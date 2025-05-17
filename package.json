@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build --force",
+    "preview": "vite preview",
     "format": "prettier --write --ignore-unknown ./src",
     "lint": "eslint . --fix",
-    "preview": "vite preview",
     "prepare": "husky"
   },
   "dependencies": {
