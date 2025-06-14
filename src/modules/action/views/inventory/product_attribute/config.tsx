@@ -108,6 +108,7 @@ const ProductsCategoryConfig: FormConfig = {
     tabs: [
       {
         name: 'Valores de atributo',
+
         content: ({ watch, control, errors, editConfig = {}, setValue }) => (
           <ProductVariantsTable
             watch={watch}

@@ -10,6 +10,7 @@ interface DatepickerControlledProps {
   rules: any
   errors: any
   startToday?: boolean
+  showTodayText?: boolean
   className?: string
   editConfig?: any
 }
@@ -20,6 +21,7 @@ export const DatepickerControlled = ({
   rules,
   errors,
   startToday = false,
+  showTodayText = true,
   className = '',
   editConfig = { config: {} },
 }: DatepickerControlledProps) => {
@@ -63,6 +65,15 @@ export const DatepickerControlled = ({
     clear: 'Limpiar',
   })
 
+  const isToday = (date: Date) => {
+    const today = new Date()
+    return (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    )
+  }
+
   const { config } = editConfig
   return (
     <Controller
@@ -74,7 +85,11 @@ export const DatepickerControlled = ({
           return (
             <div className={'DivEx ' + className}>
               {field.value ? (
-                formatDateToDDMMYYYY(field.value)
+                showTodayText && isToday(new Date(field.value)) ? (
+                  'Hoy'
+                ) : (
+                  formatDateToDDMMYYYY(field.value)
+                )
               ) : (
                 <span className="text-transparent">-</span>
               )}
@@ -84,7 +99,7 @@ export const DatepickerControlled = ({
         return (
           <>
             <Calendar
-              className={`custom__calendar`}
+              className={`custom__calendar relative `}
               value={field.value ? new Date(field.value) : today}
               onChange={(e) => {
                 const selectedDate = e.value

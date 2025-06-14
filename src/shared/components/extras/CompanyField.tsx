@@ -5,9 +5,10 @@ import useUserStore from '@/store/persist/persistStore'
 import { useEffect, useState } from 'react'
 import { ModalBase } from '../modals/ModalBase'
 
-const CompanyField = ({ control, errors, editConfig, setValue, watch }: any) => {
-  const { userCiaEmp } = useUserStore()
-  const { formItem, openDialog, setNewAppDialogs, closeDialogWithData } = useAppStore()
+const CompanyField = ({ control, errors, editConfig, setValue, watch, isEdit = false }: any) => {
+  const { userCiaEmp, companies } = useUserStore()
+  const { formItem, openDialog, setNewAppDialogs, closeDialogWithData, setFrmIsChanged } =
+    useAppStore()
   const [company, setCompany] = useState<{ label: string; value: string }[]>([])
   useEffect(() => {
     if (formItem?.['company_id'] || watch('company_id')) {
@@ -18,7 +19,14 @@ const CompanyField = ({ control, errors, editConfig, setValue, watch }: any) => 
         },
       ])
     }
-  }, [])
+    if (isEdit) {
+      const cp = flattenNodes(userCiaEmp).find((c) => c.company_id === companies[0])
+      setCompany([{ label: cp.name, value: cp.company_id }])
+      setValue('company_id', cp.company_id)
+      setValue('company_name', cp.name)
+      setFrmIsChanged(false)
+    }
+  }, [formItem, userCiaEmp])
   const flattenNodes = (nodes: any[]): any[] => {
     return (nodes ?? []).reduce((acc: any[], node: any) => {
       const flatChildren = node.companies ? flattenNodes(node.companies) : []
@@ -72,6 +80,7 @@ const CompanyField = ({ control, errors, editConfig, setValue, watch }: any) => 
             fnc_loadOptions={loadCompanies}
             editConfig={{ config: editConfig }}
             loadMoreResults={fnc_search}
+            is_edit={isEdit}
           />
         </div>
       </div>

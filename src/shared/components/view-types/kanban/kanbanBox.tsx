@@ -7,6 +7,7 @@ import { FaRegStar, FaStar, FaTruck } from 'react-icons/fa'
 import { ContactOptionEnum } from '@/modules/contacts/contacts.types'
 import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 import useAppStore from '@/store/app/appStore'
+import Kanbanchart from './kanban-chart'
 
 interface KanbanBoxProps {
   item: any
@@ -48,7 +49,6 @@ export const KanbanBox = ({ item, fnc, index, fnc_name }: KanbanBoxProps) => {
             </div>
           </div>
         )}
-
         {fnc_name === 'fnc_partner' && (
           <>
             <div className="c_imageEx_64 self-center">
@@ -146,7 +146,6 @@ export const KanbanBox = ({ item, fnc, index, fnc_name }: KanbanBoxProps) => {
             </div>
           </>
         )}
-
         {/* ************** Productos ************** */}
         {fnc_name === 'fnc_product_template' && (
           <>
@@ -195,7 +194,6 @@ export const KanbanBox = ({ item, fnc, index, fnc_name }: KanbanBoxProps) => {
             )}
           </>
         )}
-
         {/* ************** Variantes de Productos ************** */}
         {fnc_name === 'fnc_product' && (
           <>
@@ -258,6 +256,7 @@ export const KanbanBox = ({ item, fnc, index, fnc_name }: KanbanBoxProps) => {
             )}
           </>
         )}
+        {fnc_name === 'fnc_journal' && <Kanbanchart />}
       </div>
     </div>
   )

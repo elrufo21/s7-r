@@ -1,14 +1,20 @@
 import { daysUntilDate, formatDateToDDMMYYYY } from '@/shared/utils/utils'
 import { FrmMiddle, FrmMiddleRight, FrmTab1, FrmTab2, FrmTitle } from './configView'
-import { Chip } from '@mui/material'
-import { MoveLine, StatusInvoiceEnum } from '@/modules/invoicing/invoice.types'
+import {
+  MoveLine,
+  StatusInvoiceEnum,
+  InvoiceEnum_payment_state,
+  InvoiceEnum_sent_state,
+  InvoiceEnum_edi_state,
+} from '@/modules/invoicing/invoice.types'
 import { FormConfig, ModulesEnum } from '@/shared/shared.types'
 import { Row } from '@tanstack/react-table'
 import { ViewTypeEnum } from '@/shared/shared.types'
 import { InvoiceData } from '@/shared/components/view-types/viewTypes.types'
-import { InvoiceLines } from './components/InvoiceLines'
+import EditableDraggableTable from './components/InvoiceLines'
 import { Frm_bar_buttons } from './components/Frm_bar_buttons'
 import { Frm_bar_status } from './components/Frm_bar_status'
+import { BsCardChecklist } from 'react-icons/bs'
 
 const InvoiceIndexConfig: FormConfig = {
   fnc_name: 'fnc_account_move',
@@ -47,14 +53,14 @@ const InvoiceIndexConfig: FormConfig = {
 
   default_values: {
     company_id: null,
-    tdoc: '',
+    // tdoc: '',
     state: 'B',
     state2: '',
     name: 'Borrador',
     partner_id: null,
     invoice_date: '',
     payment_reference: '',
-    invoice_date_due: new Date(),
+    invoice_date_due: null,
     payment_term_id: null,
     currency_id: null,
     reference: '',
@@ -69,7 +75,25 @@ const InvoiceIndexConfig: FormConfig = {
     group_id: null,
     move_lines: [],
   },
-
+  formButtons: [
+    {
+      icon: BsCardChecklist,
+      text: 'Pagos',
+      value: '5',
+      onClick: (context: any) => {
+        context.setAditionalFilters([[0, 'fequal', 'move_id', context?.formItem?.move_id]])
+        context.setBreadcrumb([
+          {
+            title: context.formItem?.name,
+            url: context?.pathname,
+            viewType: ViewTypeEnum.FORM,
+          },
+        ])
+        // context.setSettingsBreadcrumb(true)
+        context.navigate('/action/742')
+      },
+    },
+  ],
   grid: {
     idRow: 'move_id',
     isDragable: false,
@@ -79,7 +103,6 @@ const InvoiceIndexConfig: FormConfig = {
       columns: [
         {
           header: 'Número',
-          accessorKey: 'name',
           size: 150,
           cell: ({ row }: { row: Row<InvoiceData> }) => (
             <div
@@ -95,10 +118,9 @@ const InvoiceIndexConfig: FormConfig = {
         },
         {
           header: 'Cliente',
-          accessorKey: 'partner_name',
           cell: ({ row }: { row: Row<InvoiceData> }) => (
             <div
-              className={`font-semibold ${
+              className={`${
                 row.original.state === StatusInvoiceEnum.BORRADOR
                   ? 'text-[#0180a5] font-normal'
                   : ''
@@ -110,23 +132,21 @@ const InvoiceIndexConfig: FormConfig = {
         },
         {
           header: 'Fecha de factura',
-          accessorKey: 'invoice_date',
           size: 150,
           cell: ({ row }: { row: Row<InvoiceData> }) => (
             <div
-              className={`font-semibold ${
+              className={`${
                 row.original.state === StatusInvoiceEnum.BORRADOR
                   ? 'text-[#0180a5] font-normal'
                   : ''
               }`}
             >
-              {formatDateToDDMMYYYY(row.original.invoice_date)}
+              {row.original.invoice_date ? formatDateToDDMMYYYY(row.original.invoice_date) : ''}
             </div>
           ),
         },
         {
           header: 'Fecha de vencimiento',
-          accessorKey: 'invoice_date_due',
           size: 150,
           cell: ({ row }: { row: Row<InvoiceData> }) => {
             const getDateColorClass = (date: string) => {
@@ -147,24 +167,33 @@ const InvoiceIndexConfig: FormConfig = {
         },
         {
           header: 'Impuestos no incluidos',
-          accessorKey: 'amount_total',
-          size: 200,
+          size: 120,
+          meta: {
+            textAlign: 'text-right',
+            headerAlign: 'text-right',
+          },
+          footer: () => <div>{Math.floor(Math.random() * 10000)}</div>,
           cell: ({ row }: { row: Row<InvoiceData> }) => (
             <div
-              className={`font-semibold ${
+              className={`${
                 row.original.state === StatusInvoiceEnum.BORRADOR
-                  ? 'text-[#0180a5] font-normal'
+                  ? 'text-[#0180a5] font-normal '
                   : ''
               }`}
             >
-              {row.original.amount_total}
+              {row.original?.amount_untaxed_in_currency
+                ? row.original.amount_untaxed_in_currency
+                : '0.00'}
             </div>
           ),
         },
         {
           header: 'Total',
-          accessorKey: 'amount_total',
-          size: 200,
+          size: 120,
+          meta: {
+            textAlign: 'text-right',
+            headerAlign: 'text-right',
+          },
           cell: ({ row }: { row: Row<InvoiceData> }) => (
             <div
               className={`font-semibold ${
@@ -173,28 +202,31 @@ const InvoiceIndexConfig: FormConfig = {
                   : ''
               }`}
             >
-              {row.original.amount_total}
+              {row.original.amount_total ? row.original.amount_total : '0.00'}
             </div>
           ),
         },
         {
           header: 'Facturación electrónica',
-          accessorKey: 'partner_name',
-          cell: ({ row }: { row: Row<InvoiceData> }) => (
-            <div
-              className={`font-semibold ${
-                row.original.state === StatusInvoiceEnum.BORRADOR
-                  ? 'text-[#0180a5] font-normal'
-                  : ''
-              }`}
-            >
-              {row.original.partner_name}
-            </div>
-          ),
+          size: 90,
+          cell: ({ row }: { row: Row<InvoiceData> }) => {
+            const state = row.original.edi_state
+            const defineClass = (state: string) => {
+              if (state === InvoiceEnum_edi_state.TO_SEND) return 'text-danger'
+              // if (state === InvoiceEnum_edi_state.SEND) return 'text-warning'
+              return ''
+            }
+            return (
+              <div className={`font-semibold ${defineClass(state)}`}>
+                {row.original.edi_state_description}
+              </div>
+            )
+          },
         },
+
+        /*
         {
           header: 'Estado',
-          accessorKey: 'state',
           size: 100,
           cell: ({ row }: { row: Row<InvoiceData> }) => {
             const state = row.original.state
@@ -202,38 +234,47 @@ const InvoiceIndexConfig: FormConfig = {
               if (state === StatusInvoiceEnum.BORRADOR) return 'Borrador'
               if (state === StatusInvoiceEnum.PUBLICADO) return 'Publicado'
               if (state === StatusInvoiceEnum.CANCELADO) return 'Cancelado'
+              return ''
             }
             return (
-              <div>
-                <Chip
-                  label={deffineLabel(state)}
-                  color={state === StatusInvoiceEnum.BORRADOR ? 'error' : 'primary'}
-                  size="small"
-                  className={`h-auto`}
-                />
+              <div className={`chip_demo ${state === StatusInvoiceEnum.BORRADOR ? 'P' : 'S'}`}>
+                {deffineLabel(state)}
+              </div>
+            )
+          },
+        },
+        */
+        {
+          header: 'Estado',
+          size: 90,
+          cell: ({ row }: { row: Row<InvoiceData> }) => {
+            const state = row.original.payment_state
+            const defineClass = (state: string) => {
+              if (state === InvoiceEnum_payment_state.NO_PAYMENT) return 'text-bg-danger'
+              if (state === InvoiceEnum_payment_state.PARTIAL_PAYMENT) return 'text-bg-warning'
+              if (state === InvoiceEnum_payment_state.PAID) return 'text-bg-success'
+              return ''
+            }
+            return (
+              <div className={`chip_demo ${defineClass(state)}`}>
+                {row.original.payment_state_description}
               </div>
             )
           },
         },
         {
           header: 'Enviado',
-          accessorKey: 'state',
-          size: 100,
+          size: 90,
           cell: ({ row }: { row: Row<InvoiceData> }) => {
-            const state = row.original.state
-            const deffineLabel = (state: string) => {
-              if (state === StatusInvoiceEnum.BORRADOR) return 'Borrador'
-              if (state === StatusInvoiceEnum.PUBLICADO) return 'Publicado'
-              if (state === StatusInvoiceEnum.CANCELADO) return 'Cancelado'
+            const state = row.original.sent_state
+            const defineClass = (state: string) => {
+              if (state === InvoiceEnum_sent_state.UNSENT) return 'text-bg-danger'
+              if (state === InvoiceEnum_sent_state.SENT) return 'text-bg-success'
+              return ''
             }
             return (
-              <div>
-                <Chip
-                  label={deffineLabel(state)}
-                  color={state === StatusInvoiceEnum.BORRADOR ? 'error' : 'primary'}
-                  size="small"
-                  className={`h-auto`}
-                />
+              <div className={`chip_demo ${defineClass(state)}`}>
+                {row.original.sent_state_description}
               </div>
             )
           },
@@ -503,7 +544,7 @@ const InvoiceIndexConfig: FormConfig = {
       {
         name: 'Líneas de factura',
         content: ({ watch, control, errors, editConfig = {}, setValue }) => (
-          <InvoiceLines
+          <EditableDraggableTable
             control={control}
             errors={errors}
             setValue={setValue}

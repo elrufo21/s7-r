@@ -191,7 +191,7 @@ export const ListView = ({
             const listRowSelection = Object.keys(rowSelection).filter((elem) => rowSelection[elem])
             const listRowTable = table
               .getRowModel()
-              .rows.filter((row) => typeof row.id !== 'string')
+              .rows.filter((row) => typeof row?.id !== 'string')
             if (!listRowTable.length && !listRowSelection.length) return false
             return listRowSelection.length === listRowTable.length
           }
@@ -246,7 +246,7 @@ export const ListView = ({
           if (!row.original[idRow]) return <></>
           return (
             <div className="w-full">
-              <RowDragHandleCell rowId={row.id} />
+              <RowDragHandleCell rowId={row?.id} />
             </div>
           )
         },
@@ -515,7 +515,9 @@ export const ListView = ({
 
   useEffect(() => {
     if (table && dataShow.length > 0) {
-      setDataIds(dataShow.map((item) => item?.[idRow]) as UniqueIdentifier[])
+      setDataIds(
+        dataShow.map((item) => item?.[idRow]).filter((id): id is UniqueIdentifier => id != null)
+      )
     }
     if (table) {
       if (listGroupBy.length > 0) {
@@ -578,8 +580,8 @@ export const ListView = ({
     if (table) {
       const rows = table
         .getRowModel()
-        .rows.filter((row) => typeof row.id !== 'string')
-        .map((row) => row.id)
+        .rows.filter((row) => typeof row?.id !== 'string')
+        .map((row) => row?.id)
       setFilterRows(rows)
     }
   }, [table?.getRowModel()])
@@ -637,11 +639,11 @@ export const ListView = ({
 }
 
 const TableHeader = ({ table }: { table: Table<any> }) => (
-  <thead className="thead s-sticky">
+  <thead className="thead s-sticky bg-[#F9FAFB] ">
     {table?.getHeaderGroups()?.map((headerGroup) => (
       <tr
         key={headerGroup.id}
-        className="list-th-tr left-sticky  bg-white shadow-md"
+        className="list-th-tr left-sticky border-b  bg-[#F9FAFB]"
         style={{ height: '42px' }}
       >
         {headerGroup.headers.map((header) => (
@@ -659,7 +661,10 @@ const TableHeader = ({ table }: { table: Table<any> }) => (
                   className="flex items-center w-full"
                   onClick={header.column.getToggleSortingHandler()}
                 >
-                  <span style={{ flexGrow: 1 }} className="list-th-span">
+                  <span
+                    style={{ flexGrow: 1 }}
+                    className={`list-th-span ${(header.column.columnDef.meta as { headerAlign?: string })?.headerAlign ?? 'text-left'} font-semibold`}
+                  >
                     {flexRender(header.column.columnDef.header, header.getContext())}
                   </span>
                   {header.column.getIsSorted() && (
@@ -727,7 +732,7 @@ const TableBody = ({
           <Fragment key={i}>
             {isDragable && dataState !== dataStateType.GROUPED ? (
               <DraggableRow
-                key={row.id}
+                key={row?.id}
                 row={row}
                 index={i}
                 col_name={col_name ?? ''}
@@ -841,16 +846,18 @@ const StandardRow = ({
       setFrmLoading(false)
     }
   }
+
   const handleBackSubRows = (row: Row<GroupedItemsType>) => handleSubRowsPagination(row, 'back')
   const handleNextSubRows = (row: Row<GroupedItemsType>) => handleSubRowsPagination(row, 'next')
+
   return (
     <tr
-      key={row.id}
-      className={`group list-tr ${
-        rowSelection[row.original[idRow] as string]
-          ? '  bg-sgreen-100 hover:bg-sgreen-200 text-gray-900 border-black border-b-[1.5px] border-opacity-30'
-          : 'hover:bg-gray-200  bg-white  border-b-[#000] border-black border-b-[1.5px] border-opacity-30'
-      } ${row.getIsSelected() ? 'bg-[#d1ecf1]' : ''}`}
+      key={row?.id}
+      className={`group list-tr border-b border-opacity-30
+    ${!row.getIsSelected() ? 'odd:bg-white even:bg-[#f9fafbf6] hover:bg-gray-200 border-b-[#c5c3c3b7]' : ''}
+    ${row.getIsSelected() ? 'bg-[#d1ecf1]' : ''}
+    ${rowSelection[row.original[idRow] as string] ? 'text-gray-900' : ''}
+  `}
       style={{ height: '44px' }}
     >
       {row.getCanExpand() ? (
@@ -906,7 +913,7 @@ const StandardRow = ({
           ))}
         </>
       ) : (
-        row.getVisibleCells().map((cell, i) => {
+        row.getVisibleCells().map((cell) => {
           if (cell.id.includes('drag-handle') && dataState === dataStateType.GROUPED)
             return <td key={cell.id}></td>
           return (
@@ -926,22 +933,24 @@ const StandardRow = ({
                 ` left-sticky ${
                   rowSelection[row.original[idRow] as string]
                     ? 'bg-sgreen-100 group-hover:bg-sgreen-200 text-gray-900'
-                    : `border-gray-300 group-hover:bg-gray-200 ${i % 2 === 0 ? ' bg-white' : ' bg-gray-50'}`
+                    : `border-gray-300 group-hover:bg-gray-200`
                 }`
               }
-              px-2 py-3`}
+              px-2 py-3 truncate`}
             >
               <div
-                className={`${(cell.column.columnDef as { className?: string })?.className} ${cell.column.id === 'select' && ' text-hideable'}`}
+                className={`cell-list-view-truncate ${(cell.column.columnDef as { className?: string })?.className} ${cell.column.id === 'select' && ' text-hideable'}`}
               >
                 {cell.column.id === col_name ? (
                   <Tooltip arrow title={flexRender(cell.column.columnDef.cell, cell.getContext())}>
-                    <div className="text-hideable">
+                    <div className="text-hideable truncate">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </div>
                   </Tooltip>
                 ) : (
-                  <div className="text-hideable">
+                  <div
+                    className={`text-hideable truncate ${(cell.column.columnDef.meta as { textAlign?: string })?.textAlign ?? 'text-left'}`}
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </div>
                 )}

@@ -2,6 +2,9 @@ import useAppStore from '@/store/app/appStore'
 import { useState, useEffect, useCallback } from 'react'
 import { OptionsType } from '@/shared/ui/inputs/input.types'
 
+type SimpleFilter = [0, 'fequal', string, string | number]
+type AdvancedFilter = ['s2', string, string, string[]]
+export type Filter = SimpleFilter | AdvancedFilter
 type UseAutocompleteFieldProps = {
   initialValue?: { id: string | number; name: string }
   fncName: string
@@ -11,7 +14,7 @@ type UseAutocompleteFieldProps = {
   setValue?: (name: string, value: any) => void
   onChangeCallback?: (data: any) => void
   formItem?: any
-  filters?: Array<{ column: string; value: any }>
+  filters?: Filter[]
 }
 
 export const useAutocompleteField = ({
@@ -68,23 +71,41 @@ export const useAutocompleteField = ({
     [loadOptions]
   )
 
-  // Efecto para cargar valor inicial si existe
-  useEffect(() => {
-    if (formItem && formItem[idField]) {
-      setOptions((prevOptions) => {
-        const exists = prevOptions.some((opt) => opt.value === formItem[idField])
-        if (exists) return prevOptions
+  // SOLUCIÓN 1: Agregar los valores específicos como dependencias
+  const currentId = formItem?.[idField]
+  const currentName = formItem?.[nameField]
 
-        return [
-          ...prevOptions,
-          {
-            value: formItem[idField],
-            label: formItem[nameField],
-          },
-        ]
+  useEffect(() => {
+    if (currentId && currentName) {
+      setOptions((prevOptions) => {
+        // Buscar si ya existe una opción con este ID
+        const existingIndex = prevOptions.findIndex((opt) => opt.value === currentId)
+
+        if (existingIndex !== -1) {
+          // Si existe, actualizar la etiqueta si ha cambiado
+          const existingOption = prevOptions[existingIndex]
+          if (existingOption.label !== currentName) {
+            const updatedOptions = [...prevOptions]
+            updatedOptions[existingIndex] = {
+              ...existingOption,
+              label: currentName,
+            }
+            return updatedOptions
+          }
+          return prevOptions
+        } else {
+          // Si no existe, añadirla
+          return [
+            ...prevOptions,
+            {
+              value: currentId,
+              label: currentName,
+            },
+          ]
+        }
       })
     }
-  }, [formItem, idField, nameField])
+  }, [currentId, currentName]) // Dependencias específicas
 
   // Efecto para cargar valor inicial pasado directamente
   useEffect(() => {

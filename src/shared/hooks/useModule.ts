@@ -46,7 +46,10 @@ const getModuleItemById = async ({ id, fncName }: ModuleItemType): Promise<Conta
     fnc_name: fncName,
     form: [id],
   })
-  return res.data[0].oj_data[0]
+  return {
+    data: res.data?.[0]?.oj_data?.[0] ?? null,
+    stat: res.data?.[0]?.oj_stat ?? null,
+  }
 }
 
 export const useModuleItemById = ({

@@ -2,10 +2,7 @@ import { useEffect, useState } from 'react'
 import useAppStore from '@/store/app/appStore'
 import { frmElementsProps } from '@/shared/shared.types'
 import { AutocompleteControlled, TextControlled } from '@/shared/ui'
-
-const required = {
-  required: { value: true, message: 'Este campo es requerido' },
-}
+import { required } from '@/shared/helpers/Validators'
 
 export function FrmTitle({ control, errors, editConfig }: frmElementsProps) {
   return (
@@ -15,7 +12,7 @@ export function FrmTitle({ control, errors, editConfig }: frmElementsProps) {
       placeholder={'por ejemplo, 30 días'}
       multiline={true}
       control={control}
-      rules={required}
+      rules={required()}
       errors={errors}
       editConfig={{ config: editConfig }}
     />

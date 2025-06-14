@@ -236,7 +236,7 @@ export function FrmTab0({ control, errors, editConfig, setValue, watch }: frmEle
 
 export function FrmTab1() {
   const tableRef = useRef<HTMLTableSectionElement | null>(null)
-  const { formItem, openDialog, closeDialogWithData, executeFnc, newAppDialogs } = useAppStore()
+  const { formItem, openDialog, closeDialogWithData, executeFnc } = useAppStore()
 
   const [data, setData] = useState([])
   const [setModifyData] = useState<boolean>(false)
@@ -271,7 +271,6 @@ export function FrmTab1() {
       })
     }
   }, [data])
-  console.log('newAppDialogs', newAppDialogs)
   const columns = [
     {
       id: `drag`,
@@ -332,7 +331,6 @@ export function FrmTab1() {
           onClick: async () => {
             try {
               //const formData = getData()
-              console.log('newAppDialogs', newAppDialogs)
               //  setData([...data, formData])
               closeDialogWithData(dialogId, {})
             } catch (error) {
@@ -376,7 +374,6 @@ export function FrmTab1() {
               //const formData = getData()
               // const response = await executeFnc('fnc_company', 'i', formData)
               // const company_id = response.oj_data?.company_id
-              console.log('newAppDialogs', newAppDialogs)
               closeDialogWithData(dialogId, {})
             } catch (error) {
               console.error(error)

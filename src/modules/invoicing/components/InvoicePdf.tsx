@@ -12,8 +12,20 @@ import { FaDownload, FaCircleArrowRight, FaClockRotateLeft } from 'react-icons/f
 import { formatDateToDDMMYYYY } from '@/shared/utils/utils'
 import { MoveLine } from '../invoice.types'
 import { TypeInvoiceLineEnum } from '@/shared/components/view-types/viewTypes.types'
+import { useEffect, useState } from 'react'
+import QRCode from 'qrcode'
 
 const styles = StyleSheet.create({
+  qrContainer: {
+    width: '50%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: '15',
+  },
+  qrImage: {
+    width: 100,
+    height: 100,
+  },
   pageNumber: {
     position: 'absolute',
     fontSize: 12,
@@ -158,8 +170,105 @@ const styles = StyleSheet.create({
 })
 
 // Exportar el componente PDF interno para poder generarlo como blob
+function numeroALetras(num: any) {
+  const unidades = [
+    'CERO',
+    'UNO',
+    'DOS',
+    'TRES',
+    'CUATRO',
+    'CINCO',
+    'SEIS',
+    'SIETE',
+    'OCHO',
+    'NUEVE',
+  ]
+  const decenas = [
+    'DIEZ',
+    'ONCE',
+    'DOCE',
+    'TRECE',
+    'CATORCE',
+    'QUINCE',
+    'DIECISÉIS',
+    'DIECISIETE',
+    'DIECIOCHO',
+    'DIECINUEVE',
+  ]
+  const decenas2 = [
+    'VEINTE',
+    'TREINTA',
+    'CUARENTA',
+    'CINCUENTA',
+    'SESENTA',
+    'SETENTA',
+    'OCHENTA',
+    'NOVENTA',
+  ]
+  const centenas = [
+    'CIEN',
+    'DOSCIENTOS',
+    'TRESCIENTOS',
+    'CUATROCIENTOS',
+    'QUINIENTOS',
+    'SEISCIENTOS',
+    'SETECIENTOS',
+    'OCHOCIENTOS',
+    'NOVECIENTOS',
+  ]
+
+  function convertir(num: any) {
+    let n = parseInt(num, 10)
+    if (n < 10) return unidades[n]
+    if (n < 20) return decenas[n - 10]
+    if (n < 100) {
+      const dec = Math.floor(n / 10)
+      const uni = n % 10
+      return decenas2[dec - 2] + (uni ? ' Y ' + unidades[uni] : '')
+    }
+    if (n < 1000) {
+      const cen = Math.floor(n / 100)
+      const resto = n % 100
+      let centena = cen === 1 && resto > 0 ? 'CIENTO' : centenas[cen - 1]
+      return centena + (resto ? ' ' + convertir(resto) : '')
+    }
+    if (n < 1000000) {
+      const mil = Math.floor(n / 1000)
+      const resto = n % 1000
+      let miles = mil === 1 ? 'MIL' : convertir(mil) + ' MIL'
+      return miles + (resto ? ' ' + convertir(resto) : '')
+    }
+    return '***'
+  }
+
+  let [entero, decimal] = num.toFixed(2).split('.')
+  let letras = convertir(entero)
+  return `SON: ${letras} Y ${decimal}/100 SOLES`
+}
+
 export const InvoicePDF = ({ watch }: { watch: any }) => {
+  const [qrCodeDataURL, setQrCodeDataURL] = useState('')
   const info = watch()
+  useEffect(() => {
+    const generateQR = async () => {
+      try {
+        const qrData = `${info.name}|${info.partner_name}|${info.invoice_date}|${info.total || 1400}`
+        const dataURL = await QRCode.toDataURL(qrData, {
+          width: 100,
+          margin: 1,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF',
+          },
+        })
+        setQrCodeDataURL(dataURL)
+      } catch (err) {
+        console.error('Error generando QR:', err)
+      }
+    }
+
+    generateQR()
+  }, [info.name, info.partner_name, info.invoice_date, info.total])
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -224,11 +333,11 @@ export const InvoicePDF = ({ watch }: { watch: any }) => {
           {/* Table body */}
           {info.move_lines.map((item: MoveLine, index: number) => (
             <View key={index} style={styles.tableRow}>
-              {item.type === TypeInvoiceLineEnum.SECTION ? (
+              {item.type === TypeInvoiceLineEnum.SECTION && item.name === null ? (
                 <View style={styles.section_or_note}>
                   <Text style={styles.textBold}>{item.label}</Text>
                 </View>
-              ) : item.type === TypeInvoiceLineEnum.NOTE || item.label ? (
+              ) : item.type === TypeInvoiceLineEnum.NOTE || (item.label && item.name === null) ? (
                 <View style={styles.section_or_note}>
                   <Text style={item.type === TypeInvoiceLineEnum.NOTE ? styles.textItalic : {}}>
                     {item.label}
@@ -238,6 +347,7 @@ export const InvoicePDF = ({ watch }: { watch: any }) => {
                 <>
                   <View style={[styles.tableCellDescription]}>
                     <Text>{item.name}</Text>
+                    <Text>{item?.label}</Text>
                   </View>
                   <View style={styles.tableCellAmount}>
                     <Text>{item.quantity + ' ' + item.uom_name}</Text>
@@ -279,7 +389,9 @@ export const InvoicePDF = ({ watch }: { watch: any }) => {
                 <Text style={[]}>Subtotal</Text>
               </View>
               <View style={styles.width_50}>
-                <Text style={styles.textAlignRight}>S/ 1,200.00</Text>
+                <Text style={styles.textAlignRight}>
+                  S/ {info?.amount_untaxed?.toFixed(2) || '0.00'}
+                </Text>
               </View>
             </View>
 
@@ -307,7 +419,7 @@ export const InvoicePDF = ({ watch }: { watch: any }) => {
                 <Text style={[]}>Total</Text>
               </View>
               <View style={styles.width_50}>
-                <Text style={styles.textAlignRight}>S/ 1,400.00</Text>
+                <Text style={styles.textAlignRight}>S/ {info?.amount_total.toFixed(2)}</Text>
               </View>
             </View>
           </View>
@@ -316,9 +428,13 @@ export const InvoicePDF = ({ watch }: { watch: any }) => {
         {/* ------------------------------------------------------------------------ */}
 
         <View style={{ marginTop: '20', fontSize: '10px' }}>
-          <Text style={styles.textBold}>SON: UN MIL QUINIENTOS CINCUENTA Y 00/100 SOLES</Text>
+          <Text style={styles.textBold}>{numeroALetras(info.amount_total || 0)}</Text>
         </View>
-
+        <View style={styles.section_2_Col}>
+          <View style={styles.qrContainer}>
+            {qrCodeDataURL && <Image style={styles.qrImage} src={qrCodeDataURL} />}
+          </View>
+        </View>
         {/* ------------------------------------------------------------------------ */}
 
         {/* Totals */}
@@ -368,7 +484,7 @@ export const InvoicePDF = ({ watch }: { watch: any }) => {
             </View>
           </View>
         </View>
-        */}
+       
 
         {/* <View style={styles.pageNumber} fixed> */}
         <View style={styles.pageNumber}>
@@ -420,10 +536,9 @@ export const InvoicePdf = ({ watch }: { watch: any }) => {
   const totals = calculateTotals()
 
   const handlePay = () => {}
-  console.log('watch', watch())
 
   return (
-    <div className="flex w-[80vw] gap-4 mx-auto my-10 px-6">
+    <div className="flex w-full gap-4 mx-auto my-10 px-6 h-[78vh] overflow-hidden">
       <div className="mt-6 flex flex-col gap-2 justify-start items-center w-1/3">
         <span className="text-3xl font-semibold pb-3"> S/ {totals.total.toFixed(2)}</span>
         <div className="flex gap-2 items-center text-xs font-light pb-3">
@@ -445,7 +560,7 @@ export const InvoicePdf = ({ watch }: { watch: any }) => {
           </button>
         </PDFDownloadLink>
       </div>
-      <div className="w-full h-[500px]">
+      <div className="w-full ">
         <PDFViewer width="100%" height="100%">
           <InvoicePDF watch={watch} />
         </PDFViewer>

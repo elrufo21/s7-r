@@ -3,7 +3,7 @@ import { createContext, ReactNode, useContext, useState } from 'react'
 const ScreenContext = createContext()
 
 export const ScreenProvider = ({ children }: { children: ReactNode }) => {
-  const [screen, setScreen] = useState('product')
+  const [screen, setScreen] = useState('products')
 
   return <ScreenContext.Provider value={{ screen, setScreen }}>{children}</ScreenContext.Provider>
 }

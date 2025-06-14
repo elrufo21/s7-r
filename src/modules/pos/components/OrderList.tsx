@@ -1,9 +1,8 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useMemo, useEffect } from 'react'
 import { createColumnHelper } from '@tanstack/react-table'
 import useAppStore from '@/store/app/appStore'
 import { DataTable } from './ListView'
 import { GrTrash } from 'react-icons/gr'
-import { useCart } from '../context/CartContext'
 import { useSearch } from '../context/SearchContext'
 
 type Order = {
@@ -31,15 +30,9 @@ const statusOptions = [
 ]
 
 export const OrderList = () => {
-  const { cartFill, setOrderCart, setSelectedOrder, orderCart } = useCart()
-  const { executeFnc } = useAppStore()
-  const { setScreen, setSelectedNavbarMenu } = useSearch()
-  const [loading, setLoading] = useState<boolean>(true)
-  const [filteredData, setFilteredData] = useState<Order[]>([])
-  useEffect(() => {
-    setFilteredData(orderCart)
-  }, [orderCart])
-  console.log('filteredData', filteredData)
+  const { setScreen, orderData, setSelectedOrder, setCart, addNewOrder, executeFnc, deleteOrder } =
+    useAppStore()
+  const { setSelectedNavbarMenu } = useSearch()
 
   const columnHelper = createColumnHelper<Order>()
 
@@ -147,85 +140,49 @@ export const OrderList = () => {
     []
   )
   useEffect(() => {
-    if (orderCart.length === 0) {
-      const order_id = crypto.randomUUID()
-      setOrderCart([{ id_order: order_id, number_order: 1, name: order_id, cart: [] }])
-      setSelectedOrder(order_id)
+    if (orderData.length === 0) {
+      addNewOrder()
     }
-  }, [orderCart])
-
+  }, [orderData])
   const handleDeleteClick = async (row: Order) => {
-    setFilteredData((prevData) => prevData.filter((order) => order.move_id !== row.move_id))
-    setOrderCart((prevData) => prevData.filter((order) => order.id_order !== row.move_id))
     await executeFnc('fnc_account_move', 'd', [row.move_id])
+    deleteOrder(row.move_id)
   }
 
   const handleStatusChange = (value: string) => {
     if (value === 'all') {
-      setFilteredData(orderCart)
+      //
     } else {
-      setFilteredData(orderCart.filter((order) => order.state === value))
+      //
     }
   }
 
   const handleDobleClick = async (row: Order) => {
-    const existOrder = orderCart.find((item) => item.id_order === row?.id_order)
-    console.log('existOrder', existOrder, row, orderCart)
+    const existOrder = orderData.find((item) => item.move_id === row?.move_id)
     if (existOrder) {
-      setSelectedOrder(row?.id_order)
+      setSelectedOrder(row?.move_id)
       setSelectedNavbarMenu('R')
-      setScreen('product')
+      setScreen('products')
       return
     }
-    /* setSelectedOrder(row?.move_id)
-    /*const res = await fetchInvoice(row?.move_id)
-    const dataCart = res[0]?.move_lines.map((item: any) => ({
-      product_id: item.product_id,
-      name: item.name,
-      sale_price: item.price_unit,
-      quantity: item.quantity,
-      uom_name: item.uom_name,
-    }))
-
-    setOrderCart((prevOrderCart) => [
-      ...prevOrderCart,
-      {
-        id_order: res[0]?.move_id,
-        number_order: prevOrderCart.length ? prevOrderCart.length + 1 : 1,
-        cart: dataCart,
-      },
-    ])
-    setSelectedOrder(res[0]?.move_id)
-    setScreen('product')
-    */
   }
 
   const handleRowClick = async (row: Order) => {
-    console.log('row', row)
-    // const res = await fetchInvoice(row?.move_id)
-    /* const dataCart = res[0]?.move_lines.map((item: any) => ({
-      product_id: item.product_id,
-      name: item.name,
-      sale_price: item.price_unit || 0,
-      quantity: item.quantity,
-      uom_name: item.uom_name,
-      uom_id: item.uom_id,
-    }))*/
-    cartFill(orderCart.find((item) => item.id_order === row?.id_order)?.cart || [])
+    setCart(orderData.find((item) => item.move_id === row?.move_id)?.move_lines || [])
   }
 
   return (
     <div className="w-full h-full">
       <DataTable
         columns={columns as any}
-        data={filteredData}
+        data={orderData}
         enablePagination={true}
         enableSearch={true}
         pageSize={10}
         searchPlaceholder="Buscar órdenes ..."
         statusOptions={statusOptions}
         onStatusChange={handleStatusChange}
-        noDataMessage={loading ? 'Cargando órdenes ...' : 'No se encontraron órdenes'}
+        //noDataMessage={loading ? 'Cargando órdenes ...' : 'No se encontraron órdenes'}
         className="rounded-lg"
         onRowClick={(row: any) => {
           handleRowClick(row)

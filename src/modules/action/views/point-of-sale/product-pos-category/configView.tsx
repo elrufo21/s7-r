@@ -1,7 +1,21 @@
 import { useEffect, useState } from 'react'
 import useAppStore from '@/store/app/appStore'
-import { AutocompleteControlled, TextControlled } from '@/shared/ui'
+import { AutocompleteControlled, TextControlled, ImageInput } from '@/shared/ui'
 import { frmElementsProps } from '@/shared/shared.types'
+
+export function FrmPhoto({ watch, setValue, control, editConfig }: frmElementsProps) {
+  return (
+    <div className="o_field_widget o_field_image oe_avatar">
+      <ImageInput
+        watch={watch}
+        setValue={setValue}
+        name={'files'}
+        control={control}
+        editConfig={{ config: editConfig }}
+      />
+    </div>
+  )
+}
 
 export function FrmTitle({ control, errors, editConfig }: frmElementsProps) {
   return (
@@ -25,7 +39,7 @@ export function FrmMiddle({ control, errors }: frmElementsProps) {
   const cargaData = async () => {
     setCategorias(
       await createOptions({
-        fnc_name: 'fnc_product_category',
+        fnc_name: 'fnc_product_pos_category',
         action: 's2',
       })
     )

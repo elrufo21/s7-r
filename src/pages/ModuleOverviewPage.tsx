@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom'
 
 const menuItems = [
   { title: 'Contactos', href: '/contacts', image: 'contacts' },
-  { title: 'Facturación / Contabilidad', href: '/invoicing', image: 'invoicing' },
+  { title: 'Facturación / Contabilidad', href: '/action/187', image: 'invoicing' },
   { title: 'Inventario', href: '/inventory', image: 'inventory' },
   { title: 'Punto de venta', href: '/points-of-sale', image: 'POS' },
   { title: 'Ajustes', href: '/settings', image: 'settings' },

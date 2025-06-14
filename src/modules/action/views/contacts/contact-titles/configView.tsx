@@ -1,10 +1,7 @@
 import { useEffect } from 'react'
 import { TextControlled } from '@/shared/ui'
 import { frmElementsProps } from '@/shared/shared.types'
-
-const required = {
-  required: { value: true, message: 'Este campo es requerido' },
-}
+import { required } from '@/shared/helpers/Validators'
 
 export function FrmMiddle({ control, errors, editConfig }: frmElementsProps) {
   const handleEsc = () => {}
@@ -28,7 +25,7 @@ export function FrmMiddle({ control, errors, editConfig }: frmElementsProps) {
               name={'name'}
               placeholder={'por ejemplo, "Señor", "Doctor", "Profesor", ...'}
               control={control}
-              rules={required}
+              rules={required()}
               errors={errors}
               editConfig={{ config: editConfig }}
             />

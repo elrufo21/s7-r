@@ -3,10 +3,7 @@ import { AutocompleteControlled, TextControlled } from '@/shared/ui'
 import useAppStore from '@/store/app/appStore'
 import { frmElementsProps } from '@/shared/shared.types'
 import { useLocation, useNavigate } from 'react-router-dom'
-
-const required = {
-  required: { value: true, message: 'Este campo es requerido' },
-}
+import { required } from '@/shared/helpers/validators'
 
 export function FrmMiddle({ control, errors, editConfig }: frmElementsProps) {
   const { pathname } = useLocation()
@@ -72,7 +69,7 @@ export function FrmMiddle({ control, errors, editConfig }: frmElementsProps) {
               name={'name'}
               placeholder={'por ejemplo, "Unidades"'}
               control={control}
-              rules={required}
+              rules={required()}
               errors={errors}
               editConfig={{ config: editConfig }}
             />
@@ -108,7 +105,7 @@ export function FrmMiddle({ control, errors, editConfig }: frmElementsProps) {
                   name={'factor'}
                   placeholder={''}
                   control={control}
-                  rules={required}
+                  rules={required()}
                   errors={errors}
                   editConfig={{ config: editConfig }}
                 />

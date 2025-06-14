@@ -1,6 +1,17 @@
+// PASO 1: SwitchableTextField con useCallback y memo
 import { TextField } from '@mui/material'
 import { styled } from '@mui/material/styles'
-import { ChangeEvent, ComponentType, FocusEvent, KeyboardEvent, useRef } from 'react'
+import {
+  ChangeEvent,
+  ComponentType,
+  FocusEvent,
+  KeyboardEvent,
+  useRef,
+  useState,
+  useEffect,
+  memo,
+  useCallback,
+} from 'react'
 
 // Higher-Order Component para manejar estado de solo lectura
 function withReadOnlyCheck<
@@ -11,60 +22,97 @@ function withReadOnlyCheck<
   ReadOnlyComponent: ComponentType<ReadOnlyProps>,
   getReadOnlyProps: (editProps: EditProps) => ReadOnlyProps
 ) {
-  // El componente resultante recibe los props del componente editable más isReadOnly
   return function ReadOnlyWrapper({ isReadOnly, ...props }: EditProps & { isReadOnly: boolean }) {
     if (isReadOnly) {
-      // Transformamos los props de edición a props de solo lectura
       const readOnlyProps = getReadOnlyProps(props as EditProps)
       return <ReadOnlyComponent {...readOnlyProps} />
     }
 
-    // Si no es de solo lectura, pasamos los props originales al componente editable
     return <EditComponent {...(props as EditProps)} />
   }
 }
 
-// Componentes base
-const EditableTextField = ({
-  value,
-  onBlur,
-  onChange,
-  type = 'text',
-  className = '',
-}: {
-  value: string | number
-  onBlur: (e: FocusEvent<HTMLInputElement>) => void
-  onChange: (e: ChangeEvent<HTMLInputElement>) => void
-  type?: string
-  className?: string
-}) => {
-  const inputRef = useRef<HTMLInputElement>(null)
+// COMPONENTE MEMOIZADO para evitar re-renders
+const EditableTextField = memo(
+  ({
+    value,
+    onBlur,
+    onChange,
+    type = 'text',
+    className = '',
+    textAlign = 'right',
+  }: {
+    value: string | number
+    onBlur: (e: FocusEvent<HTMLInputElement>) => void
+    onChange: (e: ChangeEvent<HTMLInputElement>) => void
+    type?: string
+    className?: string
+    textAlign?: string
+  }) => {
+    const inputRef = useRef<HTMLInputElement>(null)
+    const [localValue, setLocalValue] = useState(String(value || ''))
+    const [isFocused, setIsFocused] = useState(false)
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      if (inputRef.current) {
-        inputRef.current.blur()
+    // Solo actualizar cuando no esté enfocado
+    useEffect(() => {
+      if (!isFocused) {
+        setLocalValue(String(value || ''))
       }
-    }
+    }, [value, isFocused])
+
+    const handleKeyDown = useCallback((e: KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        if (inputRef.current) {
+          inputRef.current.blur()
+        }
+      }
+    }, [])
+
+    const handleChange = useCallback(
+      (e: ChangeEvent<HTMLInputElement>) => {
+        setLocalValue(e.target.value)
+        onChange(e)
+      },
+      [onChange]
+    )
+
+    const handleBlur = useCallback(
+      (e: FocusEvent<HTMLInputElement>) => {
+        setIsFocused(false)
+        setLocalValue(e.target.value)
+        onBlur(e)
+      },
+      [onBlur]
+    )
+
+    const handleFocus = useCallback(() => {
+      setIsFocused(true)
+    }, [])
+
+    return (
+      <CustomTextField
+        inputRef={inputRef}
+        type={type}
+        value={localValue}
+        onBlur={handleBlur}
+        onFocus={handleFocus}
+        className={className}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        sx={{
+          '& input': {
+            textAlign: textAlign,
+          },
+        }}
+      />
+    )
   }
-
-  return (
-    <CustomTextField
-      inputRef={inputRef}
-      type={type}
-      defaultValue={value}
-      onBlur={onBlur}
-      className={className}
-      onChange={onChange}
-      onKeyDown={handleKeyDown}
-    />
-  )
-}
-
-const ReadOnlyText = ({ value }: { value: string | number }) => (
-  <span className="block py-1 text-right">{value}</span>
 )
+
+const ReadOnlyText = memo(({ value }: { value: string | number }) => (
+  <span className="block py-1 text-right">{value}</span>
+))
 
 const CustomTextField = styled(TextField)({
   '& .MuiOutlinedInput-root': {

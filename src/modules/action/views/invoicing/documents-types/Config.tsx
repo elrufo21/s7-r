@@ -10,8 +10,8 @@ const PaymentTermsConfig: FormConfig = {
   views: [ViewTypeEnum.LIST],
   view_default: ViewTypeEnum.LIST,
   module_url: '/action/746',
-  item_url: '/action/746/detail',
-  new_url: '/action/746/detail/new',
+  item_url: '',
+  new_url: '',
   isFavoriteColumn: false,
 
   fnc_valid: (data) => {
@@ -61,12 +61,12 @@ const PaymentTermsConfig: FormConfig = {
         },
         {
           header: 'Prefijo del código de documento',
-          accessorKey: 'code_prefix',
+          accessorKey: 'doc_code_prefix',
           className: '!w-auto text-left',
         },
         {
           header: 'Nombre en reportes',
-          accessorKey: 'reports_name',
+          accessorKey: 'report_name',
           className: '!w-auto text-left',
         },
         {
@@ -76,7 +76,7 @@ const PaymentTermsConfig: FormConfig = {
         },
         {
           header: 'País',
-          accessorKey: 'country_name',
+          accessorKey: 'ln1_name',
           className: '!w-auto text-left',
         },
         {

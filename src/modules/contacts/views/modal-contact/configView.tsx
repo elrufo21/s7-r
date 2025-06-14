@@ -3,7 +3,7 @@ import useAppStore from '@/store/app/appStore'
 import { InputWithLabel, RadioButtonControlled, TextControlled } from '@/shared/ui'
 import { frmElementsProps } from '@/shared/shared.types'
 import AddressField from '@/shared/components/extras/AddressField'
-
+import { required } from '@/shared/helpers/validators'
 interface TopTitleProps {
   control: any
   editConfig: any
@@ -65,9 +65,6 @@ export function Frm_Middle_Left({
       cargaData()
     }
   }, [frmDialogItem])
-  const required = {
-    required: { value: true, message: 'Este campo es requerido' },
-  }
 
   // const handleChange = (data: any, dsc: string) => {
   //   console.log(dsc, data[dsc])
@@ -83,7 +80,7 @@ export function Frm_Middle_Left({
         label={'Nombre'}
         name={'name'}
         placeholder={'por ejemplo, Nueva dirección'}
-        rules={required}
+        rules={required()}
       />
       {watch('address_type') === 'CO' ? (
         <>

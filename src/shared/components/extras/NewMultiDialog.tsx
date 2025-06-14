@@ -25,7 +25,6 @@ export const NewMultiDialog = () => {
   const handleCloseDialog = (dialogId: string) => {
     setNewAppDialogs(newAppDialogs.filter((dialog) => dialog.id !== dialogId))
   }
-  console.log('newAppDialogs', newAppDialogs)
   return (
     <>
       {newAppDialogs.map((dialog) => {
@@ -34,10 +33,11 @@ export const NewMultiDialog = () => {
             key={dialog.id}
             open={dialog.open}
             onClose={() => handleCloseDialog(dialog.id)}
-            maxWidth={'md'}
+            maxWidth={false}
             scroll={'paper'}
             PaperComponent={PaperComponent}
             className="modal o_technical_modal"
+            fullScreen={dialog.fullScreen}
           >
             <DialogTitle id="draggable-dialog-title" className="ModalDialogTitle">
               {dialog.customHeader ? (

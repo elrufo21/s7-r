@@ -290,6 +290,7 @@ export const FormView = ({ item }: { item?: any }) => {
             //toast('registro guardado')
             setFrmIsChanged(false)
             setFrmIsChangedItem(false)
+            setFrmAction(FormActionEnum.BASE)
           },
           onError(err) {
             console.log(err)
@@ -300,14 +301,15 @@ export const FormView = ({ item }: { item?: any }) => {
       )
     } else {
       toast.error('Error al validar el formulario')
+      setFrmLoading(false)
       setFrmAction(FormActionEnum.BASE)
+      return null
     }
   }
 
   const handleChange = () => {
     setFrmIsChanged(isDirty)
   }
-
   const queryClient = useQueryClient()
   const executeAction = async (action: FormActionEnum) => {
     let isValid: boolean
@@ -316,14 +318,12 @@ export const FormView = ({ item }: { item?: any }) => {
       case FormActionEnum.PRE_SAVE:
         // Validamos todos los campos primero
         isValid = await trigger()
-
         // Si el formulario es válido, procedemos con el guardado
         if (isValid) {
           handleSubmit(() => saveCore())()
         } else {
           setFrmLoading(false)
           setFrmAction(FormActionEnum.BASE)
-          toast.error('Por favor, complete los campos requeridos')
         }
         break
       case FormActionEnum.UPDATE_STATE:
@@ -373,6 +373,7 @@ export const FormView = ({ item }: { item?: any }) => {
     //setFrmConfigControls(config.configControls)
   }, [config.configControls, setFrmConfigControls])
 
+  console.log('config.fnc_name', config.fnc_name)
   return (
     <div className="o_content">
       <div className="o_form_renderer o_form_editable d-flex flex-nowrap h-100 o_form_saved">
@@ -416,11 +417,16 @@ export const FormView = ({ item }: { item?: any }) => {
             className={`o_form_sheet position-relative ${frm_bar_buttons || frm_bar_status ? 'border-top-width-0' : ''}`}
           >
             {/* {(frm_bar_buttons || frm_bar_status) && <div className="ribbon-simple">PAGADO</div>} */}
-            {(frm_bar_buttons || frm_bar_status) && (
+            {(frm_bar_buttons || frm_bar_status) && config.fnc_name === 'fnc_account_move' && (
               <div className="ribbon-simple reversed">REVERTIDO</div>
             )}
 
-            <>{formItem?.state === 'I' && <div className="ribbon">Archivado</div>}</>
+            <>
+              {formItem?.state === 'I' && fnc_name !== 'fnc_payment' && (
+                <div className="ribbon">Archivado</div>
+              )}
+            </>
+
             <form onChange={handleChange}>
               {frm_photo &&
                 frm_photo({

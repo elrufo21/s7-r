@@ -1,5 +1,4 @@
 import type { Product } from '../types'
-import { useCart } from '../context/CartContext'
 import { FaInfo } from 'react-icons/fa'
 import useAppStore from '@/store/app/appStore'
 import ProductInfoConfig from '../views/product-info/config'
@@ -10,9 +9,8 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const { openDialog } = useAppStore()
-  const { addToCart, getItemQuantity } = useCart()
-  const quantity = getItemQuantity(product?.product_id)
+  const { openDialog, addProductToOrder, getProductQuantityInOrder, selectedOrder } = useAppStore()
+  const quantity = getProductQuantityInOrder(selectedOrder, product.product_id)
 
   const fnc_open_product_info = async (product: Product) => {
     const dialog = openDialog({
@@ -21,11 +19,17 @@ export default function ProductCard({ product }: ProductCardProps) {
         <FrmBaseDialog config={ProductInfoConfig} values={product} initialValues={product} />
       ),
     })
+    console.log(dialog)
   }
 
   return (
     <>
-      <article className="card_article" onClick={() => addToCart(product)}>
+      <article
+        className="card_article"
+        onClick={() => {
+          addProductToOrder(selectedOrder, product, 1)
+        }}
+      >
         <div className="product-information-tag">
           <FaInfo
             className="product-information-tag-logo"

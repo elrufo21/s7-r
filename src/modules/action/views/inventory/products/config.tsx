@@ -28,7 +28,7 @@ const ProductsConfig: FormConfig = {
   isFavoriteColumn: true,
 
   fnc_valid: (data, formItem) => {
-    if (!data.name) return
+    if (!data.name) return null
     const { taxes_sale, taxes_purchase } = data
 
     if (taxes_sale || taxes_purchase) {

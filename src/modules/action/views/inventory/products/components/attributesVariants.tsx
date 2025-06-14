@@ -1,27 +1,18 @@
 import useAppStore from '@/store/app/appStore'
 import { toast } from 'sonner'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Attribute, AttributeTable } from '../products.type'
-import Sortable from 'sortablejs'
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
-  Row,
-  useReactTable,
-} from '@tanstack/react-table'
+import { ColumnDef, Row } from '@tanstack/react-table'
 import { GrDrag } from 'react-icons/gr'
 import { AutocompleteTable } from '@/shared/ui'
-import { FaChevronDown, FaChevronUp } from 'react-icons/fa'
 import { useAttributesOptions } from '@/modules/action/hooks/useProductsLines'
-import clsx from 'clsx'
 import { MultiSelecTableAttributes } from '@/shared/ui/inputs/MultiSelectTableAttributes'
 import { FormActionEnum, frmElementsProps, ItemStatusTypeEnum } from '@/shared/shared.types'
-import { RiDeleteBin2Line } from 'react-icons/ri'
+import { GrTrash } from 'react-icons/gr'
 import AttributesConfig from '@/modules/action/views/inventory/product_attribute/config'
 import { FrmBaseDialog } from '@/shared/components/core'
 import { ModalBase } from '@/shared/components/modals/ModalBase'
+import { DndTable } from '@/shared/components/table/DndTable'
 
 const AttributesVariantsTable = ({ setValue }: frmElementsProps) => {
   const {
@@ -40,8 +31,7 @@ const AttributesVariantsTable = ({ setValue }: frmElementsProps) => {
 
   const [data, setData] = useState<any[]>([])
   const [modifyData, setModifyData] = useState<boolean>(false)
-  const tableRef = useRef<HTMLTableSectionElement | null>(null)
-  const sortableRef = useRef<Sortable | null>(null)
+
   useEffect(() => {
     loadAttributes()
   }, [loadAttributes])
@@ -74,33 +64,6 @@ const AttributesVariantsTable = ({ setValue }: frmElementsProps) => {
     }
   }, [formItem, setValue, frmAction])
 
-  useEffect(() => {
-    if (tableRef.current) {
-      if (sortableRef.current) {
-        sortableRef.current.destroy()
-      }
-
-      sortableRef.current = Sortable.create(tableRef.current, {
-        animation: 150,
-        handle: '.drag-handle',
-        ghostClass: 'bg-white',
-        onEnd: (event) => {
-          const oldIndex = event.oldIndex!
-          const newIndex = event.newIndex!
-          setData((prevData: any) => {
-            const newData = [...prevData]
-            const [movedItem] = newData.splice(oldIndex, 1)
-            newData.splice(newIndex, 0, movedItem)
-            return newData.map((item) => ({
-              ...item,
-              attributes_changed: true,
-            }))
-          })
-          setModifyData(true)
-        },
-      })
-    }
-  }, [data])
   const handleAttributeChange = async (
     row: any,
     dataAttribute: {
@@ -378,7 +341,7 @@ const AttributesVariantsTable = ({ setValue }: frmElementsProps) => {
         cell: ({ row }: { row: any }) => (
           <div className="flex justify-center">
             <button type="button" onClick={() => handleDeleteRow(row.index)}>
-              <RiDeleteBin2Line style={{ fontSize: '17px' }} className="hover:text-red-400" />
+              <GrTrash style={{ fontSize: '14px' }} className="hover:text-red-400" />
             </button>
           </div>
         ),
@@ -386,15 +349,6 @@ const AttributesVariantsTable = ({ setValue }: frmElementsProps) => {
     ],
     [tableData, attributes, values]
   )
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    columnResizeMode: 'onEnd',
-    columnResizeDirection: 'ltr',
-    enableColumnResizing: true,
-  })
 
   const addRow = () => {
     setData((prev) => [
@@ -409,67 +363,41 @@ const AttributesVariantsTable = ({ setValue }: frmElementsProps) => {
     setModifyData(true)
   }
   return (
-    <div className="flex flex-col gap-4 py-4 ">
-      <div className="flex flex-col gap-4">
-        <table className="w-full border-[#BBB] border relative">
-          <thead className="h-10">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className={`text-left font-bold relative ${
-                      header.column.getCanSort() ? 'cursor-pointer select-none' : ''
-                    }`}
-                    style={{ width: header.getSize() }}
-                    onClick={header.column.getToggleSortingHandler()}
-                  >
-                    <div
-                      className={clsx(
-                        'flex items-center gap-2',
-                        header.column.getIsSorted() && 'justify-between'
-                      )}
-                    >
-                      {flexRender(header.column.columnDef.header, header.getContext())}
-                      {{
-                        asc: <FaChevronUp />,
-                        desc: <FaChevronDown />,
-                      }[header.column.getIsSorted() as string] ?? null}
-                    </div>
-                    <div
-                      {...{
-                        onMouseDown: header.getResizeHandler(),
-                        onTouchStart: header.getResizeHandler(),
-                        className: `resizer ${header.column.getIsResizing() ? 'isResizing' : ''}`,
-                      }}
-                    />
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody ref={tableRef}>
-            {table.getRowModel().rows.map((row) => (
-              <tr key={row.original.attribute_id} className="border-y-[#BBB] border-y-[1px]">
-                {row.getVisibleCells().map((cell) => (
-                  <td
-                    key={columns[0].id}
-                    style={{ width: row.getVisibleCells()[0].column.getSize() }}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="flex gap-4 pb-4 pl-4">
-          <button type="button" className="text-[#017e84] hover:text-[#017e84]/80" onClick={addRow}>
-            Agregar línea
-          </button>
-        </div>
-      </div>
-    </div>
+    <DndTable
+      data={data}
+      setData={setData}
+      columns={columns}
+      id="attribute_id"
+      modifyData={modifyData}
+      setModifyData={setModifyData}
+    >
+      {(table) => (
+        <tr
+          style={{ height: '42px' }}
+          className="group list-tr options border-gray-300 hover:bg-gray-200 border-t-black border-t-[1px] no-drag"
+        >
+          <td></td>
+          <td
+            colSpan={
+              table.getRowModel().rows[0]
+                ? table.getRowModel().rows[0]?.getVisibleCells().length - 1
+                : 10
+            }
+            className="w-full align-middle"
+          >
+            <div className="flex gap-4 pl-4 pr-4">
+              <button
+                type="button"
+                className="text-[#017e84] hover:text-[#017e84]/80"
+                onClick={addRow}
+              >
+                Agregar línea
+              </button>
+            </div>
+          </td>
+        </tr>
+      )}
+    </DndTable>
   )
 }
 export default AttributesVariantsTable

@@ -22,8 +22,8 @@ interface CartContextType {
   cartFill: (data: CartItem[]) => void
   orderCart: OrderCartType[]
   setOrderCart: React.Dispatch<React.SetStateAction<OrderCartType[]>>
-  selectedOrder: string
-  setSelectedOrder: React.Dispatch<React.SetStateAction<string>>
+  selectedOrder: string | number
+  setSelectedOrder: React.Dispatch<React.SetStateAction<string | number>>
   orderData: OrderCartType[]
   setOrderData: React.Dispatch<React.SetStateAction<OrderCartType[]>>
   fetchInvoices: () => void
@@ -100,7 +100,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const fetchCustomers = async () => {
     const customers = await executeFnc('fnc_partner', 's', [[1, 'pag', 1]])
     setCustomers(customers.oj_data)
-    console.log('customers', customers.oj_data)
   }
   const addToCart = (product: Product, quantity = 1) => {
     if (product.product_id === null) {

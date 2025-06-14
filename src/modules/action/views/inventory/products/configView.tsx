@@ -16,19 +16,16 @@ import { RiStarLine, RiStarFill } from 'react-icons/ri'
 import Stack from '@mui/material/Stack'
 import FormControl from '@mui/material/FormControl'
 import FormGroup from '@mui/material/FormGroup'
-import { FormActionEnum, frmElementsProps, ViewTypeEnum } from '@/shared/shared.types'
+import { FormActionEnum, frmElementsProps, ItemStatusTypeEnum } from '@/shared/shared.types'
 import { OptionsType } from '@/shared/ui/inputs/input.types'
 import { InvoicePolicyEnum, TaxType, TypeProductEnum } from './products.type'
-import { ModalBase } from '@/shared/components/modals/ModalBase'
 import modalCategoryConfig from '@/modules/action/views/inventory/products-category/config'
 
-import { useLocation, useNavigate } from 'react-router-dom'
-import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 import CompanyField from '@/shared/components/extras/CompanyField'
-
-const required = {
-  required: { value: false, message: 'Este campo es requerido' },
-}
+import { required } from '@/shared/helpers/validators'
+import BaseAutocomplete from '@/shared/components/form/base/BaseAutocomplete'
+import FormRow from '@/shared/components/form/base/FormRow'
+import uomConfig from '@/modules/action/views/inventory/unit-measurement/config'
 
 export function FrmPhoto({ watch, setValue, control, editConfig }: frmElementsProps) {
   return (
@@ -97,7 +94,7 @@ export function FrmTitle({ control, errors, editConfig }: frmElementsProps) {
       <TextControlled
         name={'name'}
         control={control}
-        rules={required}
+        rules={required()}
         errors={errors}
         placeholder={'Por ejemplo, tostada de pan'}
         style={style}
@@ -128,7 +125,7 @@ export function Subtitle({ watch, control, editConfig }: frmElementsProps) {
     setHiddenTabs([...hiddenTabs, 'Compras'])
   }, [watch('purchase_ok')])
   return (
-    <FormControl className="frmControlEx mt-1" component="fieldset" variant="standard">
+    <FormControl className="frmControlEx" component="fieldset" variant="standard">
       <div>
         {formItem?.variants?.map((item: any) => (
           <Chip
@@ -152,7 +149,7 @@ export function Subtitle({ watch, control, editConfig }: frmElementsProps) {
         ))}
       </div>
       <FormGroup>
-        <Stack direction="row" className="gap-5">
+        <Stack direction="row" className="gap-5 mt-2 mb-1">
           <CheckBoxControlled
             dsc={'Se puede vender'}
             name={'sale_ok'}
@@ -190,63 +187,13 @@ export function FrmTab0({
 }: frmElementsProps) {
   const createOptions = useAppStore((state) => state.createOptions)
   const executeFnc = useAppStore((state) => state.executeFnc)
-  const {
-    newAppDialogs,
-    setBreadcrumb,
-    frmCreater,
-    breadcrumb,
-    openDialog,
-    setNewAppDialogs,
-    closeDialogWithData,
-  } = useAppStore()
   const formItem = useAppStore((state) => state.formItem)
-  const [categories, setCategories] = useState<{ label: string; value: string }[]>([])
-  const { pathname } = useLocation()
-  const navigate = useNavigate()
 
   // hoy_
   // category - start
-  const fnc_load_data_category = async () => {
-    const options = await createOptions({
-      fnc_name: 'fnc_product_category',
-      filters: [{ column: 'state', value: 'A' }],
-      action: 's2',
-    })
-    if (!formItem) {
-      return setCategories(options)
-    }
-    setCategories([...options])
-  }
-
-  const fnc_navigate_category = (value: number) => {
-    if (newAppDialogs.length > 0) return
-
-    setBreadcrumb([
-      ...breadcrumb,
-      {
-        title: formItem.name,
-        url: pathname,
-        viewType: ViewTypeEnum.FORM,
-      },
-    ])
-    navigate(`/action/180/detail/${value}`)
-  }
-
-  const fnc_create_category = async (value: number) => {
-    await frmCreater(
-      fnc_name ?? '',
-      { name: value, state: StatusContactEnum.UNARCHIVE },
-      'category_id',
-      async (res: number) => {
-        await fnc_load_data_category()
-        setValue('category_id', res)
-      }
-    )
-  }
 
   // category - end
 
-  const [companies, setCompanies] = useState<{ label: string; value: string }[]>([])
   /*const loadDataCompanies = async () => {
     setCompanies(
       await createOptions({
@@ -255,17 +202,8 @@ export function FrmTab0({
       })
     )
   }*/
-  console.log(companies)
-  const [uom, setUom] = useState<{ label: string; value: string }[]>([])
 
   const [costUnit, setCostUnit] = useState<string>('')
-  const loadDataUom = async () => {
-    let resultUom = await createOptions({
-      fnc_name: 'fnc_uom',
-      action: 's2',
-    })
-    setUom(resultUom)
-  }
 
   const [taxPurchase, setTaxPurchase] = useState<OptionsType[]>([])
   const [taxSale, setTaxSale] = useState<OptionsType[]>([])
@@ -306,32 +244,9 @@ export function FrmTab0({
 
   const loadData = () => {
     if (formItem?.['uom_id']) {
-      setUom([
-        {
-          value: formItem['uom_id'],
-          label: formItem['uom_name'],
-        },
-      ])
       setCostUnit(formItem['uom_name'])
     }
 
-    if (formItem?.['company_id']) {
-      setCompanies([
-        {
-          value: formItem['company_id'],
-          label: formItem['company_name'],
-        },
-      ])
-    }
-
-    if (formItem?.['category_id']) {
-      setCategories([
-        {
-          value: formItem['category_id'],
-          label: formItem['category_name'],
-        },
-      ])
-    }
     if (formItem?.['taxes_sale']) {
       const taxPrice = async () => {
         const rs = await getSalePriceWhitTax(taxSale.map((tax: any) => tax.value))
@@ -345,9 +260,6 @@ export function FrmTab0({
     loadData()
   }, [formItem])
 
-  const onChangeUom = (value: { label: string; value: string; [key: string]: any }) => {
-    setCostUnit(value.label)
-  }
   const getSalePriceWhitTax = async (data: any) => {
     const result = await executeFnc('fnc_tax', 'get_sale_price_tax', data)
     return result.oj_data
@@ -392,31 +304,6 @@ export function FrmTab0({
     setPriceWithTax(res.oj_data)
   }
 
-  const fnc_search = () => {
-    const dialogId = openDialog({
-      title: 'Productos',
-      dialogContent: () => (
-        <ModalBase
-          config={modalCategoryConfig}
-          multiple={false}
-          onRowClick={async (option) => {
-            if (option.partner_id) {
-              setValue('parent_id', option.partner_id)
-            }
-            setNewAppDialogs([])
-          }}
-        />
-      ),
-      buttons: [
-        {
-          text: 'Cerrar',
-          type: 'cancel',
-          onClick: () => closeDialogWithData(dialogId, {}),
-        },
-      ],
-    })
-  }
-
   return (
     <>
       <div className="o_group mt-4">
@@ -458,7 +345,7 @@ export function FrmTab0({
                       editConfig={{ config: editConfig }}
                     />
                     <SelectControlled
-                      name={'uom_id'}
+                      name={''}
                       control={control}
                       editConfig={{ config: editConfig }}
                       options={[]}
@@ -539,17 +426,29 @@ export function FrmTab0({
 
                         <div className="w-4/6">
                           <div className="o_field">
-                            <AutocompleteControlled
-                              name={'uom_id'}
-                              placeholder={''}
+                            <BaseAutocomplete
                               control={control}
                               errors={errors}
-                              options={uom}
-                              createAndEditItem={true}
-                              fnc_loadOptions={loadDataUom}
-                              enlace={true}
+                              setValue={setValue}
                               editConfig={{ config: editConfig }}
-                              handleOnChanged={onChangeUom}
+                              formItem={formItem}
+                              name="uom_id"
+                              label="uom_name"
+                              rulers={true}
+                              filters={[]}
+                              allowCreateAndEdit={true}
+                              allowSearchMore={true}
+                              config={{
+                                basePath: '/action/91/detail',
+                                modalConfig: uomConfig,
+                                modalTitle: 'Unidad de Medida',
+                                fncName: 'fnc_uom',
+                                primaryKey: 'uom_id',
+                                createDataBuilder: (data: any) => ({
+                                  name: data,
+                                  state: ItemStatusTypeEnum.ACTIVE,
+                                }),
+                              }}
                             />
                           </div>
                         </div>
@@ -680,31 +579,34 @@ export function FrmTab0({
               </div>
             ) : null}
 
-            <div className="d-sm-contents">
-              <div className="o_cell o_wrap_label">
-                <label className="o_form_label">Categoría</label>
-              </div>
-              <div className="o_cell">
-                <div className="o_field">
-                  <AutocompleteControlled
-                    name={'category_id'}
-                    control={control}
-                    errors={errors}
-                    editConfig={{ config: editConfig }}
-                    enlace={true}
-                    options={categories}
-                    fnc_loadOptions={fnc_load_data_category}
-                    fnc_enlace={fnc_navigate_category}
-                    createItem={fnc_create_category}
-                    //createAndEditItem={true}
-                    //createAndEditItem={(data: string) => fnc_create_edit_customer(data)}
+            <FormRow label="Categoría">
+              <BaseAutocomplete
+                control={control}
+                errors={errors}
+                setValue={setValue}
+                editConfig={{ config: editConfig }}
+                formItem={formItem}
+                name={'category_id'}
+                label={'category_name'}
+                rulers={true}
+                filters={[{ column: 'state', value: ItemStatusTypeEnum.ACTIVE }]}
+                allowSearchMore={true}
+                allowCreateAndEdit={true}
+                config={{
+                  basePath: '/action/180/detail',
+                  modalConfig: modalCategoryConfig,
+                  modalTitle: 'Categoría',
+                  fncName: fnc_name || 'fnc_create_category',
+                  primaryKey: 'category_id',
 
-                    loadMoreResults={fnc_search}
-                    //loadMoreResults={fnc_search_customer}
-                  />
-                </div>
-              </div>
-            </div>
+                  createDataBuilder: (data: any) => ({
+                    name: data,
+                    state: ItemStatusTypeEnum.ACTIVE,
+                  }),
+                }}
+              />
+            </FormRow>
+
             <CompanyField
               control={control}
               errors={errors}
@@ -1005,7 +907,7 @@ export function FrmTab4({ control, errors, editConfig }: frmElementsProps) {
                     errors={errors}
                     options={unspscCode}
                     fnc_loadOptions={loadDataUnspscCode}
-                    rules={required}
+                    rules={required()}
                     editConfig={{ config: editConfig }}
                   />
                 </div>

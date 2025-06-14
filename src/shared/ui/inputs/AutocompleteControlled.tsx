@@ -24,6 +24,7 @@ type AutocompleteControlledProps = {
   handleOnBlur?: (value: string) => void
   loadMoreResults?: (value?: any) => void
   fnc_enlace?: (value: any, name: any) => void
+  is_edit?: boolean
 }
 export const AutocompleteControlled = ({
   name,
@@ -43,6 +44,7 @@ export const AutocompleteControlled = ({
   loadMoreResults,
   placeholder = '',
   createAndEditItem,
+  is_edit = false,
   editConfig = { config: {} },
 }: AutocompleteControlledProps) => {
   const { config } = editConfig
@@ -62,14 +64,13 @@ export const AutocompleteControlled = ({
       setEnlaceLoading(false)
     }
   }
-
   return (
     <Controller
       name={name}
       control={control}
       rules={rules}
       render={({ field: { onChange, value }, field }) => {
-        if (config?.[name]?.isEdit) {
+        if (config?.[name]?.isEdit || is_edit) {
           let recordOption = options?.find((item) => item.value === value)
           return (
             <div className={className}>

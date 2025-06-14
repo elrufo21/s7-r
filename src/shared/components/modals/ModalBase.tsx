@@ -8,6 +8,7 @@ import { GroupedItemsType } from '../view-types/viewTypes.types'
 import { PageCounterList } from '../navigation/panel-navigation/control-panel/components/PageCounterList'
 import useAppStore from '@/store/app/appStore'
 import { ClientModal } from '@/modules/pos/components/modal/ClientModal'
+import { Filter } from '../form/hooks/useAutocompleteField'
 
 interface ModalBaseProps {
   config: FormConfig
@@ -17,6 +18,7 @@ interface ModalBaseProps {
   contactModal?: boolean
   dataFiltered?: any[]
   openEditModal?: (client: any) => void
+  defaultFiters?: Filter[]
 }
 
 export const ModalBase = ({
@@ -27,6 +29,7 @@ export const ModalBase = ({
   contactModal = false,
   dataFiltered = [],
   openEditModal,
+  defaultFiters = [],
 }: ModalBaseProps) => {
   const { itemsPerPage, columnsVisibility, setColumnsVisibility } = useAppStore()
   const [filters, setFilters] = useState<any[]>([[1, 'pag', 1]])
@@ -52,6 +55,12 @@ export const ModalBase = ({
 
   // Estado local para la selección
   const [localRowSelection, setLocalRowSelection] = useState<Record<string, boolean>>({})
+
+  /*useEffect(() => {
+    if (config?.default_filters) {
+      setFilters((prevFilters) => [...prevFilters, config?.default_filters])
+    }
+  }, [config?.default_filters])*/
 
   const { data } = useModuleList({
     fncName: config.fnc_name,
@@ -83,7 +92,8 @@ export const ModalBase = ({
     const newFilters = clearOBy.map((filter: any, index: number) =>
       typeof filter[0] === 'number' ? filter : [index + 1, ...filter]
     )
-    setFilters(newFilters)
+
+    setFilters([...defaultFiters, ...newFilters])
   }
 
   useEffect(() => {

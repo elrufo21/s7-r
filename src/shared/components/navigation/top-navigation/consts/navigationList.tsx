@@ -94,7 +94,7 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
       {
         title: 'Tablero',
         key: 'fac-tablero',
-        path: '/contacts',
+        path: '/action/187',
       },
       {
         title: 'Clientes',
@@ -181,7 +181,7 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
               {
                 title: 'Análisis de facturas',
                 key: 'analisis-de-facturas-rep',
-                path: '',
+                path: '/action/667',
               },
             ],
           },
@@ -208,7 +208,7 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
               {
                 title: 'Diarios',
                 key: 'diarios-rep',
-                path: '',
+                path: '/action/622',
               },
               /*
               {
@@ -286,7 +286,7 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
               {
                 title: 'Métodos de pago',
                 key: 'metodos-de-pago-rep',
-                path: '',
+                path: '/action/621',
               },
             ],
           },
@@ -667,11 +667,6 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
                 key: 'Unidades-y-embalajes-inventory',
                 path: '/action/91',
               },
-              {
-                title: 'Categorías de producto de PdV',
-                key: 'categories-pos-inventory',
-                path: '/action/93',
-              },
             ],
           },
         ],
@@ -735,6 +730,7 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
           },
           { title: 'Punto de venta', key: 'punto-venta', path: '/configuracion/punto-venta' },
           { title: 'Modelos de nota', key: 'modelos-nota', path: '/configuracion/modelos-nota' },
+          /*
           {
             title: 'Pricer',
             key: 'pricer-submenu',
@@ -751,14 +747,15 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
               },
             ],
           },
+          */
           {
             title: 'Productos',
             key: 'productos-submenu',
             items: [
               {
                 title: 'Categorías de producto de PdV',
-                key: 'categorias-pdv',
-                path: '/configuracion/productos/categorias-pdv',
+                key: 'categories-pos-inventory',
+                path: '/action/93',
               },
               { title: 'Atributos', key: 'atributos', path: '/configuracion/productos/atributos' },
               {
@@ -768,8 +765,6 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
               },
             ],
           },
-          { title: 'car...', key: 'car', path: '/configuracion/car' },
-          { title: 'vencic', key: 'vencic', path: '/configuracion/vencic' },
         ],
       },
     ],

@@ -9,8 +9,9 @@ import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.type
 import { FrmBaseDialog } from '@/shared/components/core/Dialog/FrmBaseDialog'
 import { ModalBase } from '@/shared/components/modals/ModalBase'
 import { toast } from 'sonner'
+import { required } from '@/shared/helpers/validators'
 
-export const CompanyAutocomplete = ({
+export const ContactAutocomplete = ({
   control,
   errors,
   setValue,
@@ -22,6 +23,8 @@ export const CompanyAutocomplete = ({
   idField,
   nameField,
   type,
+  rulers = false,
+  filters = [],
 }: {
   control: any
   errors: any
@@ -34,6 +37,8 @@ export const CompanyAutocomplete = ({
   idField: string
   nameField: string
   type: TypeContactEnum
+  rulers?: boolean
+  filters?: Array<{ column: string; value: any }>
 }) => {
   const navigate = useNavigate()
   const { pathname } = useLocation()
@@ -54,6 +59,7 @@ export const CompanyAutocomplete = ({
     idField,
     nameField,
     formItem,
+    filters: filters,
   })
 
   const fncEnlace = (value: string) => {
@@ -69,7 +75,7 @@ export const CompanyAutocomplete = ({
     await frmCreater(
       fnc_name ?? '',
       { name: value, type, state: StatusContactEnum.UNARCHIVE },
-      idField,
+      'partner_id',
       async (res: string) => {
         await reloadOptions()
         setValue(idField, res)
@@ -122,7 +128,6 @@ export const CompanyAutocomplete = ({
                 formData.partner_id ? ActionTypeEnum.UPDATE : ActionTypeEnum.INSERT,
                 formData
               )
-
               setValue(idField, res.oj_data.partner_id)
               setValue(nameField, formData.name)
               setValue('partner_id_rel', res.oj_data.partner_id, {
@@ -154,9 +159,7 @@ export const CompanyAutocomplete = ({
           config={modalContactConfig}
           multiple={false}
           onRowClick={async (option) => {
-            if (option[idField]) {
-              setValue(idField, option[idField])
-            }
+            setValue(idField, option.partner_id)
             setFrmIsChanged(true)
             setNewAppDialogs([])
           }}
@@ -185,6 +188,7 @@ export const CompanyAutocomplete = ({
       editConfig={{ config: editConfig }}
       placeholder={placeholder}
       fnc_enlace={fncEnlace}
+      rules={rulers ? required() : {}}
     />
   )
 }

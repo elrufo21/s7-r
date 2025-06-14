@@ -20,7 +20,7 @@ const ProductsConfig: FormConfig = {
   dsc_view: 'name',
   module: ModulesEnum.INVOICING,
   views: [ViewTypeEnum.KANBAN, ViewTypeEnum.LIST],
-  view_default: ViewTypeEnum.LIST,
+  view_default: ViewTypeEnum.KANBAN,
   module_url: '/action/302',
   item_url: '/action/302/detail',
   new_url: '/action/302/detail/new',

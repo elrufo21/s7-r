@@ -29,6 +29,7 @@ const ContactIndexConfig: FormConfig = {
   no_content_dsc: 'Crea un contacto en tu libreta de direcciones',
 
   fnc_valid: (data: any, formItem: any) => {
+    if (!data?.name) return null
     data.bank_accounts = (data?.bank_accounts || []).map((elem: any, index: number) => ({
       ...elem,
       order_id: index + 1,
@@ -37,7 +38,7 @@ const ContactIndexConfig: FormConfig = {
       JSON.stringify((formItem?.categories || []).map((tag: any) => tag.label)) !==
       JSON.stringify((data?.categories || []).map((tag: any) => tag.label))
     data.categories_change = areSameTags
-    data.group_id = formItem.group_id || null
+    data.group_id = formItem?.group_id || null
     if (data['type'] === 'C') {
       data['parent_id'] = null
     }

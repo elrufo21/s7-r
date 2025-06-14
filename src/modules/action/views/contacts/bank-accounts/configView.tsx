@@ -7,11 +7,11 @@ import ModalBank from '@/modules/action/views/contacts/banks/config'
 import CompanyField from '@/shared/components/extras/CompanyField'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
-import { CompanyAutocomplete } from '@/shared/components/form/base/CompanyAutocomplete'
-
-const required = {
-  required: { value: true, message: 'Este campo es requerido' },
-}
+import { ContactAutocomplete } from '@/shared/components/form/base/ContactAutocomplete'
+import { required } from '@/shared/helpers/validators'
+import FormRow from '@/shared/components/form/base/FormRow'
+import Custom_field_currency from '@/shared/components/extras/custom_field_currency'
+import BaseTextControlled from '@/shared/components/form/base/BaseTextControlled'
 
 export function FrmTitle({ control, errors, editConfig }: frmElementsProps) {
   return (
@@ -21,7 +21,7 @@ export function FrmTitle({ control, errors, editConfig }: frmElementsProps) {
       placeholder={''}
       multiline={true}
       control={control}
-      rules={required}
+      rules={required()}
       errors={errors}
       editConfig={{ config: editConfig }}
     />
@@ -128,133 +128,81 @@ export function FrmMiddle({ control, errors, editConfig, setValue, watch }: frmE
 
   return (
     <>
-      <div className="d-sm-contents">
-        <div className="o_cell o_wrap_label">
-          <label className="o_form_label">Banco</label>
-        </div>
-        <div className="o_cell">
-          <div className="o_field">
-            <AutocompleteControlled
-              name={'bank_id'}
-              control={control}
-              errors={errors}
-              editConfig={{ config: editConfig }}
-              handleOnChanged={(data) => setValue('bank_name', data.name)}
-              options={banks}
-              fnc_loadOptions={fnc_load_data_bank}
-              fnc_enlace={fnc_navigate_bank}
-              createItem={fnc_create_bank}
-              loadMoreResults={fnc_search_bank}
-            />
-          </div>
-        </div>
-      </div>
+      <FormRow label={'Banco'}>
+        {' '}
+        <AutocompleteControlled
+          name={'bank_id'}
+          control={control}
+          errors={errors}
+          editConfig={{ config: editConfig }}
+          handleOnChanged={(data) => setValue('bank_name', data.name)}
+          options={banks}
+          fnc_loadOptions={fnc_load_data_bank}
+          fnc_enlace={fnc_navigate_bank}
+          createItem={fnc_create_bank}
+          loadMoreResults={fnc_search_bank}
+        />
+      </FormRow>
 
-      <div className="d-sm-contents">
-        <div className="o_cell o_wrap_label">
-          <label className="o_form_label">Número de compensación</label>
-        </div>
-        <div className="o_cell">
-          <div className="o_field">
-            <TextControlled
-              name={'clearing_number'}
-              placeholder={''}
-              control={control}
-              errors={errors}
-              editConfig={{ config: editConfig }}
-            />
-          </div>
-        </div>
-      </div>
+      <BaseTextControlled
+        name={'clearing_number'}
+        placeholder={''}
+        control={control}
+        errors={errors}
+        editConfig={{ config: editConfig }}
+        label={'Número de compensación'}
+      />
 
-      <div className="d-sm-contents">
-        <div className="o_cell o_wrap_label">
-          <label className="o_form_label">Titular de la cuenta</label>
-        </div>
-        <div className="o_cell">
-          <div className="o_field">
-            {!pathname.includes('contacts') ? (
-              <CompanyAutocomplete
-                name={'partner_id'}
-                control={control}
-                errors={errors}
-                setValue={setValue}
-                formItem={formItem}
-                editConfig={editConfig}
-                fnc_name={'fnc_partner'}
-                idField={'partner_id'}
-                nameField={'partner_name'}
-                type={TypeContactEnum.INDIVIDUAL}
-              />
-            ) : (
-              <TextControlled
-                control={control}
-                errors={errors}
-                name={'partner_name'}
-                rules={{}}
-                editConfig={{ config: editConfig }}
-                navigateLink={() => fnc_navigate_contact}
-                disabled={true}
-              />
-            )}
-          </div>
-        </div>
-      </div>
+      <FormRow label={'Titular de la cuenta'}>
+        {!pathname.includes('contacts') ? (
+          <ContactAutocomplete
+            name={'partner_id'}
+            control={control}
+            errors={errors}
+            setValue={setValue}
+            formItem={formItem}
+            editConfig={editConfig}
+            fnc_name={'fnc_partner'}
+            idField={'partner_id'}
+            nameField={'partner_name'}
+            type={TypeContactEnum.COMPANY}
+            rulers={true}
+          />
+        ) : (
+          <TextControlled
+            control={control}
+            errors={errors}
+            name={'partner_name'}
+            rules={{}}
+            editConfig={{ config: editConfig }}
+            navigateLink={() => fnc_navigate_contact}
+            disabled={true}
+          />
+        )}
+      </FormRow>
     </>
   )
 }
 
 export function FrmMiddleRight({ control, errors, editConfig, watch, setValue }: frmElementsProps) {
-  const createOptions = useAppStore((state) => state.createOptions)
-  const formItem = useAppStore((state) => state.formItem)
-
-  // currency - start
-  const [currency, setCurrency] = useState<{ label: string; value: string }[]>([])
-  const fnc_load_data_currency = async () => {
-    const options = await createOptions({
-      fnc_name: 'fnc_currency',
-      filters: [{ column: 'state', value: 'A' }],
-      action: 's2',
-    })
-    if (!formItem) {
-      return setCurrency(options)
-    }
-    setCurrency([...options])
-  }
-  // currency - end
-  useEffect(() => {
-    if (formItem?.['currency_id'] || watch('currency_id')) {
-      setCurrency([
-        {
-          value: watch('currency_id') ?? formItem['currency_id'],
-          label: watch('currency_name') ?? formItem['currency_name'],
-        },
-      ])
-    }
-  }, [formItem])
-
   return (
     <>
-      <CompanyField control={control} errors={errors} editConfig={editConfig} watch={watch} />
+      <CompanyField
+        control={control}
+        errors={errors}
+        editConfig={editConfig}
+        watch={watch}
+        setValue={setValue}
+        isEdit={true}
+      />
 
-      <div className="d-sm-contents">
-        <div className="o_cell o_wrap_label">
-          <label className="o_form_label">Moneda</label>
-        </div>
-        <div className="o_cell">
-          <div className="o_field">
-            <AutocompleteControlled
-              name={'currency_id'}
-              control={control}
-              errors={errors}
-              editConfig={{ config: editConfig }}
-              handleOnChanged={(data) => setValue('currency_name', data.label)}
-              options={currency}
-              fnc_loadOptions={fnc_load_data_currency}
-            />
-          </div>
-        </div>
-      </div>
+      <Custom_field_currency
+        control={control}
+        errors={errors}
+        editConfig={editConfig}
+        watch={watch}
+        setValue={setValue}
+      />
     </>
   )
 }

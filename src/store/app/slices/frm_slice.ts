@@ -52,8 +52,8 @@ const createFrmSlice = (set: SetState<FrmSliceState>, get: () => AppStoreProps):
     set({ frmError: null })
     try {
       const res = await get().executeFnc(fnc_name, 'i', data)
-      console.log(res)
       const { oj_data } = res
+
       if (oj_data?.[idfield]) {
         await callback(oj_data[idfield])
       } else {

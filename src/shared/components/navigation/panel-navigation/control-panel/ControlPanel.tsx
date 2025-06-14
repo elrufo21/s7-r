@@ -100,7 +100,6 @@ const ControlPanel = ({ config, viewType }: FrmWebOptionsProps) => {
     settingsBreadcrumb,
   } = useAppStore()
   const views = config.views
-
   const changeView = (view: ViewTypeEnum) => {
     if (view) {
       setViewType(view)
@@ -214,7 +213,7 @@ const ControlPanel = ({ config, viewType }: FrmWebOptionsProps) => {
         <div role="search" className="o_cp_pager text-nowrap ">
           <nav className="o_pager d-flex gap-2 h-100">
             {(!!dataKanbanShow.dataLength || !!dataListShow.dataLength) && (
-              <Stack direction="row" className={`${views.length > 1 && 'ml-2'}`}>
+              <Stack direction="row" className={`${views?.length > 1 && 'ml-2'}`}>
                 {viewType === ViewTypeEnum.LIST && (
                   <PageCounterList
                     counterPage={counterPage}

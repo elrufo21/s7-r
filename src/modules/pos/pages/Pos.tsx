@@ -5,7 +5,7 @@ import { useEffect } from 'react'
 import PointOfSale from '../point-of-sale2'
 
 const PointOfSalePage = () => {
-  const { config: configApp, setConfig, orderCart, setOrderCart, executeFnc } = useAppStore()
+  const { config: configApp, setConfig, setOrderCart, executeFnc } = useAppStore()
   const config = PointsOfSaleConfig
 
   useEffect(() => {
@@ -23,7 +23,6 @@ const PointOfSalePage = () => {
       setOrderCart([])
     }
   }
-  console.log('orderCart ssss', orderCart)
   if (!Object.keys(configApp).length) return <></>
 
   return (

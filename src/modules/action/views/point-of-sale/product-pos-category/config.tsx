@@ -1,14 +1,14 @@
 import { ViewTypeEnum, FormConfig, ModulesEnum, ItemStatusTypeEnum } from '@/shared/shared.types'
-import { FrmMiddle, FrmTitle } from './configView'
+import { FrmPhoto, FrmMiddle, FrmTitle } from './configView'
 
 const ProductPosCategoryConfig: FormConfig = {
-  fnc_name: 'fnc_product_category',
-  title: 'Categorías de productos',
+  fnc_name: 'fnc_product_pos_category',
+  title: 'Categorías de productos de PdV',
   dsc: 'Categoría',
   dsc_view: 'full_name',
-  views: [ViewTypeEnum.LIST],
+  views: [ViewTypeEnum.KANBAN, ViewTypeEnum.LIST],
   view_default: ViewTypeEnum.LIST,
-  module: ModulesEnum.INVENTORY,
+  module: ModulesEnum.POINTS_OF_SALE,
   module_url: '/action/93',
   item_url: '/action/93/detail',
   new_url: '/action/93/detail/new',
@@ -25,8 +25,9 @@ const ProductPosCategoryConfig: FormConfig = {
   },
 
   default_values: {
-    category_id: null,
+    pos_category_id: null,
     name: '',
+    files: [],
     group_id: null,
     parent_id: null,
     state: ItemStatusTypeEnum.ACTIVE,
@@ -34,13 +35,13 @@ const ProductPosCategoryConfig: FormConfig = {
   },
 
   grid: {
-    idRow: 'category_id',
+    idRow: 'pos_category_id',
     col_name: 'full_name',
 
     list: {
       columns: [
         {
-          header: 'Categoría del producto',
+          header: 'Categoría del producto de PdV',
           accessorKey: 'full_name',
           size: 'auto',
           enableSorting: false,
@@ -78,7 +79,7 @@ const ProductPosCategoryConfig: FormConfig = {
 
   filters_columns: [
     {
-      dsc: 'Categorías de productos',
+      dsc: 'Categoría',
       key: 'name',
       default: true,
     },
@@ -92,10 +93,18 @@ const ProductPosCategoryConfig: FormConfig = {
   configControls: {},
 
   form_inputs: {
-    imagenFields: [],
+    imagenFields: ['files'],
     auditoria: false,
 
-    /** */
+    frm_photo: ({ watch, control, errors, editConfig = {}, setValue }) => (
+      <FrmPhoto
+        watch={watch}
+        control={control}
+        setValue={setValue}
+        errors={errors}
+        editConfig={editConfig}
+      />
+    ),
     frm_title: ({ watch, control, errors, editConfig = {}, setValue }) => (
       <FrmTitle
         watch={watch}
@@ -105,7 +114,6 @@ const ProductPosCategoryConfig: FormConfig = {
         setValue={setValue}
       />
     ),
-
     frm_middle: ({ watch, control, errors, editConfig = {}, setValue }) => (
       <FrmMiddle
         watch={watch}

@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
 })
 
 // Componente principal del Ticket
-const TicketPDF = ({ info, finalCustomer }) => {
+const TicketPDF = ({ info, finalCustomer }: any) => {
   // Esta función calcula el total de los move_lines (si los hubiera)
   const getTotalPrice = () => {
     if (!info.move_lines || info.move_lines.length === 0) {
@@ -92,11 +92,11 @@ const TicketPDF = ({ info, finalCustomer }) => {
     }
 
     return info.move_lines
-      .filter((item) => item.type !== 'SECTION' && item.type !== 'NOTE')
-      .reduce((total, item) => total + (item.quantity * item.sale_price || 0), 0)
+      .filter((item: any) => item.type !== 'SECTION' && item.type !== 'NOTE')
+      .reduce((total: number, item: any) => total + (item.quantity * item.price_unit || 0), 0)
       .toFixed(2)
   }
-  function formatDateToDDMMYYYY(date) {
+  function formatDateToDDMMYYYY(date: any) {
     // Si recibimos un string, lo convertimos a objeto Date
     const d = date instanceof Date ? date : new Date(date)
 
@@ -143,12 +143,12 @@ const TicketPDF = ({ info, finalCustomer }) => {
 
           <View style={styles.items}>
             {info.move_lines &&
-              info.move_lines.map((item, index) => (
+              info.move_lines.map((item: any, index: number) => (
                 <View key={index} style={styles.item}>
-                  <Text style={styles.itemNumber}>{index + 1}</Text>
+                  <Text style={styles.itemNumber}>{item.quantity}</Text>
                   <Text style={styles.itemDescription}>{item.name}</Text>
                   <Text style={styles.itemPrice}>
-                    S/ {item.sale_price ? item.sale_price.toFixed(2) : '0.00'}
+                    S/ {item.price_unit ? item.price_unit.toFixed(2) : '0.00'}
                   </Text>
                 </View>
               ))}

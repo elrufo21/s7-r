@@ -34,7 +34,7 @@ export function FrmMiddle({ control, errors, editConfig }: frmElementsProps) {
         <div className="o_cell">
           <div className="o_field">
             <DatepickerControlled
-              name={'review_date'}
+              name={'review_date '}
               control={control}
               errors={errors}
               editConfig={{ config: editConfig }}

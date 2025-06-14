@@ -1,13 +1,9 @@
-import { Document, Page, Text, View, Image, StyleSheet, PDFViewer } from '@react-pdf/renderer'
-import { useCart } from '../context/CartContext'
 import { useEffect, useState } from 'react'
-import { MoveLine } from '@/modules/invoicing/invoice.types'
-import { TypeInvoiceLineEnum } from '@/shared/components/view-types/viewTypes.types'
 import { BiCheckCircle, BiPaperPlane } from 'react-icons/bi'
 import { FaPrint } from 'react-icons/fa'
-import TicketWithExistingData from './Ticket'
 import TicketPDF from './Ticket'
-
+import useAppStore from '@/store/app/appStore'
+/*
 function numeroALetras(num: any) {
   const unidades = [
     'CERO',
@@ -132,13 +128,7 @@ const styles = StyleSheet.create({
   headerText: {
     fontWeight: 'bold',
   },
-  /*
-  tableCell: {
-    flex: 1,
-    padding: 5,
-    textAlign: 'left',
-  },
-  */
+
   tableCellDescription: {
     flex: 3,
     padding: 5,
@@ -221,21 +211,20 @@ const styles = StyleSheet.create({
   // flexDirection: 'row',
   // justifyContent: 'space-between',
 
-  // {/* <Text style={[styles.title, styles.textBold]}>Factura {info.name}</Text> */}
+  // {/* <Text style={[styles.title, styles.textBold]}>Factura {info.name}</Text> }
   // <View style={{ flex: 5, padding: 5 }}>
   // style={item.type === TypeInvoiceLineEnum.NOTE ? { fontStyle: 'italic' } : {}}
   // <Text>S/ {(item.quantity * item.price_unit).toFixed(2)}</Text>
   // padding: '20px 40px',
-})
+})*/
 
 const Invoice = () => {
+  const { orderData, selectedOrder, getTotalPriceByOrder, finalCustomer } = useAppStore()
   const [order, setOrder] = useState({})
-  const { orderCart, selectedOrder, orderData, cart, getTotalPrice, finalCustomer } = useCart()
   useEffect(() => {
-    setOrder(orderCart.find((o) => o.id_order === selectedOrder))
-  }, [orderCart])
-  console.log('order', finalCustomer)
-  const info = { ...order, move_lines: order?.cart?.filter((c) => c.action !== 'd') }
+    setOrder(orderData.find((o) => o.move_id === selectedOrder))
+  }, [orderData])
+  const info = { ...order, move_lines: order?.move_lines || [] }
   return (
     <div className="receipt-screen screen h-100 bg-100">
       <div className="screen-content d-flex flex-column h-100">
@@ -248,7 +237,7 @@ const Invoice = () => {
                 </i>
                 <span className="fs-3 fw-bolder">Pago exitoso</span>
                 <div className="fs-4 fw-bold d-flex justify-content-center align-items-center gap-2">
-                  <span>S/&nbsp;{getTotalPrice().toFixed(2)}</span>
+                  <span>S/&nbsp;{getTotalPriceByOrder(selectedOrder).toFixed(2)}</span>
                   <span className="bg-green-600 edit-order-payment badge bg-success text-white rounded cursor-pointer pt-1">
                     Editar pago
                   </span>

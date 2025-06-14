@@ -19,10 +19,7 @@ import FormGroup from '@mui/material/FormGroup'
 import { FormActionEnum, frmElementsProps } from '@/shared/shared.types'
 import { OptionsType } from '@/shared/ui/inputs/input.types'
 import { InvoicePolicyEnum, TaxType, TypeProductEnum } from './products.type'
-const required = {
-  required: { value: true, message: 'Este campo es requerido' },
-}
-
+import { required } from '@/shared/helpers/Validators'
 export function FrmPhoto({ watch, setValue, control, editConfig }: frmElementsProps) {
   return (
     <div className="o_field_widget o_field_image oe_avatar">
@@ -90,7 +87,7 @@ export function FrmTitle({ control, errors, editConfig }: frmElementsProps) {
       <TextControlled
         name={'name'}
         control={control}
-        rules={required}
+        rules={required()}
         errors={errors}
         placeholder={'Por ejemplo, tostada de pan'}
         style={style}
@@ -942,7 +939,7 @@ export function FrmTab4({ control, errors, editConfig }: frmElementsProps) {
                     errors={errors}
                     options={unspscCode}
                     fnc_loadOptions={loadDataUnspscCode}
-                    rules={required}
+                    rules={required()}
                     editConfig={{ config: editConfig }}
                   />
                 </div>

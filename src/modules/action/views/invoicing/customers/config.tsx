@@ -14,8 +14,8 @@ import { FormConfig, ModulesEnum } from '@/shared/shared.types'
 
 const CustomersConfig: FormConfig = {
   fnc_name: 'fnc_partner',
-  title: 'Contactos',
-  dsc: 'Contactos',
+  title: 'Clientes',
+  dsc: 'Cliente',
   module: ModulesEnum.INVOICING,
   module_url: '/action/605',
   dsc_view: 'full_name',

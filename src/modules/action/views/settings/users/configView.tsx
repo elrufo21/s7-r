@@ -3,10 +3,7 @@ import { AutocompleteControlled, ImageInput, MultiSelectObject, TextControlled }
 import useAppStore from '@/store/app/appStore'
 import Chip from '@mui/material/Chip'
 import { frmElementsProps } from '@/shared/shared.types'
-
-const required = {
-  required: { value: true, message: 'Este campo es requerido' },
-}
+import { required } from '@/shared/helpers/Validators'
 
 export function Frm_bar_buttons() {
   return <button className="btn btn-secondary">Enviar un correo de invitación</button>
@@ -51,7 +48,7 @@ export function FrmTitle({ control, errors, editConfig, frmState }: frmElementsP
         className={'frm_dsc'}
         multiline={true}
         control={control}
-        rules={required}
+        rules={required()}
         errors={errors}
         editConfig={{ frmState, config: editConfig }}
       />
@@ -72,7 +69,7 @@ export function Subtitle({ control, errors, editConfig, frmState }: frmElementsP
             placeholder={'por ejemplo, email@suempresa.com'}
             className={'frm_dsc_sub'}
             control={control}
-            rules={required}
+            rules={required()}
             errors={errors}
             editConfig={{ frmState, config: editConfig }}
           />
@@ -88,7 +85,7 @@ export function Subtitle({ control, errors, editConfig, frmState }: frmElementsP
             placeholder={'por ejemplo, 987654321'}
             className={'frm_dsc_sub'}
             control={control}
-            rules={required}
+            rules={required()}
             errors={errors}
             editConfig={{ frmState, config: editConfig }}
           />
@@ -197,7 +194,7 @@ export function FrmTab0({ control, errors, editConfig, setValue }: frmElementsPr
                   name={'default_company_id'}
                   control={control}
                   errors={errors}
-                  rules={required}
+                  rules={required()}
                   options={Cias}
                   fnc_loadOptions={cargaData_Cias}
                 />

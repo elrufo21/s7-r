@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import {
   ColumnDef,
   flexRender,
@@ -8,7 +8,7 @@ import {
   useReactTable,
   PaginationState,
 } from '@tanstack/react-table'
-import { BiLeftArrow, BiLoader, BiRightArrow, BiSearch } from 'react-icons/bi'
+import { BiLoader, BiSearch } from 'react-icons/bi'
 import { SelectControlled } from '@/shared/ui'
 import { useForm } from 'react-hook-form'
 
@@ -261,7 +261,7 @@ export function DataTable<TData extends { isSelected?: boolean }, TValue = any>(
   )
 }
 
-function ChevronDown({ size = 16, className = '' }) {
+/*function ChevronDown({ size = 16, className = '' }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -278,4 +278,4 @@ function ChevronDown({ size = 16, className = '' }) {
       <polyline points="6 9 12 15 18 9"></polyline>
     </svg>
   )
-}
+}*/

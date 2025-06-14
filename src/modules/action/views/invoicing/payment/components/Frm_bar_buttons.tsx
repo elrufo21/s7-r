@@ -1,73 +1,15 @@
 import { FormActionEnum, frmElementsProps } from '@/shared/shared.types'
 import useAppStore from '@/store/app/appStore'
-//import { UseFormWatch } from 'react-hook-form'
-import { useEffect } from 'react'
-import { StatusInvoiceEnum } from '@/modules/invoicing/invoice.types'
-import { InvoicePdf } from '@/modules/invoicing/components/InvoicePdf'
-//import { FrmBaseDialog } from '@/shared/components/core/Dialog/FrmBaseDialog'
+import { ReactNode, useEffect } from 'react'
+import { Enum_Payment_State } from '@/modules/invoicing/invoice.types'
+
 export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
   const setFrmAction = useAppStore((state) => state.setFrmAction)
   const setFrmConfigControls = useAppStore((state) => state.setFrmConfigControls)
-  /*const {
-    appDialogs,
-    setAppDialogs,
-    createOptions,
-    formItem,
-    frmCreater,
-    setFrmDialogAction,
-    setBreadcrumb,
-    breadcrumb,
-  } = useAppStore((state) => state)
-  */
-  const openDialog = useAppStore((state) => state.openDialog)
-  const closeDialogWithData = useAppStore((state) => state.closeDialogWithData)
+  const { setAppDialog } = useAppStore()
 
-  /*const fnc_create_edit = (value: any) => {
-    let values = {}
-    if (typeof value === 'object') {
-      values = { ...value }
-    } else {
-      values = { name: value, type: 'C' }
-    }
-
-    setAppDialogs([
-      ...appDialogs,
-      {
-        action: 'modalAction.CREATE',
-        idDialog: appDialogs.length,
-        title: 'Crear empresa relacionada',
-        content: (fnClose) => (
-          <FrmBaseDialog
-            config={modalContactConfig}
-            values={values}
-            fnClose={() => {}}
-            idDialog={appDialogs.length}
-          />
-        ),
-        open: true,
-        type: 'form',
-        afterSave: fncAfterSave,
-        onConfirm: saveDialogForm,
-        buttonActions: [ButtonOptions.SAVE_AND_CLOSE, ButtonOptions.DISCARD],
-      },
-    ])
-  }*/
-  /*
-  const validateForm = (watch: UseFormWatch<any>): string[] => {
+  const validateForm = (): string[] => {
     const errors: string[] = []
-    if (!watch('partner_id')) {
-      errors.push(
-        'El campo "Factura de cliente" es obligatorio, complételo para validar la factura del cliente.'
-      )
-    }
-    if (!watch('name')) {
-      errors.push(
-        'El campo "Cliente" es obligatorio, complételo para validar la factura del cliente.'
-      )
-    }
-
-    if (!watch('move_lines')?.length)
-      errors.push('Debe agregar "líneas de factura" antes de validar.')
     return errors
   }
 
@@ -79,9 +21,8 @@ export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
     </div>
   )
 
-   const onConfirm = () => {
-    const errors = validateForm(watch)
-
+  const onCancel = () => {
+    const errors = validateForm()
     if (errors.length > 0) {
       setAppDialog({
         title: 'Operación no válida',
@@ -92,79 +33,81 @@ export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
       return
     }
 
-    setValue('state', StatusInvoiceEnum.PUBLICADO)
+    setValue('state', Enum_Payment_State.CANCELLED)
     setFrmAction(FormActionEnum.PRE_SAVE)
   }
-*/
+
+  const onConfirm = () => {
+    const errors = validateForm()
+    if (errors.length > 0) {
+      setAppDialog({
+        title: 'Operación no válida',
+        content: generateMessageDialog(errors),
+        open: true,
+        actions: false,
+      })
+      return
+    }
+
+    setValue('state', Enum_Payment_State.IN_PROCESS)
+    setFrmAction(FormActionEnum.PRE_SAVE)
+  }
+
   const resetDraft = () => {
-    setValue('state', StatusInvoiceEnum.BORRADOR)
+    setValue('state', Enum_Payment_State.DRAFT)
     setFrmAction(FormActionEnum.PRE_SAVE)
   }
-  const isEdit = watch('state') === StatusInvoiceEnum.PUBLICADO
+
+  const isEdit =
+    watch('state') === Enum_Payment_State.IN_PROCESS ||
+    watch('state') === Enum_Payment_State.PAID ||
+    watch('state') === Enum_Payment_State.CANCELLED
 
   useEffect(() => {
     setFrmConfigControls({
-      name: {
-        isEdit,
-      },
-      partner_id: {
-        isEdit,
-      },
-      invoice_date: {
-        isEdit,
-      },
-      reference: {
-        isEdit,
-      },
-      invoice_date_due: {
-        isEdit,
-      },
-      payment_term_id: {
-        isEdit,
-      },
-      currency_id: {
-        isEdit,
-      },
+      company_id: { isEdit },
+      memo: { isEdit },
+      currency_id: { isEdit },
+      amount: { isEdit },
+      partner_id: { isEdit },
+      date: { isEdit },
+      payment_type: { isEdit },
+      journal_id: { isEdit },
+      payment_method_id: { isEdit },
+      bank_account_id: { isEdit },
     })
   }, [setFrmConfigControls, isEdit])
 
-  if (watch('state') === StatusInvoiceEnum.PUBLICADO)
+  // ✅ Mostrar solo "Reestablecer a borrador" si está cancelado
+  if (watch('state') === Enum_Payment_State.CANCELLED) {
+    return (
+      <button className="btn btn-secondary" onClick={resetDraft}>
+        Reestablecer a borrador
+      </button>
+    )
+  }
+
+  // ✅ Mostrar "Reestablecer a borrador" y "Marcar como enviado" si está en proceso
+  if (watch('state') === Enum_Payment_State.IN_PROCESS) {
     return (
       <>
-        <button className="btn btn-primary">Enviar e imprimir</button>
-        <button className="btn btn-secondary">Registrar pago</button>
-        <button
-          className="btn btn-secondary"
-          onClick={() => {
-            const dialog = openDialog({
-              title: 'Vista previa',
-              dialogContent: () => <InvoicePdf watch={watch} />,
-              buttons: [
-                {
-                  text: 'Cerrar',
-                  type: 'cancel',
-                  onClick: () => {
-                    closeDialogWithData(dialog, {})
-                  },
-                },
-              ],
-            })
-          }}
-        >
-          Vista previa
-        </button>
-        <button className="btn btn-secondary">Nota de crédito</button>
         <button className="btn btn-secondary" onClick={resetDraft}>
           Reestablecer a borrador
         </button>
+        <button className="btn btn-secondary">Marcar como enviado</button>
       </>
     )
+  }
+
+  // ✅ Estados por defecto (ej. borrador): Confirmar y Cancelar
   return (
     <>
-      <button className="btn btn-primary" onClick={() => {}}>
+      <button className="btn btn-primary" onClick={onConfirm}>
         Confirmar
       </button>
-      <button className="btn btn-secondary">Cancelar</button>
+      <button className="btn btn-secondary" onClick={onCancel}>
+        Cancelar
+      </button>
     </>
   )
 }

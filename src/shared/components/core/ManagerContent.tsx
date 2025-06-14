@@ -6,6 +6,7 @@ import { ViewTypeEnum } from '@/shared/shared.types'
 import { useLocation, useParams } from 'react-router-dom'
 import useUserStore from '@/store/persist/persistStore'
 import { useUpdateStatus } from '@/shared/hooks/useModifyStatus'
+import InvoiceAnalisys from './InvoiceAnalisys'
 
 export const ManagerContent = () => {
   const {
@@ -66,15 +67,17 @@ export const ManagerContent = () => {
     }
   }, [breadcrumb, config.title, config.view_default, setViewType, viewType])
 
+  /*
+  configurar para que acepte info del diario 
   useEffect(() => {
     return () => {
       const view = viewType
-      if (!settingsBreadcrumb) {
+      if (!settingsBreadcrumb && breadcrumb.find((item)=>item.d)) {
         setBreadcrumb([{ title: config.title, url: pathname, viewType: view }])
       }
     }
   }, [config.title, pathname, setBreadcrumb, viewType])
-
+*/
   useEffect(() => {
     if (isFirstRender) {
       setIsFirstRender(false)
@@ -118,7 +121,9 @@ export const ManagerContent = () => {
   return (
     <div className="o_content">
       {viewType === ViewTypeEnum.KANBAN && (
-        <div className="o_kanban_renderer o_renderer d-flex o_kanban_ungrouped align-content-start flex-wrap justify-content-start">
+        <div
+          className={`o_kanban_renderer ${config.fnc_name === 'fnc_journal' && 'three-columns '} o_renderer d-flex o_kanban_ungrouped align-content-start flex-wrap justify-content-start`}
+        >
           {config && <KanbanView config={config} />}
         </div>
       )}
@@ -148,6 +153,11 @@ export const ManagerContent = () => {
               columnsVisibility={columnsVisibility}
             />
           )}
+        </div>
+      )}
+      {viewType === ViewTypeEnum.LIBRE && (
+        <div className="o_graph_renderer o_renderer h-100 d-flex flex-column border-top undefined">
+          <InvoiceAnalisys />
         </div>
       )}
     </div>

@@ -14,8 +14,6 @@ export function FrmTop({ control, errors }: frmElementsProps) {
   const [contacts, setContacts] = useState<any[]>([])
   const [pdfAttachment, setPdfAttachment] = useState<{ name: string; blob: Blob } | null>(null)
 
-  console.log(pdfAttachment)
-
   const loadData = useCallback(async () => {
     const data = await executeFnc('fnc_partner', 's2', [{ column: 'state', value: 'A' }])
     const oj_data = data.oj_data
@@ -126,11 +124,16 @@ export function FrmTop({ control, errors }: frmElementsProps) {
       {/* Mostrar el PDF precargado como adjunto */}
       {pdfAttachment && (
         <div className="mt-4">
-          <div className="flex items-center gap-2 bg-gray-100 p-2 rounded w-fit">
-            <span className="text-sm">{pdfAttachment.name}</span>
+          <div
+            className="flex items-center gap-2 bg-gray-100 p-2 rounded w-fit cursor-pointer"
+            onClick={() => window.open(URL.createObjectURL(pdfAttachment.blob))}
+          >
+            <span className="text-sm ">{pdfAttachment.name}</span>
             <button
               className="text-gray-500 hover:text-gray-700"
-              onClick={() => setPdfAttachment(null)}
+              onClick={() => {
+                setPdfAttachment(null)
+              }}
             >
               <FaTimes size={14} />
             </button>

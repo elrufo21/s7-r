@@ -3,180 +3,80 @@ import { MdAddCircle } from 'react-icons/md'
 import { IoMdArrowDropdown } from 'react-icons/io'
 import { FaBarcode } from 'react-icons/fa'
 import { BiSave } from 'react-icons/bi'
-import { useCart } from '../context/CartContext'
-import { useEffect } from 'react'
 import useAppStore from '@/store/app/appStore'
-import { ActionTypeEnum } from '@/shared/shared.types'
 
 export default function Header() {
-  const { executeFnc } = useAppStore()
   const {
-    searchTerm,
-    setSearchTerm,
-    setScreen,
-    screen,
-    selectedNavbarMenu,
-    setSelectedNavbarMenu,
-  } = useSearch()
-  const {
-    orderCart,
-    setOrderCart,
-    cart,
-    setCart,
+    executeFnc,
+    addNewOrder,
+    orderData,
     selectedOrder,
     setSelectedOrder,
-    orderData,
-    fetchInvoices,
-    finalCustomer,
-    getTotalPrice,
-  } = useCart()
+    setScreen,
+    screen,
+    getTotalPriceByOrder,
+    updateMoveId,
+  } = useAppStore()
 
-  const fnc_add_order = () => {
-    const order_id = crypto.randomUUID()
-    fnc_change_order(order_id)
-    setOrderCart((prevOrderCart) => [
-      ...prevOrderCart,
-      {
-        id_order: order_id,
-        number_order: prevOrderCart.length ? prevOrderCart.length + 1 : 1,
-        name: order_id,
-        cart: [],
-      },
-    ])
-    setSelectedOrder(order_id)
-  }
+  const { searchTerm, setSearchTerm, selectedNavbarMenu, setSelectedNavbarMenu } = useSearch()
 
   const fnc_save_order = async () => {
-    let data = {
-      move_lines: cart.map((item, i) => ({
-        ...item,
-        type: 'B',
-        order_id: i + 1,
-        price_unit: item.sale_price,
-        move_lines_taxes: [],
-        amount_untaxed: 0,
-        amount_withtaxed: 0,
-        amount_tax: 0,
-        amount_discount: 0,
-        amount_untaxed_in_currency: '0.0',
-        discount: null,
-        line_id: item.line_id,
-        hasLabel: false,
-        label: '',
-        move_lines_taxes_change: false,
-        uom_name: item.uom_name,
-        uom_id: item.uom_id,
-        _resetKey: 1747172419587,
-      })),
-      move_id: 0,
-      partner_id: finalCustomer.partner_id,
-      partner_name: finalCustomer.name,
-      name: selectedOrder,
-      state: 'B',
-      currency_id: 1,
-      currency_name: 'PEN',
-      pos_status: 'C',
-      amount_total: getTotalPrice(),
-    }
+    const data = orderData.find((item) => item.move_id === selectedOrder)
+    if (!data) return
 
-    if (typeof selectedOrder === 'string') {
-      const newOrder = cart.filter((item) => item.action !== ActionTypeEnum.DELETE)
-
-      data = {
-        ...data,
-        move_lines: newOrder.map((item, i) => ({
-          ...item,
-          type: 'B',
-          order_id: i + 1,
-          price_unit: item.sale_price,
-          move_lines_taxes: [],
-          amount_untaxed: 0,
-          amount_withtaxed: 0,
-          amount_tax: 0,
-          amount_discount: 0,
-          amount_untaxed_in_currency: '0.0',
-          discount: null,
-          line_id: item.line_id,
-          hasLabel: false,
-          label: '',
-          move_lines_taxes_change: false,
-          uom_name: item.uom_name,
-          uom_id: item.uom_id,
-          _resetKey: 1747172419587,
-        })),
-        move_id: selectedOrder,
-      }
-    }
-    const rs = await executeFnc('fnc_account_move', typeof selectedOrder === 'string' ? 'i' : 'u', {
+    const updatedData = {
       ...data,
+      move_lines: data.move_lines?.map((item: any, i: number) => ({
+        ...item,
+        order_id: i + 1,
+        tyle: 'L',
+      })),
       move_id: selectedOrder,
+      amount_total: getTotalPriceByOrder(selectedOrder),
+    }
+
+    const rs = await executeFnc('fnc_account_move', typeof selectedOrder === 'string' ? 'i' : 'u', {
+      ...updatedData,
     })
 
-    const c = await executeFnc('fnc_account_move', 's1', [rs.oj_data.move_id])
-    setOrderCart((prevOrderCart) =>
-      prevOrderCart?.map((item) => {
-        if (item.id_order === selectedOrder) {
-          setSelectedOrder(rs.oj_data.move_id)
-
-          return {
-            ...item,
-            move_id: rs.oj_data.move_id,
-            id_order: rs.oj_data.move_id,
-            partner_name: c.oj_data[0]?.partner_name,
-            partner_id: c.oj_data[0]?.partner_id,
-            amount_total: c.oj_data[0]?.amount_total,
-            cart: c.oj_data[0]?.move_lines?.map((item: any) => ({
-              ...item,
-              sale_price: item.price_unit,
-            })),
-          }
-        }
-        return item
-      })
-    )
-
-    /*setCart(
-      order[0].move_lines.map((item: any) => ({
-        ...item,
-        sale_price: item.price_unit || 0,
-      }))
-    )*/
-    setCart(
-      c.oj_data[0]?.move_lines?.map((item: any) => ({ ...item, sale_price: item.price_unit }))
-    )
+    // Si el ID cambió, actualizamos el estado con el nuevo move_id
+    if (
+      typeof selectedOrder === 'string' &&
+      rs?.oj_data?.move_id &&
+      rs?.oj_data?.move_id !== selectedOrder
+    ) {
+      updateMoveId(selectedOrder, rs.oj_data.move_id)
+    }
   }
-  console.log('orderCartorderCart', orderCart)
-  const fnc_change_order = (id_order: string) => {
-    setScreen('product')
-    setSelectedNavbarMenu('R')
 
+  const fnc_change_order = (id_order: string) => {
+    setScreen('products')
+    setSelectedNavbarMenu('R')
     setSelectedOrder(id_order)
-    setOrderCart((prevOrderCart) =>
+    /* setOrderCart((prevOrderCart) =>
       prevOrderCart.map((item) => {
         if (item.id_order === selectedOrder) {
           return { ...item, cart: cart }
         }
         return item
       })
-    )
+    )*/
   }
-  useEffect(() => {
-    setCart(orderCart.find((item) => item.id_order === selectedOrder)?.cart || [])
-  }, [selectedOrder])
+
   return (
     <header className="pos-header">
       <div className="pos-header-left">
         <div className="navbar-menu">
           <button
             // className="btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] active"
-            // onClick={() => setScreen('product')}
+            // onClick={() => setScreen('products')}
 
             className={`btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] ${
               selectedNavbarMenu === 'R' ? 'active' : ''
             }`}
             onClick={() => {
               setSelectedNavbarMenu('R')
-              setScreen('product')
+              setScreen('products')
             }}
           >
             Registrar
@@ -189,6 +89,7 @@ export default function Header() {
               selectedNavbarMenu === 'O' ? 'active' : ''
             }`}
             onClick={() => {
+              fnc_save_order()
               setSelectedNavbarMenu('O')
               setScreen('ticket')
             }}
@@ -201,7 +102,7 @@ export default function Header() {
           <button
             className="btn2 btn2-secondary lh-lg w-auto min-h-[48px]"
             onClick={() => {
-              fnc_add_order()
+              addNewOrder()
             }}
           >
             <MdAddCircle style={{ fontSize: '20px' }} />
@@ -223,13 +124,13 @@ export default function Header() {
           </button>
 
           <div className="pos-orders">
-            {orderCart?.map((order) => (
+            {orderData?.map((order, index) => (
               <button
-                key={order.id_order}
-                className={`btn2 btn2-secondary btn2-lg lh-lg w-auto min-h-[48px] ${selectedOrder === order.id_order ? 'btn2-light active' : ''} `}
-                onClick={() => fnc_change_order(order.id_order)}
+                key={order?.id_order}
+                className={`btn2 btn2-secondary btn2-lg lh-lg w-auto min-h-[48px] ${selectedOrder === order.move_id ? 'btn2-light active' : ''} `}
+                onClick={() => fnc_change_order(order.move_id)}
               >
-                {order.number_order}
+                {index + 1}
               </button>
             ))}
           </div>

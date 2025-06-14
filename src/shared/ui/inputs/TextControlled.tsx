@@ -37,7 +37,6 @@ export const TextControlled = ({
   type,
   navigateLink,
   handleChange,
-  multilineRows,
 }: TextControlledProps) => {
   const { config } = editConfig
 
@@ -67,14 +66,15 @@ export const TextControlled = ({
             variant="standard"
             inputRef={field.ref}
             multiline={multiline}
-            rows={multilineRows ? multilineRows : 1}
+            //rows={multilineRows ? multilineRows : 1}
             disabled={disabled ?? false}
             value={field.value ? field.value : ''}
             inputProps={{ style }}
             //readOnly={readOnly}
             InputLabelProps={{ shrink }}
             // className={`${className ? className : "InputEx w-full"}`}
-            className={'InputEx w-full ' + className}
+            //className={`InputEx w-full  + className`}
+            className={`InputEx w-full ${multiline ? 'h-auto' : ''} ${className}`}
             error={errors[name] ? true : false}
             helperText={errors[name] && errors[name]?.message}
             onChange={(e) => {

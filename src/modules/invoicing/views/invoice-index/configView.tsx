@@ -1,19 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
 import useAppStore from '@/store/app/appStore'
 import { Tooltip } from '@mui/material'
-import { StatusInvoiceEnum } from '@/modules/invoicing/invoice.types'
-import { frmElementsProps, TypeContactEnum, ViewTypeEnum } from '@/shared/shared.types'
+import { frmElementsProps, TypeContactEnum } from '@/shared/shared.types'
 import { TextControlled, AutocompleteControlled, DatepickerControlled } from '@/shared/ui'
-import { useLocation, useNavigate } from 'react-router-dom'
-import modalContactConfig from '@/modules/contacts/views/modal-contact-index/config'
 import { ModalBase } from '@/shared/components/modals/ModalBase'
 import CompanyField from '@/shared/components/extras/CompanyField'
 import ModalBankAccount from '@/modules/action/views/contacts/bank-accounts/config'
-import { CompanyAutocomplete } from '@/shared/components/form/base/CompanyAutocomplete'
-
-const required = {
-  required: { value: true, message: 'Este campo es requerido' },
-}
+import { ContactAutocomplete } from '@/shared/components/form/base/ContactAutocomplete'
+import supabaseClient from '@/lib/supabase'
+import { required } from '@/shared/helpers/validators'
+import Cf_date from '@/shared/components/extras/Cf_date'
 
 export function FrmTitle({ control, errors, editConfig }: frmElementsProps) {
   const setFrmConfigControls = useAppStore((state) => state.setFrmConfigControls)
@@ -31,7 +27,7 @@ export function FrmTitle({ control, errors, editConfig }: frmElementsProps) {
     <TextControlled
       name={'name'}
       control={control}
-      rules={required}
+      rules={required()}
       errors={errors}
       placeholder={'Borrador'}
       style={style}
@@ -42,50 +38,103 @@ export function FrmTitle({ control, errors, editConfig }: frmElementsProps) {
 }
 
 export function FrmMiddle({ control, errors, editConfig, setValue }: frmElementsProps) {
+  const [operationsType, setOperationsType] = useState<{ label: string; value: string }[]>([])
   const { formItem } = useAppStore()
 
+  useEffect(() => {
+    if (formItem?.['c51_id']) {
+      setOperationsType([
+        {
+          label: formItem['c51_name'],
+          value: formItem['c51_id'],
+        },
+      ])
+    }
+  }, [formItem])
+
+  const fnc_load_operations_type = useCallback(async () => {
+    const supabase = supabaseClient()
+    const res = await supabase.rpc('fnc_electronic_catalog ', { it_catalog_code: '51' })
+    setOperationsType(
+      res.data[0].oj_data.map((item: any) => ({
+        label: item.label,
+        value: parseInt(item.value),
+        operation_type: parseInt(item.value),
+        name: item.label,
+      }))
+    )
+    return JSON.stringify(res)
+  }, [])
   return (
-    <div className="d-sm-contents">
-      <div className="o_cell o_wrap_label">
-        <label className="o_form_label">Cliente</label>
+    <>
+      <div className="d-sm-contents">
+        <div className="o_cell o_wrap_label">
+          <label className="o_form_label">Cliente</label>
+        </div>
+        <div className="o_cell">
+          <ContactAutocomplete
+            name={'partner_id'}
+            control={control}
+            errors={errors}
+            setValue={setValue}
+            formItem={formItem}
+            editConfig={editConfig}
+            fnc_name={'fnc_partner'}
+            idField={'partner_id'}
+            nameField={'partner_name'}
+            type={TypeContactEnum.INDIVIDUAL}
+          />
+
+          <div className="flex flex-col mt-1">
+            <span>Jiron Palma 7548</span>
+            <span>El Tambo</span>
+            <span>Huancayo</span>
+            <span>Junin</span>
+            <span>20557634968</span>
+          </div>
+        </div>
       </div>
-      <div className="o_cell">
-        <CompanyAutocomplete
-          name={'partner_id'}
-          control={control}
-          errors={errors}
-          setValue={setValue}
-          formItem={formItem}
-          editConfig={editConfig}
-          fnc_name={'fnc_partner'}
-          idField={'partner_id'}
-          nameField={'partner_name'}
-          type={TypeContactEnum.INDIVIDUAL}
-        />
+
+      <div className="d-sm-contents">
+        <div className="o_cell o_wrap_label">
+          <label className="o_form_label">Tipo de operación</label>
+        </div>
+        <div className="o_cell">
+          <div className="o_field">
+            <AutocompleteControlled
+              name={'c51_id'}
+              control={control}
+              errors={errors}
+              editConfig={{ config: editConfig }}
+              options={operationsType}
+              fnc_loadOptions={fnc_load_operations_type}
+            />
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   )
 }
 
-export function FrmMiddleRight({ control, errors, editConfig, setValue }: frmElementsProps) {
-  const navigate = useNavigate()
+export function FrmMiddleRight({ control, errors, editConfig, setValue, watch }: frmElementsProps) {
+  const [diaries, setDiaries] = useState<{ value: any; label: string }[]>([])
+  const [documentsTypes, setDocumentsTypes] = useState<{ value: any; label: string }[]>([])
   const createOptions = useAppStore((state) => state.createOptions)
   const formItem = useAppStore((state) => state.formItem)
-  const { pathname } = useLocation()
-  const {
-    newAppDialogs,
-    setBreadcrumb,
-    breadcrumb,
-    openDialog,
-    setNewAppDialogs,
-    closeDialogWithData,
-    setFrmIsChanged,
-  } = useAppStore()
+  const { breadcrumb } = useAppStore()
 
   const [Divisas, setDivisas] = useState<{ value: string; label: string }[]>([])
-  const [CondicionesPago, setCondicionesPago] = useState<{ value: string; label: string }[]>([])
   const [isPaymentTerm, setIsPaymentTerm] = useState(false)
 
+  const fnc_load_document_types = async () => {
+    const options = await createOptions({
+      fnc_name: 'fnc_document_type',
+      filters: [{ column: 'state', value: 'A' }],
+      action: 's2',
+    })
+
+    setDocumentsTypes(options)
+  }
   const cargaData = useCallback(() => {
     if (formItem['currency_id']) {
       setDivisas([
@@ -96,16 +145,34 @@ export function FrmMiddleRight({ control, errors, editConfig, setValue }: frmEle
       ])
     }
 
-    if (formItem['payment_term_id']) {
-      setCondicionesPago([
+    if (formItem['document_type_id']) {
+      setDocumentsTypes([
         {
-          value: formItem['payment_term_id'],
-          label: formItem['payment_term_name'],
+          value: formItem['document_type_id'],
+          label: formItem['document_type_name'],
+        },
+      ])
+    }
+    if (formItem['journal_id']) {
+      setDiaries([
+        {
+          value: formItem['journal_id'],
+          label: formItem['journal_name'],
         },
       ])
     }
   }, [formItem])
-
+  useEffect(() => {
+    if (breadcrumb.find((item) => item.diary)) {
+      setDiaries([
+        {
+          value: breadcrumb.find((item) => item.diary)?.diary?.value,
+          label: breadcrumb.find((item) => item.diary)?.diary?.title,
+        },
+      ])
+      setValue('journal_id', breadcrumb.find((item) => item.diary)?.diary?.value)
+    }
+  }, [breadcrumb, formItem])
   // customer - start
   /*
   const loadCurrency = async () => {
@@ -164,33 +231,17 @@ export function FrmMiddleRight({ control, errors, editConfig, setValue }: frmEle
     setCondicionesPago(lCondicionesPago)
   }
   */
-  const fnc_load_data_PaymentTerm = async () => {
+
+  const fnc_load_diaries = async () => {
     const options = await createOptions({
-      fnc_name: 'fnc_payment_term',
+      fnc_name: 'fnc_journal',
       filters: [{ column: 'state', value: 'A' }],
       action: 's2',
     })
-    /*
-    if (!formItem) {
-      return setCondicionesPago(options)
-    }
-    */
-    setCondicionesPago([...options])
+
+    setDiaries(options)
   }
 
-  const fnc_navigate_PaymentTerm = (value: number) => {
-    if (newAppDialogs.length > 0) return
-
-    setBreadcrumb([
-      ...breadcrumb,
-      {
-        title: formItem.name,
-        url: pathname,
-        viewType: ViewTypeEnum.FORM,
-      },
-    ])
-    navigate(`/action/613/detail/${value}`)
-  }
   //fnc_enlace={() => navigate(`/action/613/detail/${formItem['payment_term_id']}`)}
 
   /*
@@ -294,38 +345,6 @@ export function FrmMiddleRight({ control, errors, editConfig, setValue }: frmEle
   }
   */
 
-  const fnc_search_PaymentTerm = async () => {
-    const dialogId = openDialog({
-      title: 'Buscar: Término de pago',
-      dialogContent: () => (
-        <ModalBase
-          config={modalContactConfig}
-          multiple={false}
-          onRowClick={async (option) => {
-            if (option) {
-              setValue('payment_term_id', option.payment_term_id)
-              //setValue('partner_name', option.full_name)
-            }
-            setFrmIsChanged(true)
-            setNewAppDialogs([])
-          }}
-        />
-      ),
-      buttons: [
-        {
-          text: 'Nuevo',
-          type: 'confirm',
-          onClick: () => {}, //fnc_create_edit_customer(''),
-        },
-        {
-          text: 'Cerrar',
-          type: 'cancel',
-          onClick: () => closeDialogWithData(dialogId, {}),
-        },
-      ],
-    })
-  }
-
   // PaymentTerm - end
 
   useEffect(() => {
@@ -339,23 +358,27 @@ export function FrmMiddleRight({ control, errors, editConfig, setValue }: frmEle
 
   return (
     <>
-      <div className="d-sm-contents">
-        <div className="o_cell o_wrap_label">
-          <label className="o_form_label">Fecha de factura</label>
-        </div>
-        <div className="o_cell">
-          <div className="o_field">
-            <DatepickerControlled
-              control={control}
-              errors={errors}
-              name={'invoice_date'}
-              rules={{}}
-              editConfig={{ config: editConfig }}
-            />
-          </div>
-        </div>
-      </div>
-      <div className="d-sm-contents">
+      <Cf_date
+        control={control}
+        errors={errors}
+        fieldName={'invoice_date'}
+        editConfig={editConfig}
+        watch={watch}
+        setValue={setValue}
+        labelName="Fecha de factura"
+        startToday
+      />
+
+      <Cf_date
+        control={control}
+        errors={errors}
+        fieldName={'invoice_date_due'}
+        editConfig={editConfig}
+        watch={watch}
+        setValue={setValue}
+        labelName={!isPaymentTerm ? 'Fecha de vencimiento' : 'Término de pago'}
+      />
+      {/*<div className="d-sm-contents">
         <div className="o_cell o_wrap_label">
           <label className="o_form_label">
             {!isPaymentTerm ? 'Fecha de vencimiento' : 'Término de pago'}
@@ -404,7 +427,7 @@ export function FrmMiddleRight({ control, errors, editConfig, setValue }: frmEle
             </div>
           </div>
         </div>
-      </div>
+      </div>*/}
 
       <div className="d-sm-contents">
         <div className="o_cell o_wrap_label">
@@ -417,9 +440,66 @@ export function FrmMiddleRight({ control, errors, editConfig, setValue }: frmEle
               control={control}
               errors={errors}
               editConfig={{ config: editConfig }}
-              rules={required}
+              //rules={formItem.state !== 'B' ? required : {}}
               options={Divisas}
               fnc_loadOptions={fnc_load_data_divisas}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="d-sm-contents">
+        <div className="o_cell o_wrap_label">
+          <label className="o_form_label">Diario</label>
+        </div>
+        <div className="o_cell">
+          <div className="o_field">
+            <AutocompleteControlled
+              is_edit={breadcrumb.find((item) => item.diary) ? true : false}
+              name={'journal_id'}
+              control={control}
+              errors={errors}
+              editConfig={{ config: editConfig }}
+              // rules={required()}
+              options={diaries}
+              fnc_loadOptions={fnc_load_diaries}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="d-sm-contents">
+        <div className="o_cell o_wrap_label">
+          <label className="o_form_label">Tipo de Documento</label>
+        </div>
+        <div className="o_cell">
+          <div className="o_field">
+            <AutocompleteControlled
+              name={'document_type_id'}
+              control={control}
+              errors={errors}
+              editConfig={{ config: editConfig }}
+              //rules={required()}
+              options={documentsTypes}
+              fnc_loadOptions={fnc_load_document_types}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="d-sm-contents">
+        <div className="o_cell o_wrap_label">
+          <label className="o_form_label">Número de documento</label>
+        </div>
+        <div className="o_cell">
+          <div className="o_field">
+            <TextControlled
+              name={'document_number'}
+              control={control}
+              // rules={required()}
+              errors={errors}
+              placeholder={''}
+              editConfig={{ config: editConfig }}
             />
           </div>
         </div>
@@ -439,8 +519,9 @@ export function FrmTab1({ control, errors, editConfig, setValue, watch }: frmEle
   const loadBanks = async () => {
     let banksDB = await createOptions({
       fnc_name: 'fnc_partner_bank_accounts',
-      filters: [{ column: 'state', value: 'A' }],
-      action: 's2',
+      action: 's2_company',
+      // filters: [{ column: 'state', value: 'A' }],
+      filters: ['4'],
     })
     setBanks(banksDB)
   }
@@ -710,7 +791,6 @@ export function FrmTab2({ control, errors, editConfig, setValue }: frmElementsPr
           config={ModalBankAccount}
           multiple={false}
           onRowClick={async (option) => {
-            console.log(option)
             setValue('bank_account_id', option.bank_account_id)
             closeDialogWithData(dialogId, {})
           }}

@@ -1,9 +1,5 @@
 import { ViewTypeEnum, FormConfig, ModulesEnum } from '@/shared/shared.types'
-import {
-  FrmMiddle,
-  FrmMiddleRight,
-  FrmTittle,
-} from '@/modules/action/views/invoicing/payment/configView'
+import { FrmMiddle, FrmMiddleRight } from './configView'
 
 const PaymentTermsConfig: FormConfig = {
   fnc_name: 'fnc_document_type',
@@ -27,8 +23,9 @@ const PaymentTermsConfig: FormConfig = {
   },
 
   default_values: {
-    date: '',
-    name: '',
+    date: new Date(),
+    name: 'Borrador',
+    peyment_type: 'R',
     payment_method: '',
     customer: '',
     import: '',
@@ -113,7 +110,7 @@ const PaymentTermsConfig: FormConfig = {
   form_inputs: {
     imagenFields: [],
     auditoria: false,
-    frm_title: () => <FrmTittle />,
+
     frm_middle: ({ watch, control, errors, editConfig = {}, setValue }) => (
       <FrmMiddle
         watch={watch}

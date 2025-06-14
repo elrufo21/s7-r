@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import contactsConfig from '../views/contact-index/config'
-import { useCart } from '../context/CartContext'
 import CartItem from './CartItem'
 import { Operation, useCalculator } from '../context/CalculatorContext'
-import { useSearch } from '../context/SearchContext'
 import clientConfig from '@/modules/contacts/views/contact-index/config'
 import { HiOutlineBackspace } from 'react-icons/hi2'
 import useAppStore from '@/store/app/appStore'
@@ -12,39 +10,49 @@ import { CustomHeader } from './CustomHeader'
 import { FrmBaseDialog } from '@/shared/components/core'
 import { ActionTypeEnum } from '@/shared/shared.types'
 import noteConfig from '../views/notes/config'
+import { Product } from '../types'
 
 export default function CartPanel() {
-  const { openDialog, closeDialogWithData, executeFnc, modalData, setModalData } = useAppStore()
   const {
-    cart,
-    getTotalPrice,
-    getTaxAmount,
-    addToCart,
-    updateCartItemQuantity,
-    updateCartItemPrice,
-    deteleAll,
+    openDialog,
+    closeDialogWithData,
+    executeFnc,
+    modalData,
+    setModalData,
+    setProductPriceInOrder,
+    setProductQuantityInOrder,
+    orderData,
+    deleteProductInOrder,
+    getTotalPriceByOrder,
+    selectedOrder,
     selectedItem,
     setSelectedItem,
-    selectedOrder,
-    finalCustomer,
-    setFinalCustomer,
-    orderCart,
-  } = useCart()
+    setScreen,
+    screen,
+    changeToPayment,
+  } = useAppStore()
 
+  const [cart, setCart] = useState<Product[]>([])
+  const [finalCustomer, setFinalCustomer] = useState<any>({})
   const { operation, setOperation, clearDisplay, addDigit } = useCalculator()
-  const [isSymbolChange, setIsSymbolChange] = useState(false)
   const [localPrice, setLocalPrice] = useState<string>('')
-  const { filteredProducts, setScreen, screen } = useSearch()
-  const [total, setTotal] = useState(0)
+
+  const [total, setTotal] = useState<number | string>()
   const [is_change, setIsChange] = useState(false)
-  const [data, setData] = useState([])
+
   const finalCustomerRef = useRef(finalCustomer)
 
   useEffect(() => {
-    setData(cart?.filter((item) => item.action !== ActionTypeEnum.DELETE))
-    setLocalValue(cart?.find((item) => item.product_id === selectedItem)?.quantity.toString() || '')
-  }, [cart])
+    const pos_Status = orderData?.find((item) => item?.move_id === selectedOrder)?.pos_status
+    if (pos_Status === 'P') setScreen('payment')
+    setCart(
+      orderData
+        ?.find((item) => item.move_id === selectedOrder)
+        ?.move_lines.filter((item: any) => item.action !== ActionTypeEnum.DELETE) || []
+    )
 
+    // setLocalValue(cart?.find((item) => item.product_id === selectedItem)?.quantity.toString() || '')
+  }, [orderData, selectedOrder])
   useEffect(() => {
     finalCustomerRef.current = finalCustomer
   }, [finalCustomer])
@@ -55,14 +63,12 @@ export default function CartPanel() {
 
   useEffect(() => {
     if (is_change) {
-      setSelectedItem(
-        cart.filter((item) => item.action !== ActionTypeEnum.DELETE)[cart.length - 1]?.product_id
-      )
+      setSelectedItem(cart[cart.length - 1]?.product_id)
 
-      if (orderCart.find((item) => item.id_order === selectedOrder)?.partner_id) {
+      if (orderData.find((item) => item.move_id === selectedOrder)?.partner_id) {
         setFinalCustomer({
-          partner_id: orderCart.find((item) => item.id_order === selectedOrder)?.partner_id,
-          name: orderCart.find((item) => item.id_order === selectedOrder)?.partner_name,
+          partner_id: orderData.find((item) => item.move_id === selectedOrder)?.partner_id,
+          name: orderData.find((item) => item.move_id === selectedOrder)?.partner_name,
         })
       } else {
         setFinalCustomer({
@@ -70,13 +76,9 @@ export default function CartPanel() {
           name: 'Empresa CONTRATISTAS',
         })
       }
-      if (orderCart?.find((item) => item?.move_id === selectedOrder)?.pos_status === 'P')
+      if (orderData?.find((item) => item?.move_id === selectedOrder)?.pos_status === 'P')
         setScreen('payment')
-      console.log(
-        'finalCustomerRef.current',
-        screen,
-        orderCart?.find((item) => item?.move_id === selectedOrder)?.pos_status
-      )
+
       setIsChange(false)
     }
   }, [cart, is_change])
@@ -157,7 +159,7 @@ export default function CartPanel() {
   }
 
   useEffect(() => {
-    setTotal(getTotalPrice().toFixed(MAX_DECIMALS))
+    setTotal(getTotalPriceByOrder(selectedOrder).toFixed(MAX_DECIMALS))
   }, [cart])
 
   // Estado para mantener el valor numérico actual que estamos construyendo
@@ -172,14 +174,6 @@ export default function CartPanel() {
   // Estado para contar los decimales ingresados
   const [decimalCount, setDecimalCount] = useState(0)
 
-  useEffect(() => {
-    if (!isSymbolChange) {
-      // setLocalValue('')
-      // setLocalPrice('')
-    }
-  }, [operation])
-
-  // Constante para el máximo de decimales permitidos
   const MAX_DECIMALS = 2
 
   const handleDecimalClick = () => {
@@ -199,7 +193,7 @@ export default function CartPanel() {
           addDigit(digit)
         }
 
-        updateCartItemQuantity(selectedItem, parseFloat(newValue))
+        setProductQuantityInOrder(selectedOrder, selectedItem, parseInt(newValue))
       } else if (operation === Operation.PRICE) {
         // No permitir múltiples puntos decimales
         if (localPrice.includes('.')) return
@@ -215,7 +209,7 @@ export default function CartPanel() {
           addDigit(digit)
         }
 
-        updateCartItemPrice(selectedItem, parseFloat(newValue))
+        setProductPriceInOrder(selectedOrder, selectedItem, parseFloat(newValue))
       }
     }
   }
@@ -284,6 +278,7 @@ export default function CartPanel() {
       customHeader: <CustomHeader fnc_create_button={fnc_create_customer} />,
     })
   }
+
   const handleCalculatorClick = (number: number) => {
     if (selectedItem) {
       if (operation === Operation.QUANTITY) {
@@ -296,7 +291,8 @@ export default function CartPanel() {
           clearDisplay()
           addDigit(newValue)
 
-          updateCartItemQuantity(selectedItem, parseInt(newValue))
+          setProductQuantityInOrder(selectedOrder, selectedItem, parseInt(newValue))
+
           setShouldReplaceValue(false)
         } else {
           // Si estamos en modo decimal, verificar el límite de decimales
@@ -306,7 +302,6 @@ export default function CartPanel() {
 
           const newValue = localValue + number.toString()
           setLocalValue(newValue)
-
           if (isDecimalMode) {
             setDecimalCount((prev) => prev + 1)
           }
@@ -315,34 +310,24 @@ export default function CartPanel() {
           for (const digit of newValue) {
             addDigit(digit)
           }
-
-          updateCartItemQuantity(selectedItem, parseFloat(newValue))
+          setProductQuantityInOrder(selectedOrder, selectedItem, parseInt(newValue))
         }
       } else if (operation === Operation.PRICE) {
         // Si estamos en modo decimal, verificar el límite de decimales
         if (isDecimalMode && decimalCount >= MAX_DECIMALS) {
           return
         }
-
         const newValue = localPrice + number.toString()
         setLocalPrice(newValue)
 
         if (isDecimalMode) {
           setDecimalCount((prev) => prev + 1)
         }
-
         clearDisplay()
         for (const digit of newValue) {
           addDigit(digit)
         }
-
-        updateCartItemPrice(selectedItem, parseFloat(newValue))
-      }
-    } else {
-      // Si no hay producto seleccionado, buscar producto por su ID
-      const product = filteredProducts.find((item) => item.product_id === String(number))
-      if (product) {
-        addToCart({ ...product })
+        setProductPriceInOrder(selectedOrder, selectedItem, parseFloat(newValue))
       }
     }
   }
@@ -353,16 +338,16 @@ export default function CartPanel() {
 
         // Si el valor es '0', eliminar el producto
         if (localValue === '0') {
-          deteleAll(selectedItem)
+          //deteleAll(selectedItem)
           if (cart[cart.length - 1].product_id === selectedItem) {
-            console.log('ar', cart[cart.length - 2].product_id)
-            setSelectedItem(cart[cart.length - 2].product_id)
-            setLocalValue(cart[cart.length - 2].quantity.toString())
+            setSelectedItem(cart[cart.length - 2]?.product_id)
+            setLocalValue(cart[cart.length - 2]?.quantity.toString())
           } else {
-            console.log('Ar2')
             setSelectedItem(cart[cart.length - 1].product_id)
             setLocalValue(cart[cart.length - 1].quantity.toString())
           }
+          deleteProductInOrder(selectedOrder, selectedItem)
+
           return
         }
 
@@ -395,8 +380,7 @@ export default function CartPanel() {
         for (const digit of newValue) {
           addDigit(digit)
         }
-
-        updateCartItemQuantity(selectedItem, parseFloat(newValue))
+        setProductQuantityInOrder(selectedOrder, selectedItem, parseFloat(newValue))
       } else if (operation === Operation.PRICE) {
         let newValue = localPrice.slice(0, -1)
 
@@ -435,8 +419,7 @@ export default function CartPanel() {
         for (const digit of newValue) {
           addDigit(digit)
         }
-
-        updateCartItemPrice(selectedItem, parseFloat(newValue))
+        setProductPriceInOrder(selectedOrder, selectedItem, parseFloat(newValue))
       }
     }
   }
@@ -480,7 +463,7 @@ export default function CartPanel() {
       setShouldReplaceValue(true)
 
       const selectedProduct = cart.find((item) => item.product_template_id === productId)
-      if (selectedProduct) {
+      if (selectedProduct && selectedProduct.quantity !== undefined) {
         const quantity = selectedProduct.quantity.toString()
         clearDisplay()
         setLocalValue(quantity)
@@ -490,7 +473,6 @@ export default function CartPanel() {
     }
   }
   const handleSymbolsClick = () => {
-    setIsSymbolChange(true)
     if (selectedItem) {
       if (operation === Operation.QUANTITY) {
         const currentValue =
@@ -513,7 +495,7 @@ export default function CartPanel() {
         }
 
         // Actualizar el carrito con el nuevo valor
-        updateCartItemQuantity(selectedItem, parseFloat(newValue))
+        setProductQuantityInOrder(selectedOrder, selectedItem, parseInt(newValue))
       } else if (operation === Operation.PRICE) {
         //const currentValue = localPrice || '0'
         const currentValue =
@@ -536,7 +518,7 @@ export default function CartPanel() {
         }
 
         // Actualizar el carrito con el nuevo valor
-        updateCartItemPrice(selectedItem, parseFloat(newValue))
+        setProductPriceInOrder(selectedOrder, selectedItem, parseFloat(newValue))
       }
     }
   }
@@ -549,6 +531,7 @@ export default function CartPanel() {
 
   const fnc_open_note_modal = () => {
     let getData = () => ({})
+    console.log('getData', getData)
     const dialogId = openDialog({
       title: 'Notas',
       dialogContent: () => (
@@ -604,7 +587,7 @@ export default function CartPanel() {
           </div>
         ) : (
           <div>
-            {data?.map((item) => (
+            {cart?.map((item) => (
               <div key={item.product_id} ref={(el) => (itemRefs.current[item.product_id] = el)}>
                 <CartItem
                   item={item}
@@ -625,7 +608,7 @@ export default function CartPanel() {
           <div className="order-summary p-3">
             <div className="flex justify-between text-gray-500">
               <span>Impuestos</span>
-              <span>S/ {getTaxAmount().toFixed(2)}</span>
+              <span>S/ 0:00</span>
             </div>
             <div className="flex justify-between text-lg font-bold mt-1">
               <span>Total</span>
@@ -691,7 +674,6 @@ export default function CartPanel() {
                   <button
                     className={`numpad-button btn2 btn2-white fs-3 lh-lg  ${operation === Operation.QUANTITY ? 'active' : ''}`}
                     onClick={() => {
-                      setIsSymbolChange(false)
                       setOperation(Operation.QUANTITY)
                       setLocalValue('')
                       setLocalPrice('')
@@ -722,7 +704,6 @@ export default function CartPanel() {
                   <button
                     className={`numpad-button btn2 btn2-white fs-3 lh-lg ${operation === Operation.DISCOUNT ? 'active' : ''}`}
                     onClick={() => {
-                      setIsSymbolChange(false)
                       setOperation(Operation.DISCOUNT)
                       setLocalValue('')
                       setLocalPrice('')
@@ -753,7 +734,6 @@ export default function CartPanel() {
                   <button
                     className={`numpad-button btn2 btn2-white fs-3 lh-lg ${operation === Operation.PRICE ? 'active' : ''}`}
                     onClick={() => {
-                      setIsSymbolChange(false)
                       setOperation(Operation.PRICE)
                       setLocalValue('')
                       setLocalPrice('')
@@ -796,7 +776,10 @@ export default function CartPanel() {
                 <div className="actionpad">
                   <button
                     className="btn2 btn2-primary btn-lg flex-auto min-h-[70px]"
-                    onClick={() => setScreen('payment')}
+                    onClick={() => {
+                      changeToPayment(selectedOrder)
+                      setScreen('payment')
+                    }}
                   >
                     Pago
                   </button>

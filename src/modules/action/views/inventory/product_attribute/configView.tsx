@@ -179,6 +179,8 @@ export function FrmTab1({ setValue }: frmElementsProps) {
         data={productAttributesValues.filter((item) => item.action !== ActionTypeEnum.DELETE)}
         setData={setProductAttributesValues}
         columns={columns}
+        modifyData={modifyData}
+        setModifyData={setModifyData}
       >
         {(table) => (
           <tr

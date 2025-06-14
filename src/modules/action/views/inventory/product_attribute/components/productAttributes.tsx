@@ -1,20 +1,12 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
-import {
-  useReactTable,
-  getCoreRowModel,
-  ColumnDef,
-  flexRender,
-  getSortedRowModel,
-} from '@tanstack/react-table'
-import Sortable from 'sortablejs'
+import { ColumnDef } from '@tanstack/react-table'
 import { GrDrag } from 'react-icons/gr'
 import { RiDeleteBin2Line } from 'react-icons/ri'
 import { TextField } from '@mui/material'
 import { styled } from '@mui/material/styles'
 import { ActionTypeEnum, FormActionEnum, frmElementsProps } from '@/shared/shared.types'
 import useAppStore from '@/store/app/appStore'
-import clsx from 'clsx'
-import { FaChevronDown, FaChevronUp } from 'react-icons/fa'
+import { DndTable } from '@/shared/components/table/DndTable'
 
 interface ProductAttribute {
   attribute_value_id: number
@@ -91,8 +83,6 @@ const ProductVariantsTable = ({ setValue }: frmElementsProps) => {
 
   const [data, setData] = useState<ProductAttribute[]>([])
   const [modifyData, setModifyData] = useState<boolean>(false)
-  const tableRef = useRef<HTMLTableSectionElement | null>(null)
-  const sortableRef = useRef<Sortable | null>(null)
 
   const handleDelete = (attribute_value_id: number) => {
     setData((prev: any) =>
@@ -190,38 +180,10 @@ const ProductVariantsTable = ({ setValue }: frmElementsProps) => {
     ],
     []
   )
-  const filteredData = useMemo(
+  /*const filteredData = useMemo(
     () => data?.filter((row) => row.action !== ActionTypeEnum.DELETE),
     [data]
-  )
-  useEffect(() => {
-    if (tableRef.current) {
-      if (sortableRef.current) {
-        sortableRef.current.destroy()
-      }
-
-      sortableRef.current = Sortable.create(tableRef.current, {
-        animation: 150,
-        handle: '.drag-handle',
-        ghostClass: 'bg-white',
-        onEnd: (event) => {
-          const oldIndex = event.oldIndex!
-          const newIndex = event.newIndex!
-
-          setData((prevData: any) => {
-            const newData = [...prevData]
-            const [movedItem] = newData.splice(oldIndex, 1)
-            newData.splice(newIndex, 0, movedItem)
-            return newData.map((item) => ({
-              ...item,
-              action: item.action === ActionTypeEnum.BASE ? ActionTypeEnum.UPDATE : item.action,
-            }))
-          })
-          setModifyData(true)
-        },
-      })
-    }
-  }, [filteredData])
+  )*/
 
   const addRow = () => {
     setData((prev: ProductAttribute[] | undefined) => {
@@ -243,77 +205,37 @@ const ProductVariantsTable = ({ setValue }: frmElementsProps) => {
     setModifyData(true)
   }
 
-  const table = useReactTable({
-    data: filteredData,
-    columns,
-    columnResizeMode: 'onEnd',
-    columnResizeDirection: 'ltr',
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-  })
-
   return (
-    <div className="flex flex-col gap-4 py-4 ">
-      <div className="flex flex-col gap-4">
-        <table className="w-full border-[#BBB] border relative">
-          <thead className="h-10">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className={`text-left font-bold relative ${
-                      header.column.getCanSort() ? 'cursor-pointer select-none' : ''
-                    }`}
-                    style={{ width: header.getSize() }}
-                    onClick={header.column.getToggleSortingHandler()}
-                  >
-                    <div
-                      className={clsx(
-                        'flex items-center gap-2',
-                        header.column.getIsSorted() && 'justify-between'
-                      )}
-                    >
-                      {flexRender(header.column.columnDef.header, header.getContext())}
-                      {{
-                        asc: <FaChevronUp />,
-                        desc: <FaChevronDown />,
-                      }[header.column.getIsSorted() as string] ?? null}
-                    </div>
-                    <div
-                      {...{
-                        onMouseDown: header.getResizeHandler(),
-                        onTouchStart: header.getResizeHandler(),
-                        className: `resizer ${header.column.getIsResizing() ? 'isResizing' : ''}`,
-                      }}
-                    />
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody ref={tableRef}>
-            {table.getRowModel().rows.map((row) => (
-              <tr key={row.original.attribute_value_id} className="border-y-[#BBB] border-y-[1px]">
-                {row.getVisibleCells().map((cell) => (
-                  <td
-                    key={columns[0].id}
-                    style={{ width: row.getVisibleCells()[0].column.getSize() }}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="flex gap-4 pb-4 pl-4">
-          <button type="button" className="text-[#017e84] hover:text-[#017e84]/80" onClick={addRow}>
-            Agregar línea
-          </button>
-        </div>
-      </div>
-    </div>
+    <DndTable
+      data={data}
+      setData={setData}
+      setModifyData={setModifyData}
+      columns={columns}
+      id="attribute_value_id"
+    >
+      {(table) => (
+        <tr
+          style={{ height: '42px' }}
+          className="group list-tr options border-gray-300 hover:bg-gray-200 border-t-black border-t-[1px]"
+        >
+          <td></td>
+          <td
+            colSpan={
+              table.getRowModel().rows[0]
+                ? table.getRowModel().rows[0]?.getVisibleCells().length - 1
+                : 10
+            }
+            className="w-full"
+          >
+            <div className="flex gap-4">
+              <button type="button" className="text-[#017E84]" onClick={addRow}>
+                Agregar línea
+              </button>
+            </div>
+          </td>
+        </tr>
+      )}
+    </DndTable>
   )
 }
 

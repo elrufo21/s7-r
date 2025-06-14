@@ -47,33 +47,35 @@ export interface ContactData {
 }
 
 export interface InvoiceData {
-  tdoc: string
-  typed: string
-  payment_term_id: string
-  company_id: string
-  partner_id: string
-  currency_id: string
   move_id: number
+  company_id: string
+  company_name: string
+  state: string
+  state2: string // VALIDAR SI SE VA A USAR O NO
+  payment_state: string
+  payment_state_description: string
+  sent_state: string
+  sent_state_description: string
+  edi_state: string
+  edi_state_description: string
+  name: string
+  partner_id: string
+  partner_name: string
+  invoice_date: Date
+  invoice_date_due: Date
+  payment_reference: string
+  payment_term_id: string
+  currency_id: string
+  currency_name: string
+  reference: string
+  seller_id: string
   team_id: string
   bank_account_id: string
-  fiscal_position_id: string
-  seller_id: string
-  name: string
-  state: string
-  dsc_cdp: string
-  company_name: string
-  partner_name: string
-  currency_name: string
-  dsc_pfi: string
-  invoice_date: Date
   delivery_date: Date
-  invoice_date_due: Date
+  fiscal_position_id: string
   amount_total: number
-  reference: string
-  payment_reference: string
-  state2: string
-  kb__dsc_1: string
   move_lines: InvoiceItem[]
+  amount_untaxed_in_currency: string
 }
 
 export interface InvoiceItem {
@@ -133,4 +135,20 @@ export type GroupedItemsType = {
 export enum StatusContactEnum {
   ARCHIVE = 'I',
   UNARCHIVE = 'A',
+}
+
+export interface Data_Journal {
+  name: string
+  payment_id: number
+  state: string
+  state_description: string
+  amount: number
+  amount_in_currency: string
+  partner_name: string
+  date: string
+  description: string
+  journal_name: string
+  company_name: string
+  payment_method_name: string
+  currency_name: string
 }

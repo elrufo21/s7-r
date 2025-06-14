@@ -10,7 +10,7 @@ export const DetailShow = () => {
   const { idAction, id } = useParams()
   const { setFormItem, setConfig, setViewType, setFrmLoading } = useAppStore()
   const { module, fnc_name: fncName } = forms[`Frm_${idAction}_config`]
-  const { data: item, isLoading } = useModuleItemById({
+  const { data, isLoading } = useModuleItemById({
     fncName,
     id: id ?? '',
     module,
@@ -20,8 +20,8 @@ export const DetailShow = () => {
     setViewType(ViewTypeEnum.FORM)
   }, [setViewType])
   useEffect(() => {
-    setFormItem(item)
-  }, [item, setFormItem])
+    setFormItem(data?.data)
+  }, [data?.data, setFormItem])
   useEffect(() => {
     setConfig(config)
   }, [config, setConfig])
@@ -30,5 +30,5 @@ export const DetailShow = () => {
   }, [isLoading, setFrmLoading])
   //if (isLoading) return <KanbanLaoder />
 
-  return <FormView item={item} />
+  return <FormView item={data?.data} />
 }

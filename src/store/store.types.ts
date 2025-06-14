@@ -4,6 +4,7 @@ import { GroupedItemsType } from '@/shared/components/view-types/viewTypes.types
 import { FormActionEnum, ViewTypeEnum } from '@/shared/shared.types'
 import { ExpandedState, Row, Table } from '@tanstack/react-table'
 import { ReactNode } from 'react'
+import { Operation } from '@/modules/pos/context/CalculatorContext'
 
 interface DialogProps {
   title: string
@@ -90,12 +91,14 @@ export interface AppSliceState {
     title: string
     url: string
     viewType: ViewTypeEnum
+    diary?: { title: string; value: number }
   }[]
   setBreadcrumb: (
     breadcrumb: {
       title: string
       url: string
       viewType: ViewTypeEnum
+      diary?: { title: string; value: number }
     }[]
   ) => void
 
@@ -139,6 +142,8 @@ export interface GridSliceState {
 }
 
 export interface DataSliceState {
+  stats: any[]
+  setStats: (stats: any[]) => void
   dataError: Error | null
   location: Location
   attributes: any[]
@@ -185,6 +190,8 @@ export interface FrmSliceState {
 export interface FiltersSliceState {
   filters: any[]
   setFilters: (filters: any[], actualCurrentPage: number) => void
+  aditionalFilters: any[]
+  setAditionalFilters: (aditionalFilters: any) => void
 }
 
 export interface UserSliceState {
@@ -213,6 +220,7 @@ export interface OpenDialogProps {
   btnDiscard?: boolean
   contactModal?: boolean
   customHeader?: any
+  fullScreen?: boolean
 }
 export interface NewAppDialogProps {
   id: string
@@ -226,6 +234,7 @@ export interface NewAppDialogProps {
   btnDiscard?: boolean
   contactModal?: boolean
   customHeader?: any
+  fullScreen?: boolean
 }
 export interface DialogSliceState {
   newAppDialogs: NewAppDialogProps[]
@@ -243,6 +252,7 @@ export interface DialogSliceState {
     btnDiscard,
     contactModal,
     customHeader,
+    fullScreen,
   }: OpenDialogProps) => string
   closeDialogWithData: (dialogId: string, data: any, key?: string) => void
   frmDialogAction: any
@@ -294,14 +304,60 @@ export type SetState<T> = (
   replace?: boolean,
   action?: string
 ) => void
-
+interface Product {
+  product_template_id: string
+  product_id: string
+  name: string
+  size: string
+  price: number
+  category: string
+  quantity?: number
+  custom_price?: number
+  cost?: number
+  category_id?: string
+  sale_price?: any
+  uom_name?: string
+  uom_id?: string
+}
 export interface PointsOfSaleSliceState {
+  operation: Operation
+  setOperation: (operation: Operation) => void
+  screen: string
+  setScreen: (screen: string) => void
+  customers: any[]
+  setCustomers: (customers: any[]) => void
+  products: any[]
+  setProducts: (product: any[]) => void
   cart: any[]
   setCart: (cart: any[]) => void
   orderCart: any[]
   setOrderCart: (orderCart: any[]) => void
   selectedOrder: string
+  setSelectedOrder: (selectedOrder: string) => void
+  setOrderData: (orderData: any[]) => void
   selectedItem: string | null
+  setSelectedItem: (selectedItem: string | null) => void
   orderData: any[]
   finalCustomer: any
+  categories: any[]
+  setCategories: (categories: any[]) => void
+  addProductToOrder: (order_id: number | string, product: Product, new_quantity: number) => void
+  addNewOrder: () => void
+  setProductQuantityInOrder: (
+    order_id: number | string,
+    product: string | number,
+    exact_quantity: number
+  ) => void
+  setProductPriceInOrder: (
+    order_id: number | string,
+    product: string | number,
+    new_price: number
+  ) => void
+  getProductQuantityInOrder: (order_id: number | string, product: string | number) => number
+  deleteProductInOrder: (order_id: number | string, product_id: string) => void
+  getTotalPriceByOrder: (order_id: number | string) => number
+  deleteOrder: (order_id: number | string) => void
+  updateOrderFromServer: (updatedOrder: any) => void
+  changeToPayment: (order_id: number | string) => void
+  updateMoveId: (oldMoveId: string, newMoveId: string) => void
 }

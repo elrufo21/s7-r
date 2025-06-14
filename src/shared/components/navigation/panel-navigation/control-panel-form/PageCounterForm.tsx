@@ -12,7 +12,15 @@ export const PageCounterForm = () => {
   const id = path.split('/').at(-1)
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const { config, dataFormShow, formItem, setDataFormShow, setTableData } = useAppStore()
+  const {
+    config,
+    dataFormShow,
+    formItem,
+    setDataFormShow,
+    setTableData,
+    setFrmIsChanged,
+    setFrmIsChangedItem,
+  } = useAppStore()
   const idRow = config.grid.idRow as keyof DataType
 
   const [pageCounter, setPageCounter] = useState({
@@ -42,6 +50,8 @@ export const PageCounterForm = () => {
   }
 
   const handlePrev = () => {
+    setFrmIsChanged(false)
+    setFrmIsChangedItem(false)
     if (pageCounter.totalElements === 1) return
     setTableData([])
     const newLowerLimit = pageCounter.currentPage
@@ -53,6 +63,8 @@ export const PageCounterForm = () => {
   }
 
   const handleNext = () => {
+    setFrmIsChanged(false)
+    setFrmIsChangedItem(false)
     if (pageCounter.totalElements === 1) return
     setTableData([])
     if (pageCounter.currentPage >= pageCounter.totalElements) {

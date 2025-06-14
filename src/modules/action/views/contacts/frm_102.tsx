@@ -3,10 +3,8 @@ import { AutocompleteControlled, ImageInput, TextControlled } from '@/shared/ui'
 import useAppStore from '@/store/app/appStore'
 import { frmElementsProps } from '@/shared/shared.types'
 import AddressField from '@/shared/components/extras/AddressField'
-
-const required = {
-  required: { value: true, message: 'Este campo es requerido' },
-}
+import { required } from '@/shared/helpers/validators'
+import BaseTextControlled from '@/shared/components/form/base/BaseTextControlled'
 
 export function FrmPhoto({ watch, setValue, control, editConfig }: frmElementsProps) {
   return (
@@ -33,7 +31,7 @@ export function FrmTitle({ control, errors, editConfig }: frmElementsProps) {
       <TextControlled
         name={'company_name'}
         control={control}
-        rules={required}
+        rules={required()}
         errors={errors}
         placeholder={'por ejemplo, Mi empresa'}
         style={style}
@@ -137,7 +135,7 @@ export function FrmTab0({ control, errors, editConfig, setValue, watch }: frmEle
                     name={'currency_id'}
                     placeholder={''}
                     control={control}
-                    rules={required}
+                    rules={required()}
                     errors={errors}
                     options={Divisas}
                     // fnc_create={fnc_create}
@@ -206,22 +204,14 @@ export function FrmTab0({ control, errors, editConfig, setValue, watch }: frmEle
                 </div>
               </div>
             </div>
-            <div className="d-sm-contents">
-              <div className="o_cell o_wrap_label">
-                <label className="o_form_label">Sitio web</label>
-              </div>
-              <div className="o_cell">
-                <div className="o_field">
-                  <TextControlled
-                    name={'website'}
-                    control={control}
-                    errors={errors}
-                    placeholder={'p. ej. https://www.system.com'}
-                    editConfig={{ config: editConfig }}
-                  />
-                </div>
-              </div>
-            </div>
+            <BaseTextControlled
+              name={'website'}
+              control={control}
+              errors={errors}
+              placeholder={'p. ej. https://www.system.com'}
+              editConfig={editConfig}
+              label={'Sitio web'}
+            />
           </div>
         </div>
       </div>

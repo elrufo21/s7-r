@@ -7,6 +7,7 @@ export enum ViewTypeEnum {
   LIST = 'list',
   DRAGLIST = 'draglist',
   FORM = 'form',
+  LIBRE = 'libre',
 }
 
 export interface CompanyProps {
@@ -153,6 +154,7 @@ export type FormConfig = {
   new_url: string
   isFavoriteColumn?: boolean
   formTitle?: string
+  formButtons?: any
 
   fnc_valid: (data: any, formItem?: any) => any
 
@@ -217,6 +219,7 @@ export interface frmElementsProps {
   editConfig: any
   fnc_name?: string
   options?: any[]
+  label?: boolean
 }
 
 export interface ContentElementsProps extends frmElementsProps {

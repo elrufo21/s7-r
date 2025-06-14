@@ -1,25 +1,24 @@
-import { useSearch } from '../context/SearchContext'
 import CartPanel from './CartPanel'
 import CategorySelector from './CategorySelector'
 import ProductGrid from './ProductGrid'
 import { OrderList } from './OrderList'
-import { useCart } from '../context/CartContext'
 import CartItem from './CartItem'
 import { useEffect, useState } from 'react'
 import { MdKeyboardArrowLeft } from 'react-icons/md'
 import Payment from './Payment'
 import Invoice from './Invoice'
+import useAppStore from '@/store/app/appStore'
 
 const Screens = () => {
+  const { screen, cart, getTotalPriceByOrder } = useAppStore()
   const [total, setTotal] = useState(0)
-  const { screen } = useSearch()
-  const { cart, getTaxAmount, getTotalPrice } = useCart()
+
   useEffect(() => {
-    setTotal(getTotalPrice().toFixed(2))
+    setTotal(getTotalPriceByOrder(cart[0]?.move_id || 0))
   }, [cart])
 
   switch (screen) {
-    case 'product':
+    case 'products':
       return (
         <div className="product-screen">
           <div className="leftpanel">
@@ -56,7 +55,7 @@ const Screens = () => {
                 <div className="order-summary d-flex flex-column gap-1 p-2 border-bottom fw-bolder lh-sm">
                   <div className="flex justify-between text-gray-500">
                     <span>Impuestos</span>
-                    <span>S/ {getTaxAmount().toFixed(2)}</span>
+                    <span>S/ 0:00</span>
                   </div>
                   <div className="flex justify-between text-lg font-bold mt-1">
                     <span>Total</span>

@@ -2,6 +2,8 @@ import { FiltersSliceState, SetState } from '@/store/store.types'
 
 export const createFiltersSlice = (set: SetState<FiltersSliceState>): FiltersSliceState => ({
   filters: [],
+  aditionalFilters: [],
+  setAditionalFilters: (aditionalFilters) => set({ aditionalFilters }),
   setFilters: (filters, actualCurrentPage) => {
     const filtersClear = filters.map((item) => (typeof item[0] === 'number' ? item.slice(1) : item))
     const addPagination = filtersClear.some((elem) => elem[0] === 'gby' || elem[0] === 'pag')

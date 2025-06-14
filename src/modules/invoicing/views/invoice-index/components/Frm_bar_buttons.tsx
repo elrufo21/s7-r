@@ -1,8 +1,8 @@
-import { FormActionEnum, frmElementsProps } from '@/shared/shared.types'
+import { ActionTypeEnum, FormActionEnum, frmElementsProps } from '@/shared/shared.types'
 import useAppStore from '@/store/app/appStore'
 import { UseFormWatch } from 'react-hook-form'
 import { ReactNode, useEffect } from 'react'
-import { StatusInvoiceEnum } from '@/modules/invoicing/invoice.types'
+import { Enum_Payment_State, StatusInvoiceEnum } from '@/modules/invoicing/invoice.types'
 import { InvoicePdf } from '@/modules/invoicing/components/InvoicePdf'
 import { FrmBaseDialog } from '@/shared/components/core'
 import sendInvoiceConfig from '@/modules/invoicing/views/modal-send-invoice/config'
@@ -15,7 +15,7 @@ export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
   const setFrmConfigControls = useAppStore((state) => state.setFrmConfigControls)
   const setAppDialog = useAppStore((state) => state.setAppDialog)
   const closeDialogWithData = useAppStore((state) => state.closeDialogWithData)
-  const { openDialog } = useAppStore((state) => state)
+  const { openDialog, formItem, executeFnc } = useAppStore((state) => state)
 
   const validateForm = (watch: UseFormWatch<any>): string[] => {
     const errors: string[] = []
@@ -59,12 +59,28 @@ export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
     setValue('state', StatusInvoiceEnum.PUBLICADO)
     setFrmAction(FormActionEnum.PRE_SAVE)
   }
+  const onCancel = () => {
+    const errors = validateForm(watch)
+    if (errors.length > 0) {
+      setAppDialog({
+        title: 'Operación no válida',
+        content: generateMessageDialog(errors),
+        open: true,
+        actions: false,
+      })
+      return
+    }
+
+    setValue('state', StatusInvoiceEnum.CANCELADO)
+    setFrmAction(FormActionEnum.PRE_SAVE)
+  }
 
   const resetDraft = () => {
     setValue('state', StatusInvoiceEnum.BORRADOR)
     setFrmAction(FormActionEnum.PRE_SAVE)
   }
-  const isEdit = watch('state') === StatusInvoiceEnum.PUBLICADO
+  const isEdit =
+    watch('state') === StatusInvoiceEnum.PUBLICADO || watch('state') === StatusInvoiceEnum.CANCELADO
 
   useEffect(() => {
     setFrmConfigControls({
@@ -91,16 +107,35 @@ export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
       },
     })
   }, [setFrmConfigControls, isEdit])
-
-  const openModal = (rowData: any | null = null) => {
+  const openModal = () => {
+    let getData = () => ({})
     const dialog = openDialog({
-      title: '',
-      dialogContent: () => <FrmBaseDialog config={PaymentTermsConfig} values={rowData ?? {}} />,
+      title: 'Pagar',
+      dialogContent: () => (
+        <FrmBaseDialog
+          config={PaymentTermsConfig}
+          values={{
+            memo: formItem?.name,
+            move_id: formItem?.move_id,
+            partner_id: formItem?.partner_id,
+            date: new Date(),
+            state: Enum_Payment_State.IN_PROCESS,
+            payment_type: 'R',
+          }}
+          setGetData={(fn: any) => (getData = fn)}
+        />
+      ),
       buttons: [
         {
           text: 'Guardar y cerrar',
           type: 'confirm',
-          onClick: () => closeDialogWithData(dialog, {}),
+          onClick: async () => {
+            const formData = getData()
+            const res = await executeFnc('fnc_payment', ActionTypeEnum.INSERT, formData)
+            console.log(res)
+            setFrmAction(FormActionEnum.PRE_SAVE)
+            closeDialogWithData(dialog, {})
+          },
         },
         {
           text: 'Cerrar',
@@ -199,6 +234,7 @@ export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
           onClick={() => {
             const dialog = openDialog({
               title: 'Vista previa',
+              fullScreen: true,
               dialogContent: () => <InvoicePdf watch={watch} />,
               buttons: [
                 {
@@ -225,12 +261,20 @@ export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
         </button>
       </>
     )
+  if (watch('state') === StatusInvoiceEnum.CANCELADO)
+    return (
+      <button className="btn btn-secondary" onClick={resetDraft}>
+        Restablecer a borrador
+      </button>
+    )
   return (
     <>
       <button className="btn btn-primary" onClick={onConfirm}>
         Confirmar
       </button>
-      <button className="btn btn-secondary">Cancelar</button>
+      <button className="btn btn-secondary" onClick={onCancel}>
+        Cancelar
+      </button>
     </>
   )
 }

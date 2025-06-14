@@ -1,22 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AutocompleteControlled, ImageInput, TextControlled } from '@/shared/ui'
 import useAppStore from '@/store/app/appStore'
 import { frmElementsProps } from '@/shared/shared.types'
 import AddressField from '@/shared/components/extras/AddressField'
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from '@tanstack/react-table'
+import { ColumnDef } from '@tanstack/react-table'
 import { GrDrag } from 'react-icons/gr'
 import { Chip } from '@mui/material'
-import { FaChevronDown, FaChevronUp } from 'react-icons/fa'
-import clsx from 'clsx'
-import Sortable from 'sortablejs'
 import { FrmBaseDialog } from '@/shared/components/core'
 import companyConfig from '@/modules/action/views/settings/modal-company/config'
+import { DndTable } from '@/shared/components/table/DndTable'
 
 export function FrmPhoto({ watch, setValue, control, editConfig }: frmElementsProps) {
   return (
@@ -236,42 +228,12 @@ export function FrmTab0({ control, errors, editConfig, setValue, watch }: frmEle
 }
 
 export function FrmTab1({ watch }: frmElementsProps) {
-  const tableRef = useRef<HTMLTableSectionElement | null>(null)
   const { openDialog, closeDialogWithData, executeFnc, newAppDialogs } = useAppStore()
 
   const [data, setData] = useState([])
-  const [setModifyData] = useState<boolean>(false)
-  const sortableRef = useRef<Sortable | null>(null)
   useEffect(() => {
     setData(watch('companies'))
   }, [watch('companies')])
-
-  useEffect(() => {
-    if (tableRef.current) {
-      if (sortableRef.current) {
-        sortableRef.current.destroy()
-      }
-
-      sortableRef.current = Sortable.create(tableRef.current, {
-        animation: 150,
-        handle: '.drag-handle',
-        ghostClass: 'bg-white',
-        onEnd: (event) => {
-          const oldIndex = event.oldIndex!
-          const newIndex = event.newIndex!
-          setData((prevData: any) => {
-            const newData = [...prevData]
-            const [movedItem] = newData.splice(oldIndex, 1)
-            newData.splice(newIndex, 0, movedItem)
-            return newData.map((item) => ({
-              ...item,
-            }))
-          })
-          setModifyData(true)
-        },
-      })
-    }
-  }, [data])
 
   const columns = useMemo<ColumnDef<any>[]>(
     () => [
@@ -292,7 +254,14 @@ export function FrmTab1({ watch }: frmElementsProps) {
         accessorKey: 'name',
         size: 100,
         cell: ({ row }: { row: any; column: any }) => (
-          <div className="flex flex-col gap-2 ">{row.original.name}</div>
+          <div
+            className="flex flex-col gap-2 "
+            onClick={() => {
+              fnc_open_company_modal(row.original.company_id)
+            }}
+          >
+            {row.original.name}
+          </div>
         ),
       },
       {
@@ -300,7 +269,14 @@ export function FrmTab1({ watch }: frmElementsProps) {
         accessorKey: 'name',
         size: 100,
         cell: ({ row }: { row: any; column: any }) => (
-          <div className="flex flex-col gap-2 ">{row.original.name}</div>
+          <div
+            className="flex flex-col gap-2 "
+            onClick={() => {
+              fnc_open_company_modal(row.original.company_id)
+            }}
+          >
+            {row.original.name}
+          </div>
         ),
       },
       {
@@ -308,8 +284,13 @@ export function FrmTab1({ watch }: frmElementsProps) {
         accessorKey: 'companies',
         size: 100,
         cell: ({ row }: { row: any; column: any }) => (
-          <div className="flex flex-col gap-2 ">
-            {row.original?.companies?.map((company) => (
+          <div
+            className="flex flex-col gap-2 "
+            onClick={() => {
+              fnc_open_company_modal(row.original.company_id)
+            }}
+          >
+            {row.original?.companies?.map((company: any) => (
               <>
                 <Chip key={company.company_id} label={company.name} size="small" className="ml-1" />
               </>
@@ -320,7 +301,6 @@ export function FrmTab1({ watch }: frmElementsProps) {
     ],
     [data]
   )
-  console.log('newAppDialogs', newAppDialogs)
   const addRow = () => {
     let getData = () => ({})
     const dialogId = openDialog({
@@ -348,20 +328,9 @@ export function FrmTab1({ watch }: frmElementsProps) {
     })
   }
 
-  const table = useReactTable({
-    data: data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    columnResizeMode: 'onEnd',
-    columnResizeDirection: 'ltr',
-    enableColumnResizing: true,
-  })
-
   const fnc_open_company_modal = async (company_id: number) => {
     const { oj_data } = await executeFnc('fnc_company', 's1', [String(company_id)])
 
-    console.log('company_id', oj_data)
     let getData = () => ({})
     console.log(getData)
 
@@ -395,70 +364,33 @@ export function FrmTab1({ watch }: frmElementsProps) {
   }
 
   return (
-    <div className="flex flex-col gap-4 py-4 ">
-      <div className="flex flex-col gap-4">
-        <table className="w-full border-[#BBB] border relative">
-          <thead className="h-10">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className={`text-left font-bold relative ${
-                      header.column.getCanSort() ? 'cursor-pointer select-none' : ''
-                    }`}
-                    style={{ width: header.getSize() }}
-                    onClick={header.column.getToggleSortingHandler()}
-                  >
-                    <div
-                      className={clsx(
-                        'flex items-center gap-2',
-                        header.column.getIsSorted() && 'justify-between'
-                      )}
-                    >
-                      {flexRender(header.column.columnDef.header, header.getContext())}
-                      {{
-                        asc: <FaChevronUp />,
-                        desc: <FaChevronDown />,
-                      }[header.column.getIsSorted() as string] ?? null}
-                    </div>
-                    <div
-                      {...{
-                        onMouseDown: header.getResizeHandler(),
-                        onTouchStart: header.getResizeHandler(),
-                        className: `resizer ${header.column.getIsResizing() ? 'isResizing' : ''}`,
-                      }}
-                    />
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody ref={tableRef}>
-            {table.getRowModel().rows.map((row) => (
-              <tr
-                key={row.original?.company_id}
-                className="h-10 border-y-[#BBB]  border-y-[1px] cursor-pointer"
-                onClick={() => fnc_open_company_modal(row.original.company_id)}
+    <DndTable data={data} setData={setData} columns={columns} id="company_id">
+      {(table) => (
+        <tr
+          style={{ height: '42px' }}
+          className="group list-tr options border-gray-300 hover:bg-gray-200 border-t-black border-t-[1px]"
+        >
+          <td></td>
+          <td
+            colSpan={
+              table.getRowModel().rows[0]
+                ? table.getRowModel().rows[0]?.getVisibleCells().length - 1
+                : 10
+            }
+            className="w-full"
+          >
+            <div className="flex gap-4">
+              <button
+                type="button"
+                className="text-[#017e84] hover:text-[#017e84]/80"
+                onClick={addRow}
               >
-                {row.getVisibleCells().map((cell) => (
-                  <td
-                    key={columns[0].id}
-                    style={{ width: row.getVisibleCells()[0].column.getSize() }}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="flex gap-4 pb-4 pl-4">
-          <button type="button" className="text-[#017e84] hover:text-[#017e84]/80" onClick={addRow}>
-            Agregar línea
-          </button>
-        </div>
-      </div>
-    </div>
+                Agregar línea
+              </button>
+            </div>
+          </td>
+        </tr>
+      )}
+    </DndTable>
   )
 }

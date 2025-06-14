@@ -179,7 +179,7 @@ export const MultiSelecTableAttributes = ({
             ...params.InputProps,
             endAdornment: (
               <>
-                {isLoading ? <span>Cargando...</span> : null}
+                {isLoading ? <span>Cargando..........</span> : null}
                 {params.InputProps.endAdornment}
               </>
             ),

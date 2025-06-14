@@ -1,8 +1,7 @@
 import { HiOutlineBackspace } from 'react-icons/hi'
-import { useCart } from '../context/CartContext'
 import { useState } from 'react'
-import { useSearch } from '../context/SearchContext'
 import React from 'react'
+import useAppStore from '@/store/app/appStore'
 
 // Definición de la interfaz para los pagos
 interface PaymentItem {
@@ -21,22 +20,13 @@ const PaymentMethod = {
 
 // Componente principal de pago
 const Payment = () => {
-  const { getTotalPrice, orderCart, orderData, selectedOrder } = useCart()
-  const { setScreen } = useSearch()
+  const { setScreen, getTotalPriceByOrder, selectedOrder } = useAppStore()
   const [payments, setPayments] = useState<PaymentItem[]>([])
   const [selectedPaymentId, setSelectedPaymentId] = useState('')
   const [inputAmount, setInputAmount] = useState('')
   const [visibleNumberPad, setVisibleNumberPad] = useState(true)
   const [isFirstDigit, setIsFirstDigit] = useState(true)
 
-  console.log(
-    'orders',
-    orderCart.find((item) => item.id_order === selectedOrder)
-  )
-  console.log(
-    'orders',
-    orderData.find((item) => item.id_order === selectedOrder)
-  )
   // Calcula el total actual pagado
   const getTotalPaid = () => {
     return payments.reduce((sum, payment) => sum + payment.amount, 0)
@@ -44,14 +34,14 @@ const Payment = () => {
 
   // Calcula el cambio (si se pagó en exceso)
   const getChange = () => {
-    const total = getTotalPrice()
+    const total = getTotalPriceByOrder(selectedOrder)
     const paid = getTotalPaid()
     return Math.max(0, paid - total)
   }
 
   // Calcula el monto restante por pagar
   const getRemainingAmount = () => {
-    const total = getTotalPrice()
+    const total = getTotalPriceByOrder(selectedOrder)
     const paid = getTotalPaid()
     return Math.max(0, total - paid)
   }
@@ -144,7 +134,7 @@ const Payment = () => {
   }
 
   // Completa el pago
-  const handleCompletePay = () => {
+  /* const handleCompletePay = () => {
     if (getRemainingAmount() > 0) {
       alert('Debe cubrir el monto total para completar el pago')
       return
@@ -154,7 +144,7 @@ const Payment = () => {
     console.log('Pago completado:', payments)
     alert('Pago procesado correctamente')
   }
-
+*/
   // Selecciona un pago existente
   const handleSelectPayment = (id: string) => {
     setSelectedPaymentId(id)
@@ -392,7 +382,9 @@ const Payment = () => {
       <div className="center-content flex flex-col flex-grow-1 gap-4 p-4">
         {/* Total a pagar */}
         <section className="paymentlines-container">
-          <div className="total text-center text-success">S/ {getTotalPrice().toFixed(2)}</div>
+          <div className="total text-center text-success">
+            S/ {getTotalPriceByOrder(selectedOrder).toFixed(2)}
+          </div>
         </section>
 
         {/* Lista de pagos */}

@@ -3,14 +3,10 @@ import { AutocompleteControlled, TextControlled } from '@/shared/ui'
 import useAppStore from '@/store/app/appStore'
 import Stack from '@mui/material/Stack'
 import ClickAwayListener from '@mui/material/ClickAwayListener'
-
+import { required } from '@/shared/helpers/Validators'
 import { Controller } from 'react-hook-form'
 import { frmElementsProps } from '@/shared/shared.types'
 import { listTagColors } from '@/shared/constants'
-
-const required = {
-  required: { value: true, message: 'Este campo es requerido' },
-}
 
 export const ColorOptions = [
   { label: 'Sin color', value: 0 },
@@ -108,7 +104,7 @@ export function FrmMiddle({ setValue, control, errors, editConfig }: frmElements
               name={'name'}
               placeholder={'por ejemplo, "servicios de consultoría"'}
               control={control}
-              rules={required}
+              rules={required()}
               errors={errors}
               editConfig={{ config: editConfig }}
             />

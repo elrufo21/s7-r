@@ -218,6 +218,8 @@ export const FrmTab1 = ({ setValue }: frmElementsProps) => {
         data={dataUnits.filter((item) => item.action !== ActionTypeEnum.DELETE)}
         setData={setDataUnits}
         columns={columns}
+        modifyData={modifyData}
+        setModifyData={setModifyData}
       >
         {(table) => (
           <tr

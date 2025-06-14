@@ -30,9 +30,11 @@ export const Tabs = ({
   const [tabValue, setTabValue] = useState<number>(tabForm)
 
   useEffect(() => {
+    setTabValue(tabForm)
+  }, [tabForm])
+  useEffect(() => {
     setTabForm(tabValue)
   }, [tabValue])
-
   const tabItemProps = (index: number) => {
     return {
       id: `simple-tab-${index}`,

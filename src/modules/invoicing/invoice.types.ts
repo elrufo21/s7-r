@@ -1,10 +1,34 @@
 import { InvoiceItem, TypeInvoiceLineEnum } from '@/shared/components/view-types/viewTypes.types'
 import { ActionTypeEnum } from '@/shared/shared.types'
 
+export enum InvoiceEnum_payment_state {
+  NO_PAYMENT = 'NO_PAYMENT',
+  PARTIAL_PAYMENT = 'PARTIAL_PAYMENT',
+  IN_PROCESS = 'IN_PROCESS',
+  PAID = 'PAID',
+}
+
+export enum InvoiceEnum_sent_state {
+  UNSENT = 'UNSENT',
+  SENT = 'SENT',
+}
+
+export enum InvoiceEnum_edi_state {
+  TO_SEND = 'TO_SEND',
+}
+
 export enum StatusInvoiceEnum {
   BORRADOR = 'B',
   PUBLICADO = 'P',
   CANCELADO = 'C',
+}
+
+export enum Enum_Payment_State {
+  DRAFT = 'D',
+  IN_PROCESS = 'I',
+  PAID = 'P',
+  REFUSED = 'R',
+  CANCELLED = 'C',
 }
 
 export type ProductSelectType = {
@@ -89,4 +113,11 @@ export interface MoveLine {
 export interface MoveLinesTax {
   label: string
   tax_id: number
+}
+
+export enum Enum_Journal_State {
+  DRAFT = 'D',
+  IN_PROCESS = 'I',
+  PAID = 'P',
+  REFUSED = 'R',
 }

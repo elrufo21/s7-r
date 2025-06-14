@@ -140,7 +140,6 @@ export const FrmBaseDialog = ({
 
   const executeAction = async (action: string) => {
     let isValid: boolean
-
     switch (action) {
       case 'save': {
         const dialog = appDialogsContent.find((content) => content.idDialog === idDialogBase)
@@ -156,6 +155,7 @@ export const FrmBaseDialog = ({
         } else {
           // Si no es válido, solo detenemos la carga
           setFrmDialogLoading(false)
+          setFrmDialogAction(null)
           toast.error('Por favor, complete los campos requeridos')
         }
 

@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
-  AutocompleteControlled,
   ImageInput,
   MultiSelectObject,
   RadioButtonControlled,
@@ -9,26 +8,25 @@ import {
 } from '@/shared/ui'
 import { Button, Typography } from '@mui/material'
 import useAppStore from '@/store/app/appStore'
-import { Tooltip } from '@mui/material'
 import Chip from '@mui/material/Chip'
 import { Unstable_Popup as BasePopup } from '@mui/base/Unstable_Popup'
 import { FrmBaseDialog } from '@/shared/components/core/Dialog/FrmBaseDialog'
 import ModalContactConfig from '@/modules/contacts/views/modal-contact/config'
+import ContactConfig from '@/modules/contacts/views/modal-contact-index/config'
+
 import ModalPaymentTermConfig from '@/modules/action/views/invoicing/payment-terms/config'
 import { listTagColors } from '@/shared/constants'
 import AccountBankConfig from '@/modules/action/views/contacts/bank-accounts/config'
-import { AccountBank, TypeContactEnum } from '@/modules/contacts/contacts.types'
+import { AccountBank, ContactItem, TypeContactEnum } from '@/modules/contacts/contacts.types'
 import { ListContact } from '@/modules/contacts/components/ListContact'
-import { ActionTypeEnum, FormActionEnum, ModulesEnum, ViewTypeEnum } from '@/shared/shared.types'
-import { useLocation, useNavigate } from 'react-router-dom'
 import {
-  Column,
-  ColumnDef,
-  flexRender,
-  Row,
-  useReactTable,
-  getCoreRowModel,
-} from '@tanstack/react-table'
+  ActionTypeEnum,
+  FormActionEnum,
+  ItemStatusTypeEnum,
+  ModulesEnum,
+} from '@/shared/shared.types'
+import { useNavigate } from 'react-router-dom'
+import { Column, ColumnDef, Row } from '@tanstack/react-table'
 import { toast } from 'sonner'
 import { GrTrash } from 'react-icons/gr'
 import { address_topTitleOptions } from '@/modules/contacts/constants'
@@ -38,12 +36,13 @@ import ContactTagsConfig from '@/modules/action/views/contacts/contact-tags/conf
 import AddressField from '@/shared/components/extras/AddressField'
 import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 import { GrDrag } from 'react-icons/gr'
-import Sortable from 'sortablejs'
 import CompanyField from '@/shared/components/extras/CompanyField'
 import IndustriesConfig from '@/modules/action/views/contacts/industries/config'
-import modalTypeIdentification from '@/modules/action/views/contacts/identification-type/ModalIdentificationType'
-import { CompanyAutocomplete } from '@/shared/components/form/base/CompanyAutocomplete'
-
+import { DndTable } from '@/shared/components/table/DndTable'
+import { required } from '@/shared/helpers/validators'
+import BaseAutocomplete from '@/shared/components/form/base/BaseAutocomplete'
+import FormRow from '@/shared/components/form/base/FormRow'
+import BaseTextControlled from '@/shared/components/form/base/BaseTextControlled'
 export function FrmPhoto({ watch, setValue, control, editConfig }: frmElementsProps) {
   return (
     <div className="o_field_widget o_field_image oe_avatar">
@@ -86,8 +85,8 @@ export function FrmTitle({ control, errors, editConfig, watch }: frmElementsProp
           : 'por ejemplo, Alberto Cervantes'
       }
       control={control}
-      multiline={false}
-      rules={{ value: true, message: 'Este campo es requerido' }}
+      multiline={true}
+      rules={required()}
       errors={errors}
       editConfig={{ config: editConfig }}
     />
@@ -102,23 +101,77 @@ export function Subtitle({
   setValue,
   editConfig,
 }: frmElementsProps) {
-  const { formItem } = useAppStore((state) => state)
+  const { formItem, executeFnc } = useAppStore((state) => state)
 
   return (
     <>
       {watch('type') === TypeContactEnum.INDIVIDUAL && (
-        <CompanyAutocomplete
+        <BaseAutocomplete
           control={control}
-          placeholder={'Nombre de la empresa ...'}
           errors={errors}
           setValue={setValue}
+          editConfig={{ config: editConfig }}
           formItem={formItem}
-          editConfig={editConfig}
-          fnc_name={fnc_name || ''}
+          placeholder="Nombre de la empresa ..."
           name={'parent_id'}
-          idField={'parent_id'}
-          nameField={'parent_full_name'}
-          type={TypeContactEnum.COMPANY}
+          label={'parent_full_name'}
+          filters={[[0, 'fequal', 'type', TypeContactEnum.COMPANY]]}
+          allowCreateAndEdit={true}
+          allowSearchMore={true}
+          //añadir para que salgue o no el crear
+          config={{
+            basePath: '/contacts',
+            modalConfig: ContactConfig,
+            modalTitle: 'Empresa',
+            fncName: 'fnc_partner',
+            primaryKey: 'partner_id',
+            createDataBuilder: (value: any) => ({
+              name: value,
+              type: TypeContactEnum.COMPANY,
+              state: StatusContactEnum.UNARCHIVE,
+            }),
+            onCreateAndEditSave: async (getData, helpers, reloadOptions) => {
+              try {
+                const formData = getData() as ContactItem
+                let newContacts = []
+                if (formData.partner_id && formData.contacts) {
+                  newContacts = formData.contacts.map((contact) => {
+                    if (contact.partner_id) return contact
+                    return {
+                      ...contact,
+                      action:
+                        contact.action === ActionTypeEnum.INSERT
+                          ? ActionTypeEnum.INSERT
+                          : contact.action,
+                      parent_id: formData.partner_id,
+                    }
+                  })
+                  formData.contacts = newContacts
+                } else if (formData.contacts) {
+                  newContacts = formData.contacts.filter((contact) => {
+                    return contact.action !== ActionTypeEnum.DELETE
+                  })
+                  formData.contacts = newContacts
+                }
+                const res = await executeFnc(
+                  fnc_name ?? '',
+                  formData.partner_id ? ActionTypeEnum.UPDATE : ActionTypeEnum.INSERT,
+                  formData
+                )
+                setValue('parent_id', res.oj_data.partner_id)
+                setValue('parent_full_name', formData.name)
+                setValue('partner_id_rel', res.oj_data.partner_id, {
+                  shouldDirty: true,
+                })
+                await reloadOptions()
+
+                helpers.close()
+              } catch (error) {
+                toast.error('Error al crear la contacto')
+                console.error(error)
+              }
+            },
+          }}
         />
       )}
     </>
@@ -126,25 +179,9 @@ export function Subtitle({
 }
 
 export function FrmMiddle({ setValue, watch, control, errors, editConfig }: frmElementsProps) {
-  const createOptions = useAppStore((state) => state.createOptions)
   const formItem = useAppStore((state) => state.formItem)
-  const { openDialog, closeDialogWithData, setFrmIsChanged } = useAppStore((state) => state)
-  const [identificationType, setIdentificationType] = useState<
-    { label: string; value: string; hasParents?: string }[]
-  >([])
   const ln3_id = watch('ln3_id')
   const type = watch('type')
-
-  const loadData = useCallback(async () => {
-    if (formItem['identification_type_id']) {
-      setIdentificationType([
-        {
-          label: formItem['identification_type_name'],
-          value: formItem['identification_type_id'],
-        },
-      ])
-    }
-  }, [formItem])
 
   useEffect(() => {
     if (type === TypeContactEnum.COMPANY) {
@@ -154,92 +191,46 @@ export function FrmMiddle({ setValue, watch, control, errors, editConfig }: frmE
     }
   }, [setValue, type])
 
-  const fnc_load_data_identificationType = async () => {
-    const options = await createOptions({
-      fnc_name: 'fnc_partner_identification_type',
-      filters: [{ column: 'state', value: 'A' }],
-      action: 's2',
-    })
-    if (!formItem) {
-      return setIdentificationType(options)
-    }
-    setIdentificationType([...options])
-  }
-  const fnc_search_identificationType = async () => {
-    const dialogId = openDialog({
-      title: 'Buscar: Tipo de identificación',
-      dialogContent: () => (
-        <ModalBase
-          config={modalTypeIdentification}
-          multiple={false}
-          onRowClick={async (option) => {
-            setValue('identification_type_id', option.identification_type_id)
-
-            setFrmIsChanged(true)
-            closeDialogWithData(dialogId, {})
-          }}
-        />
-      ),
-      buttons: [
-        {
-          text: 'Cerrar',
-          type: 'cancel',
-          onClick: () => closeDialogWithData(dialogId, {}),
-        },
-      ],
-    })
-  }
-
   useEffect(() => {
     if (!ln3_id) {
       setValue('zip', null)
     }
   }, [ln3_id, setValue])
 
-  useEffect(() => {
-    if (formItem) {
-      loadData()
-    }
-  }, [formItem, loadData])
-
   return (
     <>
-      <div className="d-sm-contents">
-        <div className="o_cell o_wrap_label">
-          <label className="o_form_label">
-            Número de identificación
-            <Tooltip
-              arrow
-              title="El número registrado de la empresa. Úselo si es diferente al NIF. Debe ser único para todos los contactos del mismo país."
-            >
-              <sup className="text-info p-1">?</sup>
-            </Tooltip>
-          </label>
+      <FormRow
+        label="Número de identificación"
+        infoLabel="El número registrado de la empresa. Úselo si es diferente al NIF. Debe ser único para todos los contactos del mismo país."
+      >
+        <div className="o_field">
+          <BaseAutocomplete
+            name={'identification_type_id'}
+            control={control}
+            errors={errors}
+            placeholder={'Tipo'}
+            editConfig={{ config: editConfig }}
+            setValue={setValue}
+            formItem={formItem}
+            label="identification_type_name"
+            filters={[[0, 'fequal', 'state', ItemStatusTypeEnum.ACTIVE]]}
+            config={{
+              fncName: 'fnc_partner_identification_type',
+              primaryKey: 'identification_type_id',
+            }}
+          />
         </div>
-        <div className="o_cell">
-          <div className="o_field">
-            <AutocompleteControlled
-              name={'identification_type_id'}
-              placeholder={'Tipo'}
-              control={control}
-              errors={errors}
-              editConfig={{ config: editConfig }}
-              options={identificationType}
-              fnc_loadOptions={fnc_load_data_identificationType}
-              loadMoreResults={fnc_search_identificationType}
-            />
-          </div>
-          <div className="o_field">
-            <TextControlled
-              name={'identification_number'}
-              control={control}
-              errors={errors}
-              placeholder={'Número'}
-              editConfig={{ config: editConfig }}
-            />
-          </div>
+        <div className="o_field">
+          <TextControlled
+            name={'identification_number'}
+            control={control}
+            errors={errors}
+            placeholder={'Número'}
+            editConfig={{ config: editConfig }}
+          />
         </div>
-      </div>
+      </FormRow>
+
       <div className="d-sm-contents">
         {type === 'C' ? (
           <div className="o_cell o_wrap_label">
@@ -433,41 +424,26 @@ export function FrmMiddleRight({ setValue, control, errors, watch, editConfig }:
       </BasePopup>
 
       {watch('type') === 'I' && (
-        <div className="d-sm-contents">
-          <div className="o_cell o_wrap_label">
-            <label className="o_form_label">Puesto de trabajo</label>
-          </div>
-          <div className="o_cell">
-            <div className="o_field">
-              <TextControlled
-                name={'workstation'}
-                placeholder={'por ejemplo, director de ventas'}
-                control={control}
-                errors={errors}
-                multiline={true}
-                editConfig={{ config: editConfig }}
-              />
-            </div>
-          </div>
-        </div>
+        <BaseTextControlled
+          name={'workstation'}
+          placeholder={'por ejemplo, director de ventas'}
+          control={control}
+          errors={errors}
+          multiline={true}
+          editConfig={{ config: editConfig }}
+          label="Puesto de trabajo"
+        />
       )}
-      <div className="d-sm-contents">
-        <div className="o_cell o_wrap_label">
-          <label className="o_form_label">Teléfono</label>
-        </div>
-        <div className="o_cell">
-          <div className="o_field">
-            <TextControlled
-              name={'phone'}
-              type="text"
-              control={control}
-              errors={errors}
-              placeholder={''}
-              editConfig={{ config: editConfig }}
-            />
-          </div>
-        </div>
-      </div>
+      <BaseTextControlled
+        name={'phone'}
+        //type="text"
+        control={control}
+        errors={errors}
+        placeholder={''}
+        editConfig={{ config: editConfig }}
+        label="Teléfono"
+      />
+
       {/*
       <div className="d-sm-contents">
         <div className="o_cell o_wrap_label">
@@ -487,38 +463,23 @@ export function FrmMiddleRight({ setValue, control, errors, watch, editConfig }:
         </div>
       </div>
       */}
-      <div className="d-sm-contents">
-        <div className="o_cell o_wrap_label">
-          <label className="o_form_label">Correo electrónico</label>
-        </div>
-        <div className="o_cell">
-          <div className="o_field">
-            <TextControlled
-              name={'email'}
-              control={control}
-              errors={errors}
-              placeholder={''}
-              editConfig={{ config: editConfig }}
-            />
-          </div>
-        </div>
-      </div>
-      <div className="d-sm-contents">
-        <div className="o_cell o_wrap_label">
-          <label className="o_form_label">Sitio web</label>
-        </div>
-        <div className="o_cell">
-          <div className="o_field">
-            <TextControlled
-              name={'website'}
-              control={control}
-              errors={errors}
-              placeholder={'por ejemplo, https://www.system.com'}
-              editConfig={{ config: editConfig }}
-            />
-          </div>
-        </div>
-      </div>
+      <BaseTextControlled
+        name={'email'}
+        control={control}
+        errors={errors}
+        placeholder={''}
+        editConfig={{ config: editConfig }}
+        label="Correo electrónico"
+      />
+
+      <BaseTextControlled
+        name={'website'}
+        control={control}
+        errors={errors}
+        placeholder={'por ejemplo, https://www.system.com'}
+        editConfig={{ config: editConfig }}
+        label="Sitio web"
+      />
 
       {/*
       <div className="d-sm-contents">
@@ -542,33 +503,24 @@ export function FrmMiddleRight({ setValue, control, errors, watch, editConfig }:
       </div>
       */}
 
-      <div className="d-sm-contents">
-        <div className="o_cell o_wrap_label">
-          <label className="o_form_label">Etiquetas</label>
-        </div>
-        <div className="o_cell">
-          <div className="o_field">
-            <MultiSelectObject
-              name={'categories'}
-              control={control}
-              options={tags}
-              errors={errors}
-              placeholder={
-                (watch('categories') || []).length
-                  ? ''
-                  : 'por ejemplo, "Mayorista", "Minorista", ...'
-              }
-              fnc_loadOptions={loadTags}
-              renderTags={fnc_renderTags}
-              fnc_create={fnc_createTag}
-              createOpt={true}
-              searchOpt={true}
-              editConfig={{ config: editConfig }}
-              handleSearchOpt={handleSearchOpt}
-            />
-          </div>
-        </div>
-      </div>
+      <FormRow label="Etiquetas">
+        <MultiSelectObject
+          name={'categories'}
+          control={control}
+          options={tags}
+          errors={errors}
+          placeholder={
+            (watch('categories') || []).length ? '' : 'por ejemplo, "Mayorista", "Minorista", ...'
+          }
+          fnc_loadOptions={loadTags}
+          renderTags={fnc_renderTags}
+          fnc_create={fnc_createTag}
+          createOpt={true}
+          searchOpt={true}
+          editConfig={{ config: editConfig }}
+          handleSearchOpt={handleSearchOpt}
+        />
+      </FormRow>
     </>
   )
 }
@@ -659,19 +611,8 @@ export function FrmTab0({ watch, setValue }: { watch: any; setValue: any }) {
 }
 
 export function FrmTab1({ control, errors, editConfig, watch, setValue }: frmElementsProps) {
-  const createOptions = useAppStore((state) => state.createOptions)
   const formItem = useAppStore((state) => state.formItem)
-  const navigate = useNavigate()
-  const { pathname } = useLocation()
-  const {
-    newAppDialogs,
-    openDialog,
-    setNewAppDialogs,
-    closeDialogWithData,
-    setFrmIsChanged,
-    setBreadcrumb,
-    breadcrumb,
-  } = useAppStore()
+
   // const [Ldps, setLdps] = useState<{ label: string; value: string }[]>([])
 
   // const load_Ldps = async () => {
@@ -682,140 +623,10 @@ export function FrmTab1({ control, errors, editConfig, watch, setValue }: frmEle
   //   )
   // }
 
-  const [Cdps, setCdps] = useState<{ label: string; value: string; hasParents?: string }[]>([])
-  const carga_Cdps = async () => {
-    setCdps(
-      await createOptions({
-        fnc_name: 'fnc_payment_term',
-        filters: [{ column: 'state', value: 'A' }],
-        action: 's2',
-      })
-    )
-  }
-
-  const fnc_search = (value: string) => {
-    const dialogId = openDialog({
-      title: 'Buscar: Término de pago',
-      dialogContent: () => (
-        <ModalBase
-          config={ModalPaymentTermConfig}
-          multiple={false}
-          onRowClick={async (option) => {
-            setValue(value, option.payment_term_id)
-            setFrmIsChanged(true)
-            setNewAppDialogs([])
-          }}
-        />
-      ),
-      buttons: [
-        {
-          text: 'Cerrar',
-          type: 'cancel',
-          onClick: () => {
-            closeDialogWithData(dialogId, null, 'payment_term')
-          },
-        },
-      ],
-    })
-  }
-  const [Cdps_supplier, setCdps_supplier] = useState<
-    { label: string; value: string; hasParents?: string }[]
-  >([])
-  const carga_Cdps_supplier = async () => {
-    setCdps_supplier(
-      await createOptions({
-        fnc_name: 'fnc_payment_term',
-        action: 's2',
-      })
-    )
-  }
-
   // industry - start
-  const [industry, setIndustry] = useState<{ label: string; value: string; hasParents?: string }[]>(
-    []
-  )
-  const fnc_load_data_industry = async () => {
-    const options = await createOptions({
-      fnc_name: 'fnc_partner_industry',
-      filters: [{ column: 'state', value: 'A' }],
-      action: 's2',
-    })
-    if (!formItem) {
-      return setIndustry(options)
-    }
-    setIndustry([...options])
-  }
-  const fnc_navigate_industry = (value: number) => {
-    if (newAppDialogs.length > 0) return
 
-    setBreadcrumb([
-      ...breadcrumb,
-      {
-        title: formItem.name,
-        url: pathname,
-        viewType: ViewTypeEnum.FORM,
-      },
-    ])
-    navigate(`/action/103/detail/${value}`)
-  }
-  const fnc_search_industry = () => {
-    const dialogId = openDialog({
-      title: 'Buscar: Industrias',
-      dialogContent: () => (
-        <ModalBase
-          config={IndustriesConfig}
-          multiple={false}
-          onRowClick={async (option) => {
-            setValue('industry_id', option.industry_id)
-            setFrmIsChanged(true)
-            setNewAppDialogs([])
-          }}
-        />
-      ),
-      buttons: [
-        {
-          text: 'Cerrar',
-          type: 'cancel',
-          onClick: () => {
-            closeDialogWithData(dialogId, null, 'industry_id')
-          },
-        },
-      ],
-    })
-  }
   // industry - end
 
-  const loadData = () => {
-    if (formItem?.['customer_payment_term_id'] || watch('customer_payment_term_id')) {
-      setCdps([
-        {
-          label: watch('customer_payment_term_name') ?? formItem['customer_payment_term_name'],
-          value: watch('customer_payment_term_id') ?? formItem['customer_payment_term_id'],
-        },
-      ])
-    }
-
-    if (formItem?.['supplier_payment_term_id'] || watch('supplier_payment_term_id')) {
-      setCdps_supplier([
-        {
-          label: watch('supplier_payment_term_name') ?? formItem['supplier_payment_term_name'],
-          value: watch('supplier_payment_term_id') ?? formItem['supplier_payment_term_id'],
-        },
-      ])
-    }
-
-    if (formItem?.['industry_id']) {
-      setIndustry([
-        {
-          label: formItem['industry_name'],
-          value: formItem['industry_id'],
-        },
-      ])
-    }
-  }
-  useEffect(() => {
-    loadData()
-  }, [formItem])
   return (
     <>
       <div className="o_group mt-4">
@@ -848,28 +659,26 @@ export function FrmTab1({ control, errors, editConfig, watch, setValue }: frmEle
                 </div>
               </div>
             </div> */}
-
-            <div className="d-sm-contents">
-              <div className="o_cell o_wrap_label">
-                <label className="o_form_label">Término de pago</label>
-              </div>
-              <div className="o_cell">
-                <div className="o_field">
-                  <AutocompleteControlled
-                    name={'customer_payment_term_id'}
-                    placeholder={''}
-                    control={control}
-                    errors={errors}
-                    options={Cdps}
-                    fnc_loadOptions={carga_Cdps}
-                    editConfig={{ config: editConfig }}
-                    loadMoreResults={() => fnc_search('customer_payment_term_id')}
-                    setValue={setValue}
-                    labelName="customer_payment_term_name"
-                  />
-                </div>
-              </div>
-            </div>
+            <FormRow label="Término de pago">
+              <BaseAutocomplete
+                name={'customer_payment_term_id'}
+                control={control}
+                errors={errors}
+                placeholder={''}
+                editConfig={{ config: editConfig }}
+                setValue={setValue}
+                formItem={formItem}
+                label="customer_payment_term_name"
+                filters={[{ column: 'state', value: 'A' }]}
+                allowSearchMore={true}
+                config={{
+                  fncName: 'fnc_payment_term',
+                  primaryKey: 'payment_term_id',
+                  modalConfig: ModalPaymentTermConfig,
+                  modalTitle: 'Término de pago',
+                }}
+              />
+            </FormRow>
 
             {/* <div className="d-sm-contents">
               <div className="o_cell o_wrap_label">
@@ -925,28 +734,26 @@ export function FrmTab1({ control, errors, editConfig, watch, setValue }: frmEle
               </div>
             </div>
             */}
-
-            <div className="d-sm-contents">
-              <div className="o_cell o_wrap_label">
-                <label className="o_form_label">Término de pago</label>
-              </div>
-              <div className="o_cell">
-                <div className="o_field">
-                  <AutocompleteControlled
-                    name={'supplier_payment_term_id'}
-                    labelName="supplier_payment_term_name"
-                    setValue={setValue}
-                    placeholder={''}
-                    control={control}
-                    errors={errors}
-                    options={Cdps_supplier}
-                    fnc_loadOptions={carga_Cdps_supplier}
-                    loadMoreResults={() => fnc_search('supplier_payment_term_id')}
-                    editConfig={{ config: editConfig }}
-                  />
-                </div>
-              </div>
-            </div>
+            <FormRow label="Término de pago">
+              <BaseAutocomplete
+                name={'supplier_payment_term_id'}
+                control={control}
+                errors={errors}
+                placeholder={''}
+                editConfig={{ config: editConfig }}
+                setValue={setValue}
+                formItem={formItem}
+                label="supplier_payment_term_name"
+                filters={[{ column: 'state', value: 'A' }]}
+                allowSearchMore={true}
+                config={{
+                  fncName: 'fnc_payment_term',
+                  primaryKey: 'payment_term_id',
+                  modalConfig: ModalPaymentTermConfig,
+                  modalTitle: 'Término de pago',
+                }}
+              />
+            </FormRow>
           </div>
         </div>
       </div>
@@ -959,22 +766,14 @@ export function FrmTab1({ control, errors, editConfig, watch, setValue }: frmEle
                 Punto de venta
               </div>
             </div>
-            <div className="d-sm-contents">
-              <div className="o_cell o_wrap_label">
-                <label className="o_form_label">Código de barras</label>
-              </div>
-              <div className="o_cell">
-                <div className="o_field">
-                  <TextControlled
-                    name={'barcode'}
-                    control={control}
-                    errors={errors}
-                    placeholder={''}
-                    editConfig={{ config: editConfig }}
-                  />
-                </div>
-              </div>
-            </div>
+            <BaseTextControlled
+              name={'barcode'}
+              control={control}
+              errors={errors}
+              placeholder={''}
+              editConfig={{ config: editConfig }}
+              label="Código de barras"
+            />
           </div>
         </div>
 
@@ -989,22 +788,15 @@ export function FrmTab1({ control, errors, editConfig, watch, setValue }: frmEle
                 Varios
               </div>
             </div>
-            <div className="d-sm-contents">
-              <div className="o_cell o_wrap_label">
-                <label className="o_form_label">Referencia</label>
-              </div>
-              <div className="o_cell">
-                <div className="o_field">
-                  <TextControlled
-                    name={'reference'}
-                    control={control}
-                    errors={errors}
-                    placeholder={''}
-                    editConfig={{ config: editConfig }}
-                  />
-                </div>
-              </div>
-            </div>
+            <BaseTextControlled
+              name={'reference'}
+              control={control}
+              errors={errors}
+              placeholder={''}
+              editConfig={{ config: editConfig }}
+              label="Referencia"
+            />
+
             {
               <CompanyField
                 control={control}
@@ -1015,25 +807,25 @@ export function FrmTab1({ control, errors, editConfig, watch, setValue }: frmEle
               />
             }
 
-            <div className="d-sm-contents">
-              <div className="o_cell o_wrap_label">
-                <label className="o_form_label">Industria</label>
-              </div>
-              <div className="o_cell">
-                <div className="o_field">
-                  <AutocompleteControlled
-                    name={'industry_id'}
-                    control={control}
-                    errors={errors}
-                    editConfig={{ config: editConfig }}
-                    options={industry}
-                    fnc_loadOptions={fnc_load_data_industry}
-                    fnc_enlace={fnc_navigate_industry}
-                    loadMoreResults={fnc_search_industry}
-                  />
-                </div>
-              </div>
-            </div>
+            <FormRow label="Industria">
+              <BaseAutocomplete
+                name={'industry_id'}
+                control={control}
+                errors={errors}
+                editConfig={{ config: editConfig }}
+                setValue={setValue}
+                formItem={formItem}
+                label="industry_name"
+                filters={[{ column: 'state', value: 'A' }]}
+                allowSearchMore={true}
+                config={{
+                  fncName: 'fnc_partner_industry',
+                  primaryKey: 'industry_id',
+                  modalConfig: IndustriesConfig,
+                  basePath: '/action/103/detail',
+                }}
+              />
+            </FormRow>
           </div>
         </div>
         <div className="lg:w-1/2"></div>
@@ -1046,7 +838,6 @@ export const FrmTab2 = ({ setValue, watch, fnc_name }: frmElementsProps) => {
   const {
     formItem,
     frmAction,
-    frmLoading,
     setFrmIsChanged,
     openDialog,
     closeDialogWithData,
@@ -1056,8 +847,7 @@ export const FrmTab2 = ({ setValue, watch, fnc_name }: frmElementsProps) => {
   } = useAppStore()
   const navigate = useNavigate()
   const [data, setData] = useState<AccountBank[]>([])
-  const tableRef = useRef<HTMLTableSectionElement>(null)
-  const sortableRef = useRef<Sortable | null>(null)
+  const [modifyData, setModifyData] = useState<boolean>(false)
 
   const RowDragHandleCell = () => {
     return (
@@ -1068,6 +858,13 @@ export const FrmTab2 = ({ setValue, watch, fnc_name }: frmElementsProps) => {
       </div>
     )
   }
+
+  useEffect(() => {
+    if (modifyData) {
+      setFrmIsChanged(true)
+      setModifyData(false)
+    }
+  }, [modifyData])
   useEffect(() => {
     const dataAccount = watch('bank_accounts')
 
@@ -1082,44 +879,6 @@ export const FrmTab2 = ({ setValue, watch, fnc_name }: frmElementsProps) => {
       setData(watch('bank_accounts') ?? [])
     }
   }, [formItem, setValue, frmAction])
-
-  useEffect(() => {
-    if (tableRef.current) {
-      sortableRef.current = new Sortable(tableRef.current, {
-        animation: 150,
-        handle: '.drag-handle',
-        ghostClass: 'opacity-50',
-        onEnd: (evt) => {
-          const { oldIndex, newIndex } = evt
-          if (
-            typeof oldIndex === 'number' &&
-            typeof newIndex === 'number' &&
-            oldIndex !== newIndex
-          ) {
-            setData((prev) => {
-              const newData = [...prev]
-              const [movedItem] = newData.splice(oldIndex, 1)
-              newData.splice(newIndex, 0, movedItem)
-              return newData.map((item) => ({
-                ...item,
-                action:
-                  item.action === ActionTypeEnum.INSERT
-                    ? ActionTypeEnum.INSERT
-                    : ActionTypeEnum.UPDATE,
-              }))
-            })
-            setFrmIsChanged(true)
-          }
-        },
-      })
-    }
-
-    return () => {
-      if (sortableRef.current) {
-        sortableRef.current.destroy()
-      }
-    }
-  }, [data])
 
   const openModal = async (rowData: AccountBank | null = null) => {
     if (!watch('name')) return toast.error('Proporcione un nombre al contacto')
@@ -1261,6 +1020,7 @@ export const FrmTab2 = ({ setValue, watch, fnc_name }: frmElementsProps) => {
       {
         header: 'Número',
         accessorKey: 'number',
+        size: 100,
         cell: ({ row }: { row: Row<any>; column: Column<any> }) => {
           return (
             <div className="w-full h-full" onClick={() => editBank({ rowData: row.original })}>
@@ -1306,17 +1066,9 @@ export const FrmTab2 = ({ setValue, watch, fnc_name }: frmElementsProps) => {
     []
   )
 
-  const dataFiltered = useMemo(() => {
-    return data.filter((item) => item.action !== ActionTypeEnum.DELETE)
-  }, [data])
-  const table = useReactTable({
-    data: dataFiltered,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  })
-
   return (
     <>
+      {/*
       <div className="o_group mt-4">
         <div className="lg:w-1/2">
           <div className="o_inner_group grid">
@@ -1337,6 +1089,7 @@ export const FrmTab2 = ({ setValue, watch, fnc_name }: frmElementsProps) => {
         </div>
         <div className="lg:w-1/2"></div>
       </div>
+      */}
 
       <div className="o_group mt-4">
         <div className="lg:w-1/2">
@@ -1349,6 +1102,58 @@ export const FrmTab2 = ({ setValue, watch, fnc_name }: frmElementsProps) => {
             </div>
 
             {/* <div className="d-sm-contents"> */}
+            <DndTable
+              data={data}
+              setData={setData}
+              columns={columns}
+              id="bank_account_id"
+              modifyData={modifyData}
+              setModifyData={setModifyData}
+            >
+              {(table) => (
+                <tr
+                  style={{ height: '42px' }}
+                  className="group list-tr options border-gray-300 hover:bg-gray-200 border-t-black border-t-[1px]"
+                >
+                  <td></td>
+                  <td
+                    colSpan={
+                      table.getRowModel().rows[0]
+                        ? table.getRowModel().rows[0]?.getVisibleCells().length - 1
+                        : 10
+                    }
+                    className="w-full"
+                  >
+                    <div className="flex gap-4">
+                      <button
+                        type="button"
+                        className="text-[#017E84]"
+                        onClick={() =>
+                          openModal({
+                            bank_id: null,
+                            bank_account_id: crypto.randomUUID(),
+                            company_id: null,
+                            partner_id: null,
+                            currency_id: null,
+                            state: StatusContactEnum.UNARCHIVE,
+                            company_name: '',
+                            name: '',
+                            currency_name: '',
+                            bank_name: '',
+                            number: '',
+                            action: ActionTypeEnum.INSERT,
+                            disabled: false,
+                          })
+                        }
+                      >
+                        Agregar línea
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </DndTable>
+            {/*
             <div className="">
               <div className="">
                 <table className="w-full">
@@ -1408,8 +1213,8 @@ export const FrmTab2 = ({ setValue, watch, fnc_name }: frmElementsProps) => {
                   </button>
                 </div>
               </div>
-              {/* <div className="col-span-1"></div> */}
             </div>
+            */}
             {/* </div> */}
           </div>
         </div>

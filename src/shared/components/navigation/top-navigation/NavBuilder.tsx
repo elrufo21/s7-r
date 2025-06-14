@@ -8,6 +8,7 @@ import { RiArrowRightSLine } from 'react-icons/ri'
 import { ModulesEnum } from '@/shared/shared.types'
 import { MenuItemType } from '../navigation.types'
 import { useForm } from 'react-hook-form'
+import useUserStore from '@/store/persist/persistStore'
 
 const NavMenuList = lazy(
   () => import('@/shared/components/navigation/top-navigation/components/NavMenuList')
@@ -31,6 +32,7 @@ const NavBuilder: FC = () => {
     setDinamicModule,
     breadcrumb,
   } = useAppStore((state) => state)
+  const { setAditionalFilters } = useUserStore()
   const { default_values } = config
   const { watch } = useForm<any>({ defaultValues: default_values })
   const { module } = config
@@ -43,13 +45,13 @@ const NavBuilder: FC = () => {
     setListCurrentPage(1)
     setKanbanCurrentPage(1)
     setActualCurrentPage(1)
+    setAditionalFilters([])
     setPreviousDataBeforeMenu({
       formItem: watch(),
       breadcrumb: breadcrumb,
       url: pathname,
     })
   }
-  console.log('navigation', navigation, module, pathname)
 
   const backToPreviousData = () => {
     const { url } = previousDataBeforeMenu
@@ -100,7 +102,7 @@ const NavBuilder: FC = () => {
                   setFiltersLocal([])
                   setViewTypeFromConfig(true)
                   setSettingsBreadcrumb(false)
-
+                  setAditionalFilters([])
                   if (subSubItem.path) navigate(subSubItem.path)
                 }}
               >
@@ -117,7 +119,7 @@ const NavBuilder: FC = () => {
             setFiltersLocal([])
             setViewTypeFromConfig(true)
             setSettingsBreadcrumb(false)
-
+            setAditionalFilters([])
             if (subItem.path) {
               navigate(subItem.path)
             }
@@ -162,6 +164,7 @@ const NavBuilder: FC = () => {
               setFiltersLocal([])
               setViewTypeFromConfig(true)
               backToPreviousData()
+              setAditionalFilters([])
             }}
           >
             <RiArrowRightSLine

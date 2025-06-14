@@ -7,7 +7,7 @@ import { useParams } from 'react-router-dom'
 
 export const ActionShow = () => {
   const { idAction } = useParams()
-  const { filters } = useUserStore()
+  const { filters, aditionalFilters } = useUserStore()
 
   const {
     setInitialData,
@@ -24,7 +24,7 @@ export const ActionShow = () => {
 
   useEffect(() => {}, [])
   const { data, isLoading } = useModuleList({
-    filters,
+    filters: [...filters, ...aditionalFilters],
     fncName: config.fnc_name,
     module: config.module,
     id: idAction ?? '',

@@ -1,7 +1,6 @@
 import { fncExecute } from '@/data'
 import { toast } from 'sonner'
 import { AppStoreProps, DataSliceState, SetState } from '@/store/store.types'
-import { ItemStatusTypeEnum } from '@/shared/shared.types'
 import { OptionsType } from '@/shared/ui/inputs/input.types'
 
 const createDataSlice = (
@@ -10,6 +9,8 @@ const createDataSlice = (
 ): DataSliceState => ({
   dataError: null,
   attributes: [],
+  stats: [],
+  setStats: (stats) => set({ stats }),
   setAttributes: (attributes) => set({ attributes }),
   values: [],
   setValues: (values) => set({ values }),
@@ -53,10 +54,7 @@ const createDataSlice = (
       const res = await fncExecute({
         caccion: action,
         fnc_name,
-        form:
-          action === 's2'
-            ? [...params, { column: 'state', value: ItemStatusTypeEnum.ACTIVE }]
-            : params,
+        form: action === 's2' ? [...params] : params,
       })
 
       const { data, error } = res

@@ -1,5 +1,4 @@
 import type { CartItem as CartItemType } from '../types'
-import { useCart } from '../context/CartContext'
 
 interface CartItemProps {
   item: CartItemType
@@ -14,10 +13,7 @@ export default function CartItem({
   isSelected = false,
   onSelect,
   maxDecimals = 2,
-  btnDelete = false,
 }: CartItemProps) {
-  const { removeFromCart } = useCart()
-
   return (
     <div
       className={`py-2 px-2 flex items-center justify-between hover:bg-gray-50 cursor-pointer ${
@@ -36,14 +32,14 @@ export default function CartItem({
           <div className="text-gray-900">{item.name}</div>
           {/* <div className="text-gray-500 text-sm">- Verde, L</div> */}
           <div>
-            {`S/ ${item.sale_price ? Number.parseFloat(item.sale_price).toFixed(maxDecimals) : '0.00'} x ${item.uom_name}`}
+            {`S/ ${item.price_unit ? Number.parseFloat(item.price_unit).toFixed(maxDecimals) : '0.00'} x ${item.uom_name}`}
           </div>
         </div>
       </div>
       <div className="flex items-center space-x-3">
         <div className="text-right">
           {/* <div className="font-medium"> */}
-          <div className="c1">{(item.sale_price * item.quantity).toFixed(maxDecimals)}</div>
+          <div className="c1">{(item.price_unit * item.quantity).toFixed(maxDecimals)}</div>
           {/*           
           {btnDelete && (
             <button

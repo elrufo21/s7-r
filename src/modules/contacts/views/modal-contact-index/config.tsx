@@ -30,7 +30,6 @@ const ModalContactIndexConfig: FormConfig = {
   item_url: '',
   module_url: '',
   visibility_columns: {},
-
   fnc_name: 'fnc_partner',
   fnc_valid: (data) => {
     if (data['type'] === 'C') {
@@ -162,6 +161,7 @@ const ModalContactIndexConfig: FormConfig = {
           key_db: 'type',
           value: 'C',
           type: 'check',
+          default: true,
         },
       ],
     },

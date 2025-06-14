@@ -25,7 +25,7 @@ export const useSearch = () => {
 }
 
 export const SearchProvider = ({ children }: { children: ReactNode }) => {
-  const [screen, setScreen] = useState('product')
+  const [screen, setScreen] = useState('products')
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [products, setProducts] = useState<Product[]>([])

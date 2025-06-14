@@ -78,7 +78,7 @@ const ProductsCategoryConfig: FormConfig = {
 
   filters_columns: [
     {
-      dsc: 'Categorías de productos',
+      dsc: 'Categoría',
       key: 'name',
       default: true,
     },

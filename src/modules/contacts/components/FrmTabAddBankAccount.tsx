@@ -2,14 +2,14 @@ import { FrmBaseDialog } from '@/shared/components/core'
 import useAppStore from '@/store/app/appStore'
 import ModalAccountBankConfig from '@/modules/contacts/views/modal-account-bank/config'
 import { ActionTypeEnum } from '@/shared/shared.types'
-import { Column, ColumnDef, flexRender, Row } from '@tanstack/react-table'
+import { Column, ColumnDef, Row } from '@tanstack/react-table'
 import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 import { FaRegTrashAlt } from 'react-icons/fa'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AccountBank } from '../contacts.types'
 import { GrDrag } from 'react-icons/gr'
 import { toast } from 'sonner'
-import Sortable from 'sortablejs'
+import { DndTable } from '@/shared/components/table/DndTable'
 
 interface FrmTabAddBankAccountProps {
   watch: any
@@ -24,12 +24,13 @@ export function FrmTabAddBankAccount({
   idDialog,
   setValue,
 }: FrmTabAddBankAccountProps) {
-  const [data, setData] = useState([])
-  const [wasCreated] = useState(false)
-  const tableRef = useRef<HTMLTableSectionElement>(null)
-  const sortableRef = useRef<Sortable | null>(null)
+  const [modifyData, setModifyData] = useState(false)
+  const [data, setData] = useState<AccountBank[]>([])
+  //const [wasCreated] = useState(false)
+  //const tableRef = useRef<HTMLTableSectionElement>(null)
+  //const sortableRef = useRef<Sortable | null>(null)
 
-  const { frmLoading, openDialog, closeDialogWithData, newAppDialogs, executeFnc } = useAppStore(
+  const { openDialog, closeDialogWithData, newAppDialogs, executeFnc } = useAppStore(
     (state) => state
   )
 
@@ -196,7 +197,7 @@ export function FrmTabAddBankAccount({
     ],
     []
   )
-
+  /*
   useEffect(() => {
     if (tableRef.current) {
       sortableRef.current = new Sortable(tableRef.current, {
@@ -229,12 +230,17 @@ export function FrmTabAddBankAccount({
       }
     }
   }, [data])
+*/
   useEffect(() => {
-    setData(watch('bank_accounts')?.filter((item) => item.action !== ActionTypeEnum.DELETE) ?? [])
+    setData(
+      watch('bank_accounts')?.filter(
+        (item: AccountBank) => item.action !== ActionTypeEnum.DELETE
+      ) ?? []
+    )
   }, [newAppDialogs, watch('bank_accounts')])
 
   return (
-    <div className="grid !grid-cols-3 gap-4">
+    /*<div className="grid !grid-cols-3 gap-4">
       <div className="col-span-2">
         <table className="w-full">
           <thead>
@@ -295,6 +301,57 @@ export function FrmTabAddBankAccount({
         </div>
       </div>
       <div className="col-span-1"></div>
-    </div>
+    </div>*/
+    <DndTable
+      data={data}
+      setData={setData}
+      columns={columns}
+      id="attribute_id"
+      modifyData={modifyData}
+      setModifyData={setModifyData}
+    >
+      {(table) => (
+        <tr
+          style={{ height: '42px' }}
+          className="group list-tr options border-gray-300 hover:bg-gray-200 border-t-black border-t-[1px]"
+        >
+          <td></td>
+          <td
+            colSpan={
+              table.getRowModel().rows[0]
+                ? table.getRowModel().rows[0]?.getVisibleCells().length - 1
+                : 10
+            }
+            className="w-full"
+          >
+            <div className="flex gap-4">
+              <button
+                type="button"
+                className="text-[#017e84] hover:text-[#017e84]/80"
+                onClick={() =>
+                  handleClick({
+                    bank_id: null,
+                    bank_account_id: null,
+                    company_id: null,
+                    partner_id: null,
+                    currency_id: null,
+                    state: StatusContactEnum.UNARCHIVE,
+                    company_name: '',
+                    name: '',
+                    currency_name: '',
+                    bank_name: '',
+                    number: '',
+                    action: ActionTypeEnum.INSERT,
+                    disabled: false,
+                  })
+                }
+              >
+                Agregar línea
+              </button>
+            </div>
+          </td>
+        </tr>
+      )}
+    </DndTable>
   )
 }

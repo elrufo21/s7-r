@@ -9,11 +9,7 @@ import {
 } from '@/shared/ui'
 import { frmElementsProps } from '@/shared/shared.types'
 import CompanyField from '@/shared/components/extras/CompanyField'
-
-const required = {
-  required: { value: true, message: 'Este campo es requerido' },
-}
-
+import { required } from '@/shared/helpers/Validators'
 export function FrmTitle({ control, errors, editConfig }: frmElementsProps) {
   const style = {
     fontSize: 26,
@@ -25,7 +21,7 @@ export function FrmTitle({ control, errors, editConfig }: frmElementsProps) {
       <TextControlled
         name={'name'}
         control={control}
-        rules={required}
+        rules={required()}
         errors={errors}
         placeholder={'por ejemplo, Alberto Cervantes'}
         style={style}
@@ -54,7 +50,7 @@ export function FrmMiddle({ control, errors, editConfig }: frmElementsProps) {
             <TextControlled
               name={'name'}
               control={control}
-              rules={required}
+              rules={required()}
               errors={errors}
               placeholder={''}
               editConfig={{ config: editConfig }}
@@ -321,7 +317,7 @@ export function FrmTab0({ control, errors, editConfig, setValue, watch }: frmEle
                     control={control}
                     errors={errors}
                     editConfig={{ config: editConfig }}
-                    rules={required}
+                    rules={required()}
                     enlace={true}
                     options={tax_group}
                     fnc_loadOptions={fnc_load_data_tax_group}
@@ -336,7 +332,7 @@ export function FrmTab0({ control, errors, editConfig, setValue, watch }: frmEle
                     name={'tax_group_id'}
                     placeholder={''}
                     control={control}
-                    rules={required}
+                    rules={required()}
                     errors={errors}
                     options={taxGroup || []}
                     

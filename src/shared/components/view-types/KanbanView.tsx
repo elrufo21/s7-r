@@ -18,11 +18,11 @@ export const KanbanView = ({ config }: KanbanViewProps) => {
 
   const fnc_name = config.fnc_name
   const idRow = config.grid.idRow as keyof any
-
   const viewItem = async (item: any) => {
     setDataFormShow(dataShow)
     navigate(`${config.item_url}/${item?.[idRow]}`)
   }
+
   if (fnc_name === 'fnc_point_of_sale')
     return (
       <div className="oe_kanban_card flex">
@@ -96,10 +96,10 @@ export const KanbanView = ({ config }: KanbanViewProps) => {
           .map((item, index: number) => (
             <KanbanBox item={item} index={index} fnc={viewItem} key={index} fnc_name={fnc_name} />
           ))}
-      {Array.from({ length: 5 }).map((_, index) => (
+      {Array.from({ length: fnc_name === 'fnc_journal' ? 2 : 5 }).map((_, index) => (
         <div
           key={index}
-          className="o_kanban_record o_kanban_ghost flex-grow-1 flex-md-shrink-1 flex-shrink-0 my-0"
+          className="o_kanban_record   o_kanban_ghost flex-grow-1 flex-md-shrink-1 flex-shrink-0 my-0"
         ></div>
       ))}
     </>

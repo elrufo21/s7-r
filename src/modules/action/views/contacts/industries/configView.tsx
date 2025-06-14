@@ -1,9 +1,6 @@
 import { TextControlled } from '@/shared/ui'
 import { frmElementsProps } from '@/shared/shared.types'
-
-const required = {
-  required: { value: true, message: 'Este campo es requerido' },
-}
+import { required } from '@/shared/helpers/Validators'
 
 export function FrmMiddle({ control, errors, editConfig }: frmElementsProps) {
   return (
@@ -18,7 +15,7 @@ export function FrmMiddle({ control, errors, editConfig }: frmElementsProps) {
               name={'name'}
               placeholder={'por ejemplo, "Agricultura", "Construcción", "Minería", ...'}
               control={control}
-              rules={required}
+              rules={required()}
               errors={errors}
               editConfig={{ config: editConfig }}
             />

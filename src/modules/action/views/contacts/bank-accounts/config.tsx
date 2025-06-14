@@ -49,6 +49,11 @@ const BankAccountsConfig: FormConfig = {
           align: 'left',
         },
         {
+          header: 'Titular de la cuenta',
+          accessorKey: 'partner_name',
+          size: 300,
+        },
+        {
           header: 'Banco',
           accessorKey: 'bank_name',
           size: 350,
@@ -57,12 +62,6 @@ const BankAccountsConfig: FormConfig = {
           header: 'Empresa',
           accessorKey: 'company_name',
           size: 270,
-        },
-
-        {
-          header: 'Titular de la cuenta',
-          accessorKey: 'partner_name',
-          size: 300,
         },
       ],
     },
