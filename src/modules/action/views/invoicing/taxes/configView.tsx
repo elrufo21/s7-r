@@ -9,7 +9,7 @@ import {
 } from '@/shared/ui'
 import { frmElementsProps } from '@/shared/shared.types'
 import CompanyField from '@/shared/components/extras/CompanyField'
-import { required } from '@/shared/helpers/Validators'
+import { required } from '@/shared/helpers/validators'
 export function FrmTitle({ control, errors, editConfig }: frmElementsProps) {
   const style = {
     fontSize: 26,
