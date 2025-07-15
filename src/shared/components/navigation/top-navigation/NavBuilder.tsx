@@ -9,6 +9,7 @@ import { ModulesEnum } from '@/shared/shared.types'
 import { MenuItemType } from '../navigation.types'
 import { useForm } from 'react-hook-form'
 import useUserStore from '@/store/persist/persistStore'
+import { FrmBaseDialog } from '../../core'
 
 const NavMenuList = lazy(
   () => import('@/shared/components/navigation/top-navigation/components/NavMenuList')
@@ -26,17 +27,18 @@ const NavBuilder: FC = () => {
     setActualCurrentPage,
     setFiltersLocal,
     setSearchFiltersLabel,
-    setSettingsBreadcrumb,
     previousDataBeforeMenu,
     setPreviousDataBeforeMenu,
     setDinamicModule,
     breadcrumb,
+    setBreadcrumb,
   } = useAppStore((state) => state)
   const { setAditionalFilters } = useUserStore()
   const { default_values } = config
   const { watch } = useForm<any>({ defaultValues: default_values })
   const { module } = config
   const navigation = pathname === '/app' ? ModulesEnum.BASE : navigationList[module]
+  const { openDialog, closeDialogWithData } = useAppStore()
   const resetView = () => {
     setViewTypeFromConfig(true)
     setFiltersLocal([])
@@ -46,6 +48,7 @@ const NavBuilder: FC = () => {
     setKanbanCurrentPage(1)
     setActualCurrentPage(1)
     setAditionalFilters([])
+    setBreadcrumb([])
     setPreviousDataBeforeMenu({
       formItem: watch(),
       breadcrumb: breadcrumb,
@@ -76,7 +79,6 @@ const NavBuilder: FC = () => {
           disableElevation
           onClick={() => {
             resetView()
-            setSettingsBreadcrumb(false)
             if (item.path) navigate(item.path)
           }}
         >
@@ -99,11 +101,36 @@ const NavBuilder: FC = () => {
                 className="MenuItem_N2"
                 key={`${subSubItem.key}-${ind}`}
                 onClick={() => {
-                  setFiltersLocal([])
-                  setViewTypeFromConfig(true)
-                  setSettingsBreadcrumb(false)
-                  setAditionalFilters([])
-                  if (subSubItem.path) navigate(subSubItem.path)
+                  if (subSubItem.openAsModal) {
+                    const dialogId = openDialog({
+                      title: subSubItem.title,
+                      dialogContent: () =>
+                        subSubItem.modalConfig?.config ? (
+                          <FrmBaseDialog config={subSubItem.modalConfig.config} />
+                        ) : (
+                          <div>No hay configuración disponible</div>
+                        ),
+                      buttons: [
+                        // Botones personalizados del modalConfig (si existen)
+                        ...(subSubItem.modalConfig?.customButtons || []).map((button: any) => ({
+                          text: button.text,
+                          type: button.type,
+                          onClick: () => button.onClick(dialogId, closeDialogWithData),
+                        })),
+                        // Botón cerrar siempre presente
+                        {
+                          text: 'Cerrar',
+                          type: 'cancel',
+                          onClick: () => closeDialogWithData(dialogId, {}),
+                        },
+                      ],
+                    })
+                  } else {
+                    setFiltersLocal([])
+                    setViewTypeFromConfig(true)
+                    setAditionalFilters([])
+                    if (subSubItem.path) navigate(subSubItem.path)
+                  }
                 }}
               >
                 <ListItemText>{subSubItem.title}</ListItemText>
@@ -116,12 +143,30 @@ const NavBuilder: FC = () => {
         <MenuItem
           key={subItem.key}
           onClick={() => {
-            setFiltersLocal([])
-            setViewTypeFromConfig(true)
-            setSettingsBreadcrumb(false)
-            setAditionalFilters([])
-            if (subItem.path) {
-              navigate(subItem.path)
+            if (subItem.openAsModal) {
+              const dialogId = openDialog({
+                title: subItem.title,
+                dialogContent: () => <FrmBaseDialog config={subItem.modalConfig?.config} />,
+                buttons: [
+                  ...(subItem.modalConfig?.customButtons || []).map((button: any) => ({
+                    text: button.text,
+                    type: button.type,
+                    onClick: () => button.onClick(dialogId, closeDialogWithData),
+                  })),
+                  {
+                    text: 'Cerrar',
+                    type: 'cancel',
+                    onClick: () => closeDialogWithData(dialogId, {}),
+                  },
+                ],
+              })
+            } else {
+              setFiltersLocal([])
+              setViewTypeFromConfig(true)
+              setAditionalFilters([])
+              if (subItem.path) {
+                navigate(subItem.path)
+              }
             }
           }}
         >
@@ -152,9 +197,10 @@ const NavBuilder: FC = () => {
             />
             <span className="o_menu_brand d-none d-md-flex ms-3 pe-0">{navigation.title}</span>
           </Link>
-          <div className="mx-2">
-            <div className="hidden md:flex items-center text-sm">{renderNavigationItems()}</div>
-          </div>
+          {/* <div className="mx-2"> */}
+          {/* <div className="hidden md:flex items-center text-sm">{renderNavigationItems()}</div> */}
+          <div className="flex">{renderNavigationItems()}</div>
+          {/* </div> */}
         </>
       ) : (
         appShowPrevView && (

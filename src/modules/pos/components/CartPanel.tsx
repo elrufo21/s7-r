@@ -1,16 +1,18 @@
 import { useState, useEffect, useRef } from 'react'
 import contactsConfig from '../views/contact-index/config'
 import CartItem from './CartItem'
-import { Operation, useCalculator } from '../context/CalculatorContext'
 import clientConfig from '@/modules/contacts/views/contact-index/config'
 import { HiOutlineBackspace } from 'react-icons/hi2'
 import useAppStore from '@/store/app/appStore'
 import { ModalBase } from '@/shared/components/modals/ModalBase'
 import { CustomHeader } from './CustomHeader'
 import { FrmBaseDialog } from '@/shared/components/core'
-import { ActionTypeEnum } from '@/shared/shared.types'
+import { ActionTypeEnum, ViewTypeEnum } from '@/shared/shared.types'
 import noteConfig from '../views/notes/config'
 import { Product } from '../types'
+import { Operation } from '../types'
+
+import MoreOptionsModalConfig from '../views/modal-more-options/config'
 
 export default function CartPanel() {
   const {
@@ -29,12 +31,22 @@ export default function CartPanel() {
     setSelectedItem,
     setScreen,
     screen,
-    changeToPayment,
+    changeToPaymentLocal,
+    finalCustomer,
+    setFinalCustomer,
+    setHandleChange,
+    operation,
+    setOperation,
+    clearDisplay,
+    addDigit,
+    setBackToProducts,
+    backToProducts,
+    defaultPosSessionData,
   } = useAppStore()
 
   const [cart, setCart] = useState<Product[]>([])
-  const [finalCustomer, setFinalCustomer] = useState<any>({})
-  const { operation, setOperation, clearDisplay, addDigit } = useCalculator()
+  // const [finalCustomer, setFinalCustomer] = useState<any>({})
+
   const [localPrice, setLocalPrice] = useState<string>('')
 
   const [total, setTotal] = useState<number | string>()
@@ -43,12 +55,20 @@ export default function CartPanel() {
   const finalCustomerRef = useRef(finalCustomer)
 
   useEffect(() => {
-    const pos_Status = orderData?.find((item) => item?.move_id === selectedOrder)?.pos_status
-    if (pos_Status === 'P') setScreen('payment')
+    setOperation(Operation.QUANTITY)
+    setDecimalCount(0)
+    setIsDecimalMode(false)
+    setShouldReplaceValue(false)
+    setLocalValue('')
+  }, [selectedItem])
+
+  useEffect(() => {
+    const pos_Status = orderData?.find((item) => item?.order_id === selectedOrder)?.pos_status
+    if (pos_Status === 'P' && backToProducts === false) setScreen('payment')
     setCart(
       orderData
-        ?.find((item) => item.move_id === selectedOrder)
-        ?.move_lines.filter((item: any) => item.action !== ActionTypeEnum.DELETE) || []
+        ?.find((item) => item.order_id === selectedOrder)
+        ?.lines?.filter((item: any) => item.action !== ActionTypeEnum.DELETE) || []
     )
 
     // setLocalValue(cart?.find((item) => item.product_id === selectedItem)?.quantity.toString() || '')
@@ -60,28 +80,33 @@ export default function CartPanel() {
   useEffect(() => {
     setIsChange(true)
   }, [screen, selectedOrder])
-
   useEffect(() => {
+    const currentOrder = orderData.find((item) => item.order_id === selectedOrder)
+    const lines = currentOrder?.lines || []
+    setSelectedItem(lines[lines.length - 1]?.product_id)
+  }, [selectedOrder])
+  useEffect(() => {
+    setFinalCustomer({
+      partner_id:
+        orderData.find((item) => item.order_id === selectedOrder)?.partner_id ||
+        defaultPosSessionData.partner_id,
+      name:
+        orderData.find((item) => item.order_id === selectedOrder)?.partner_name ||
+        defaultPosSessionData.name,
+    })
     if (is_change) {
-      setSelectedItem(cart[cart.length - 1]?.product_id)
-
-      if (orderData.find((item) => item.move_id === selectedOrder)?.partner_id) {
-        setFinalCustomer({
-          partner_id: orderData.find((item) => item.move_id === selectedOrder)?.partner_id,
-          name: orderData.find((item) => item.move_id === selectedOrder)?.partner_name,
-        })
-      } else {
-        setFinalCustomer({
-          partner_id: 65651,
-          name: 'Empresa CONTRATISTAS',
-        })
+      if (orderData.find((item) => item.order_id === selectedOrder)?.partner_id) {
+        /* setFinalCustomer({
+          partner_id: orderData.find((item) => item.order_id === selectedOrder)?.partner_id,
+          name: orderData.find((item) => item.order_id === selectedOrder)?.partner_name,
+        })*/
       }
-      if (orderData?.find((item) => item?.move_id === selectedOrder)?.pos_status === 'P')
-        setScreen('payment')
+      if (orderData?.find((item) => item?.order_id === selectedOrder)?.pos_status === 'Y')
+        // setScreen('payment')
 
-      setIsChange(false)
+        setIsChange(false)
     }
-  }, [cart, is_change])
+  }, [is_change, orderData, selectedOrder])
 
   const fetchClients = async () => {
     try {
@@ -162,56 +187,42 @@ export default function CartPanel() {
     setTotal(getTotalPriceByOrder(selectedOrder).toFixed(MAX_DECIMALS))
   }, [cart])
 
-  // Estado para mantener el valor numérico actual que estamos construyendo
   const [localValue, setLocalValue] = useState('')
-
-  // Estado para controlar si el próximo número debe reemplazar o concatenarse
   const [shouldReplaceValue, setShouldReplaceValue] = useState(false)
-
-  // Estado para controlar si estamos en modo decimal
   const [isDecimalMode, setIsDecimalMode] = useState(false)
-
-  // Estado para contar los decimales ingresados
   const [decimalCount, setDecimalCount] = useState(0)
-
   const MAX_DECIMALS = 2
 
-  const handleDecimalClick = () => {
-    if (selectedItem) {
-      if (operation === Operation.QUANTITY) {
-        // No permitir múltiples puntos decimales
-        if (localValue.includes('.')) return
+  const updateValue = (value: string) => {
+    if (!selectedItem) return
 
-        // Si el valor está vacío, agregar '0.' en lugar de solo '.'
-        const newValue = localValue === '' ? '0.' : localValue + '.'
-        setLocalValue(newValue)
-        setIsDecimalMode(true)
-        setDecimalCount(0)
+    const isPrice = operation === Operation.PRICE
+    const setter = isPrice ? setLocalPrice : setLocalValue
+    const updateStore = isPrice ? setProductPriceInOrder : setProductQuantityInOrder
+    const parser = parseFloat
+    setter(value)
 
-        clearDisplay()
-        for (const digit of newValue) {
-          addDigit(digit)
-        }
-
-        setProductQuantityInOrder(selectedOrder, selectedItem, parseInt(newValue))
-      } else if (operation === Operation.PRICE) {
-        // No permitir múltiples puntos decimales
-        if (localPrice.includes('.')) return
-
-        // Si el precio está vacío, agregar '0.' en lugar de solo '.'
-        const newValue = localPrice === '' ? '0.' : localPrice + '.'
-        setLocalPrice(newValue)
-        setIsDecimalMode(true)
-        setDecimalCount(0)
-
-        clearDisplay()
-        for (const digit of newValue) {
-          addDigit(digit)
-        }
-
-        setProductPriceInOrder(selectedOrder, selectedItem, parseFloat(newValue))
-      }
+    clearDisplay()
+    for (const digit of value) {
+      addDigit(digit)
     }
+
+    setHandleChange(true)
+    updateStore(selectedOrder, selectedItem, parser(value) || 0)
+  }
+
+  const handleDecimalClick = () => {
+    if (!selectedItem) return
+    const isPrice = operation === Operation.PRICE
+    const currentValue = isPrice ? localPrice : localValue
+    if (currentValue.includes('.')) return
+
+    const newValue = currentValue === '' ? '0.' : currentValue + '.'
+
+    updateValue(newValue)
+
+    setIsDecimalMode(true)
+    setDecimalCount(0)
   }
   const fnc_create_customer = () => {
     let getData = () => ({})
@@ -276,152 +287,84 @@ export default function CartPanel() {
         />
       ),
       customHeader: <CustomHeader fnc_create_button={fnc_create_customer} />,
+      buttons: [
+        {
+          text: 'Descartar',
+          type: 'confirm',
+          onClick: () => {
+            setFinalCustomer({
+              partner_id: defaultPosSessionData.partner_id,
+              partner_name: defaultPosSessionData.name,
+            })
+            closeDialogWithData(dialogId, {})
+          },
+        },
+      ],
     })
   }
 
   const handleCalculatorClick = (number: number) => {
-    if (selectedItem) {
-      if (operation === Operation.QUANTITY) {
-        if (shouldReplaceValue) {
-          const newValue = number.toString()
-          setLocalValue(newValue)
-          setIsDecimalMode(false)
-          setDecimalCount(0)
+    if (!selectedItem) return
 
-          clearDisplay()
-          addDigit(newValue)
+    const isPrice = operation === Operation.PRICE
+    const currentValue = isPrice ? localPrice : localValue
 
-          setProductQuantityInOrder(selectedOrder, selectedItem, parseInt(newValue))
+    if (shouldReplaceValue) {
+      const newValue = number.toString()
+      updateValue(newValue)
+      setIsDecimalMode(false)
+      setDecimalCount(0)
+      setShouldReplaceValue(false)
+    } else {
+      if (isDecimalMode && decimalCount >= MAX_DECIMALS) {
+        return
+      }
 
-          setShouldReplaceValue(false)
-        } else {
-          // Si estamos en modo decimal, verificar el límite de decimales
-          if (isDecimalMode && decimalCount >= MAX_DECIMALS) {
-            return
-          }
-
-          const newValue = localValue + number.toString()
-          setLocalValue(newValue)
-          if (isDecimalMode) {
-            setDecimalCount((prev) => prev + 1)
-          }
-
-          clearDisplay()
-          for (const digit of newValue) {
-            addDigit(digit)
-          }
-          setProductQuantityInOrder(selectedOrder, selectedItem, parseInt(newValue))
-        }
-      } else if (operation === Operation.PRICE) {
-        // Si estamos en modo decimal, verificar el límite de decimales
-        if (isDecimalMode && decimalCount >= MAX_DECIMALS) {
-          return
-        }
-        const newValue = localPrice + number.toString()
-        setLocalPrice(newValue)
-
-        if (isDecimalMode) {
-          setDecimalCount((prev) => prev + 1)
-        }
-        clearDisplay()
-        for (const digit of newValue) {
-          addDigit(digit)
-        }
-        setProductPriceInOrder(selectedOrder, selectedItem, parseFloat(newValue))
+      const newValue = currentValue + number.toString()
+      updateValue(newValue)
+      if (isDecimalMode) {
+        setDecimalCount((prev) => prev + 1)
       }
     }
   }
+
   const deleteLastDigit = () => {
-    if (selectedItem) {
-      if (operation === Operation.QUANTITY) {
-        let newValue = localValue.slice(0, -1)
+    if (!selectedItem) return
 
-        // Si el valor es '0', eliminar el producto
-        if (localValue === '0') {
-          //deteleAll(selectedItem)
-          if (cart[cart.length - 1].product_id === selectedItem) {
-            setSelectedItem(cart[cart.length - 2]?.product_id)
-            setLocalValue(cart[cart.length - 2]?.quantity.toString())
-          } else {
-            setSelectedItem(cart[cart.length - 1].product_id)
-            setLocalValue(cart[cart.length - 1].quantity.toString())
-          }
-          deleteProductInOrder(selectedOrder, selectedItem)
+    const isPrice = operation === Operation.PRICE
+    const currentValue = isPrice ? localPrice : localValue
+    const setter = isPrice ? setLocalPrice : setLocalValue
 
-          return
-        }
-
-        // Si el valor queda vacío después de borrar
-        if (newValue === '') {
-          newValue = '0'
-          setIsDecimalMode(false)
-          setDecimalCount(0)
-        } else {
-          // Verificar si al borrar el último dígito quedó solo el punto
-          if (newValue.endsWith('.')) {
-            newValue = newValue.slice(0, -1) // Eliminar el punto
-            setIsDecimalMode(false)
-            setDecimalCount(0)
-          } else {
-            // Actualizar el contador de decimales y modo decimal
-            const parts = newValue.split('.')
-            if (parts.length > 1) {
-              setDecimalCount(parts[1].length)
-              setIsDecimalMode(true)
-            } else {
-              setDecimalCount(0)
-              setIsDecimalMode(false)
-            }
-          }
-        }
-
-        setLocalValue(newValue)
-        clearDisplay()
-        for (const digit of newValue) {
-          addDigit(digit)
-        }
-        setProductQuantityInOrder(selectedOrder, selectedItem, parseFloat(newValue))
-      } else if (operation === Operation.PRICE) {
-        let newValue = localPrice.slice(0, -1)
-
-        // Si el valor es '0', cambiar a modo cantidad
-        if (localPrice === '0') {
-          setOperation(Operation.QUANTITY)
-          return
-        }
-
-        // Si el valor queda vacío después de borrar
-        if (newValue === '') {
-          newValue = '0'
-          setIsDecimalMode(false)
-          setDecimalCount(0)
-        } else {
-          // Verificar si al borrar el último dígito quedó solo el punto
-          if (newValue.endsWith('.')) {
-            newValue = newValue.slice(0, -1) // Eliminar el punto
-            setIsDecimalMode(false)
-            setDecimalCount(0)
-          } else {
-            // Actualizar el contador de decimales y modo decimal
-            const parts = newValue.split('.')
-            if (parts.length > 1) {
-              setDecimalCount(parts[1].length)
-              setIsDecimalMode(true)
-            } else {
-              setDecimalCount(0)
-              setIsDecimalMode(false)
-            }
-          }
-        }
-
-        setLocalPrice(newValue)
-        clearDisplay()
-        for (const digit of newValue) {
-          addDigit(digit)
-        }
-        setProductPriceInOrder(selectedOrder, selectedItem, parseFloat(newValue))
+    if (currentValue === '0') {
+      if (isPrice) {
+        setOperation(Operation.QUANTITY)
+      } else {
+        // Al borrar la cantidad '0', se elimina el producto del carrito.
+        // El useEffect que observa los cambios en `cart` se encargará de seleccionar el siguiente item.
+        deleteProductInOrder(selectedOrder, selectedItem)
+        setHandleChange(true)
       }
+      return
     }
+
+    let newValue = currentValue.slice(0, -1)
+
+    if (newValue === '' || newValue === '-') {
+      newValue = '0'
+    }
+
+    setter(newValue)
+
+    const pointIndex = newValue.indexOf('.')
+    if (pointIndex === -1) {
+      setIsDecimalMode(false)
+      setDecimalCount(0)
+    } else {
+      setIsDecimalMode(true)
+      setDecimalCount(newValue.length - pointIndex - 1)
+    }
+
+    updateValue(newValue)
   }
 
   // Efecto para manejar el scroll cuando se agrega un nuevo producto
@@ -454,76 +397,67 @@ export default function CartPanel() {
 
   // Función para manejar la selección de productos
   const handleSelectItem = (productId: string) => {
-    setLocalValue('')
-    setLocalPrice('')
-    setIsDecimalMode(false)
-    setDecimalCount(0)
     if (productId !== selectedItem) {
+      setLocalValue('')
+      setLocalPrice('')
+      setIsDecimalMode(false)
+      setDecimalCount(0)
       setSelectedItem(productId)
       setShouldReplaceValue(true)
 
-      const selectedProduct = cart.find((item) => item.product_template_id === productId)
+      const selectedProduct = cart.find((item) => item.product_id === productId)
       if (selectedProduct && selectedProduct.quantity !== undefined) {
         const quantity = selectedProduct.quantity.toString()
-        clearDisplay()
+        const price = selectedProduct.sale_price.toString()
         setLocalValue(quantity)
-        setLocalPrice(selectedProduct.sale_price.toString())
-        addDigit(quantity)
+        setLocalPrice(price)
+
+        clearDisplay()
+        const valueToDisplay = operation === Operation.PRICE ? price : quantity
+        for (const digit of valueToDisplay) {
+          addDigit(digit)
+        }
+        setHandleChange(true)
       }
     }
   }
   const handleSymbolsClick = () => {
-    if (selectedItem) {
-      if (operation === Operation.QUANTITY) {
-        const currentValue =
-          cart.find((item) => item.product_template_id === selectedItem)?.quantity.toString() || '0'
-        //const currentValue = localValue || '0'
-        let newValue = currentValue
+    if (!selectedItem) return
+    const isPrice = operation === Operation.PRICE
+    const currentValue =
+      cart
+        .find(
+          (item) => item.product_template_id === selectedItem || item.product_id === selectedItem
+        )
+        ?.[isPrice ? 'sale_price' : 'quantity']?.toString() || '0'
 
-        // Cambiar el signo
-        if (currentValue.startsWith('-')) {
-          newValue = currentValue.substring(1)
-        } else {
-          newValue = '-' + currentValue
-        }
+    const newValue = currentValue.startsWith('-') ? currentValue.substring(1) : '-' + currentValue
 
-        setLocalValue(newValue)
-        setShouldReplaceValue(false) // Desactivar el modo reemplazo después de cambiar el signo
-        clearDisplay()
-        for (const digit of newValue) {
-          addDigit(digit)
-        }
-
-        // Actualizar el carrito con el nuevo valor
-        setProductQuantityInOrder(selectedOrder, selectedItem, parseInt(newValue))
-      } else if (operation === Operation.PRICE) {
-        //const currentValue = localPrice || '0'
-        const currentValue =
-          cart.find((item) => item.product_template_id === selectedItem)?.sale_price.toString() ||
-          '0'
-        let newValue = currentValue
-
-        // Cambiar el signo
-        if (currentValue.startsWith('-')) {
-          newValue = currentValue.substring(1)
-        } else {
-          newValue = '-' + currentValue
-        }
-
-        setLocalPrice(newValue)
-        setShouldReplaceValue(false) // Desactivar el modo reemplazo después de cambiar el signo
-        clearDisplay()
-        for (const digit of newValue) {
-          addDigit(digit)
-        }
-
-        // Actualizar el carrito con el nuevo valor
-        setProductPriceInOrder(selectedOrder, selectedItem, parseFloat(newValue))
-      }
+    if (isPrice) {
+      setLocalPrice(newValue)
+    } else {
+      setLocalValue(newValue)
     }
+
+    updateValue(newValue)
+    setShouldReplaceValue(false)
   }
 
-  const fnc_open_more_options_modal = () => {}
+  const fnc_open_more_options_modal = () => {
+    const dialogId = openDialog({
+      title: 'Opciones',
+      dialogContent: () => (
+        <FrmBaseDialog config={MoreOptionsModalConfig} viewType={ViewTypeEnum.LIBRE} />
+      ),
+      buttons: [
+        {
+          text: 'Cerrar',
+          type: 'cancel',
+          onClick: () => closeDialogWithData(dialogId, {}),
+        },
+      ],
+    })
+  }
 
   useEffect(() => {
     document.documentElement.style.setProperty('--clear-next-digit', 'false')
@@ -558,6 +492,23 @@ export default function CartPanel() {
     })
   }
 
+  const fnc_to_pay = async () => {
+    changeToPaymentLocal(selectedOrder)
+    /*  const rs = await executeFnc('fnc_pos_order', 'u', {
+      order_id: selectedOrder,
+      state: 'Y',
+    })
+    if (rs.oj_data.length > 0) {
+      const newOrders = await executeFnc('fnc_pos_order', 's_pos', [
+        [0, 'fequal', 'point_id', pointId],
+      ])
+      setOrderData(newOrders.oj_data)
+    }*/
+    //Linea comentada, analizar luego
+    //  changeToPayment(selectedOrder)
+    setScreen('payment')
+  }
+
   const itemRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
   return (
     <>
@@ -590,9 +541,12 @@ export default function CartPanel() {
             {cart?.map((item) => (
               <div key={item.product_id} ref={(el) => (itemRefs.current[item.product_id] = el)}>
                 <CartItem
-                  item={item}
+                  item={{ ...item, quantity: item.quantity ?? 0 }}
                   isSelected={selectedItem === item.product_id}
-                  onSelect={() => handleSelectItem(item.product_id)}
+                  onSelect={() => {
+                    setOperation(Operation.QUANTITY)
+                    handleSelectItem(item.product_id)
+                  }}
                   maxDecimals={MAX_DECIMALS}
                   btnDelete={true}
                 />
@@ -624,7 +578,7 @@ export default function CartPanel() {
                 fnc_open_contact_modal()
               }}
             >
-              {finalCustomer.name ? finalCustomer.name : 'Consumidor final'}
+              {finalCustomer.name ? finalCustomer.name : defaultPosSessionData.name}
             </button>
 
             <button className="btn2 btn2-white lh-lg w-auto" onClick={() => fnc_open_note_modal()}>
@@ -672,11 +626,16 @@ export default function CartPanel() {
                   </button>
 
                   <button
-                    className={`numpad-button btn2 btn2-white fs-3 lh-lg  ${operation === Operation.QUANTITY ? 'active' : ''}`}
+                    className={`numpad-button btn2 btn2-white fs-3 lh-lg ${operation === Operation.QUANTITY ? 'active' : ''}`}
                     onClick={() => {
                       setOperation(Operation.QUANTITY)
-                      setLocalValue('')
-                      setLocalPrice('')
+                      if (selectedItem) {
+                        setShouldReplaceValue(true)
+                        clearDisplay()
+                        for (const digit of localValue) {
+                          addDigit(digit)
+                        }
+                      }
                     }}
                   >
                     Cant.
@@ -735,8 +694,13 @@ export default function CartPanel() {
                     className={`numpad-button btn2 btn2-white fs-3 lh-lg ${operation === Operation.PRICE ? 'active' : ''}`}
                     onClick={() => {
                       setOperation(Operation.PRICE)
-                      setLocalValue('')
-                      setLocalPrice('')
+                      if (selectedItem) {
+                        setShouldReplaceValue(true)
+                        clearDisplay()
+                        for (const digit of localPrice) {
+                          addDigit(digit)
+                        }
+                      }
                     }}
                   >
                     Precio
@@ -777,8 +741,8 @@ export default function CartPanel() {
                   <button
                     className="btn2 btn2-primary btn-lg flex-auto min-h-[70px]"
                     onClick={() => {
-                      changeToPayment(selectedOrder)
-                      setScreen('payment')
+                      setBackToProducts(false)
+                      fnc_to_pay()
                     }}
                   >
                     Pago

@@ -26,7 +26,15 @@ const ContactIndexConfig: FormConfig = {
   view_default: ViewTypeEnum.KANBAN,
   item_url: '/contacts',
   new_url: '/contacts/new',
-  no_content_dsc: 'Crea un contacto en tu libreta de direcciones',
+  no_content_title: 'Crear un contacto en su libreta de direcciones',
+  no_content_dsc: 'S7 le ayuda a llevar seguimiento de todas las actividades relacionadas con sus contactos.',
+  ribbonList: [
+    {
+      label: 'ARCHIVADO',
+      state: 'I',
+      className: 'ribbon',
+    },
+  ],
 
   fnc_valid: (data: any, formItem: any) => {
     if (!data?.name) return null
@@ -103,6 +111,8 @@ const ContactIndexConfig: FormConfig = {
     sw_categories: false,
     group_id: null,
   },
+
+  formButtons: [],
 
   grid: {
     idRow: 'partner_id',

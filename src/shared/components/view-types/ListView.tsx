@@ -598,7 +598,8 @@ export const ListView = ({
           <div className="o_view_nocontent">
             <div className="w-full h-full flex flex-col justify-center items-center gap-3">
               <img src="/images/not-content.svg" />
-              <h2 className="text-lg text-center">{config.no_content_dsc}</h2>
+              <h2 className="text-center text-[1.25rem] font-bold ">{config.no_content_title}</h2>
+              <h2 className="text-center text-[1rem]">{config.no_content_dsc}</h2>
             </div>
           </div>
         )

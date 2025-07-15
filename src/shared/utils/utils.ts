@@ -18,6 +18,17 @@ export const formatDateToDDMMYYYY = (date: Date | string) => {
 
   return `${day}/${month}/${year}`
 }
+export const formatDateTimeToDDMMYYYYHHMM = (date: Date | string) => {
+  if (!date) return ''
+  const formatDate = typeof date === 'string' ? new Date(date) : date
+  const day = String(formatDate.getUTCDate()).padStart(2, '0')
+  const month = String(formatDate.getUTCMonth() + 1).padStart(2, '0')
+  const year = formatDate.getUTCFullYear()
+  const hours = String(formatDate.getUTCHours()).padStart(2, '0')
+  const minutes = String(formatDate.getUTCMinutes()).padStart(2, '0')
+
+  return `${day}/${month}/${year} ${hours}:${minutes}`
+}
 export const sumItems = (list: any[], prop: string) => {
   return list.reduce((acc, obj) => {
     return acc + obj[prop]

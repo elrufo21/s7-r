@@ -16,7 +16,7 @@ export default function CartItem({
 }: CartItemProps) {
   return (
     <div
-      className={`py-2 px-2 flex items-center justify-between hover:bg-gray-50 cursor-pointer ${
+      className={`py-2 px-2 flex items-center justify-between hover:bg-gray-50 cursor-pointer  ${
         isSelected ? 'bg-blue-50' : ''
       }`}
       onClick={onSelect}

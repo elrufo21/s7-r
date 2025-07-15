@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { TextControlled } from '@/shared/ui'
 import { frmElementsProps } from '@/shared/shared.types'
-import { required } from '@/shared/helpers/validators'
+import { required } from '@/shared/helpers/Validators'
 
 export function FrmMiddle({ control, errors, editConfig }: frmElementsProps) {
   const handleEsc = () => {}

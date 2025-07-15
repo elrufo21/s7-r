@@ -1,6 +1,7 @@
 export enum TaxType {
-  PURCHASE = 'purchases',
-  SALE = 'sales',
+  PURCHASE = 'P', // PURCHASES
+  SALE = 'S', // SALES
+  // NONE
 }
 
 export type Tax = {

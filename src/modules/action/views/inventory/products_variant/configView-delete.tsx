@@ -19,7 +19,7 @@ import FormGroup from '@mui/material/FormGroup'
 import { FormActionEnum, frmElementsProps } from '@/shared/shared.types'
 import { OptionsType } from '@/shared/ui/inputs/input.types'
 import { InvoicePolicyEnum, TaxType, TypeProductEnum } from './products.type'
-import { required } from '@/shared/helpers/validators'
+import { required } from '@/shared/helpers/Validators'
 export function FrmPhoto({ watch, setValue, control, editConfig }: frmElementsProps) {
   return (
     <div className="o_field_widget o_field_image oe_avatar">

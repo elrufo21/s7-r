@@ -70,7 +70,7 @@ const PointOfSale = () => {
                       type="text"
                       className="o_input border-0 mx-2 text-body"
                       style={{ minWidth: '60px' }}
-                      placeholder="Buscar productos..."
+                      placeholder="Buscar productos ..."
                     />
                     <i className="fa fa-times mx-2 invisible"></i>
                   </div>

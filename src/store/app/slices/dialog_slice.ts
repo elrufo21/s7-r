@@ -21,6 +21,7 @@ const createFrmDialogSlice = (set: SetState<DialogSliceState>): DialogSliceState
     contactModal = false,
     customHeader = false,
     fullScreen = false,
+    disableClose = false,
   }) => {
     const dialogId = crypto.randomUUID()
     set((state) => {
@@ -36,6 +37,7 @@ const createFrmDialogSlice = (set: SetState<DialogSliceState>): DialogSliceState
         contactModal: contactModal,
         customHeader: customHeader,
         fullScreen: fullScreen,
+        disableClose: disableClose,
       }
       return { newAppDialogs: [...state.newAppDialogs, newDialog] }
     })

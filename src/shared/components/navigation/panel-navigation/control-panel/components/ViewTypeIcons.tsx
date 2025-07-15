@@ -1,4 +1,4 @@
-import { MouseEvent } from 'react'
+import React from 'react'
 import { ToggleButton, ToggleButtonGroup } from '@mui/material'
 import { MdDragHandle, MdViewModule } from 'react-icons/md'
 import { ViewTypeEnum } from '@/shared/shared.types'
@@ -12,7 +12,7 @@ type ViewTypeIconsProps = {
 }
 
 export const ViewTypeIcons = ({ viewType, changeView, listViews }: ViewTypeIconsProps) => {
-  const handleButtonClick = (event: MouseEvent, value: ViewTypeEnum) => {
+  const handleButtonClick = (event: React.MouseEvent<HTMLElement>, value: ViewTypeEnum) => {
     event.preventDefault()
     changeView(value)
   }

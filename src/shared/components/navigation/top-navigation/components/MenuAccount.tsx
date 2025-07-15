@@ -44,8 +44,8 @@ export const MenuAccount = () => {
   return (
     <>
       <button
+        className="ls_user_avatar"
         onClick={handleClick}
-        className="h-6 w-6 flex justify-center items-center mx-2 bg-green-600 rounded text-gray-200 dark:text-gray-300 focus:outline-none"
       >
         {userData?.avatar ? (
           <Avatar

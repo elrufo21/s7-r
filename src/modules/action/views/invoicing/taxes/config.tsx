@@ -1,7 +1,5 @@
 import { ViewTypeEnum, FormConfig, ModulesEnum, ItemStatusTypeEnum } from '@/shared/shared.types'
 import { FrmMiddle, FrmMiddleRight, FrmTab0 } from './configView'
-import { SwitchTable } from '@/shared/ui/inputs/SwitchTable'
-import useAppStore from '@/store/app/appStore'
 
 const TaxesConfig: FormConfig = {
   fnc_name: 'fnc_tax',
@@ -32,7 +30,7 @@ const TaxesConfig: FormConfig = {
     tax_code_id: null,
     code_unece: '',
     affectation_reason_id: null,
-    type: 'sales',
+    type: 'S',
     scope: '',
     percentage: '0',
     invoice_label: '',
@@ -89,42 +87,42 @@ const TaxesConfig: FormConfig = {
           accessorKey: 'company_name',
           size: 210,
         },
-        {
-          header: 'Activo',
-          accessorKey: 'state',
-          cell: ({ row, column }: { row: any; column: any }) => {
-            const { setInitialData, dataListShow } = useAppStore()
-            const handleStateChange = (tax_id: number) => {
-              const newData = dataListShow.dataShow.map((item) =>
-                item.tax_id === tax_id
-                  ? { ...item, state: row.original.state === 'a' ? 'i' : 'a' }
-                  : item
-              )
-              setInitialData({
-                data: newData,
-                total: newData.length,
-              })
-            }
-            return (
-              <div className="flex justify-center">
-                <SwitchTable
-                  row={row}
-                  column={column}
-                  onChange={() => {
-                    handleStateChange(row.original.tax_id)
-                  }}
-                />
-                {/*
-                
-                <SwitchCell
-                  size="small"
-                  color="success"
-                  initialValue={row.original.state === 'a'}
-                />*/}
-              </div>
-            )
-          },
-        },
+
+        // {
+        //   header: 'Activo',
+        //   accessorKey: 'state',
+        //   cell: ({ row, column }: { row: any; column: any }) => {
+        //     const { setInitialData, dataListShow } = useAppStore()
+        //     const handleStateChange = (tax_id: number) => {
+        //       const newData = dataListShow.dataShow.map((item) =>
+        //         item.tax_id === tax_id
+        //           ? { ...item, state: row.original.state === 'a' ? 'i' : 'a' }
+        //           : item
+        //       )
+        //       setInitialData({
+        //         data: newData,
+        //         total: newData.length,
+        //       })
+        //     }
+        //     return (
+        //       <div className="flex justify-center">
+        //         <SwitchTable
+        //           row={row}
+        //           column={column}
+        //           onChange={() => {
+        //             handleStateChange(row.original.tax_id)
+        //           }}
+        //         />
+        //         {/*
+        //         <SwitchCell
+        //           size="small"
+        //           color="success"
+        //           initialValue={row.original.state === 'a'}
+        //         />*/}
+        //       </div>
+        //     )
+        //   },
+        // },
       ],
     },
   },

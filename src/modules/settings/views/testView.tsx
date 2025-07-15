@@ -37,6 +37,12 @@ const tabs = [
     img: '/images/modules/invoicing.png',
     label: 'Facturación',
   },
+  {
+    key: 'points-of-sale',
+    href: '#points-of-sale',
+    img: '/images/modules/POS.png',
+    label: 'Puntos de venta',
+  },
 ]
 
 const TestView = () => {
@@ -71,7 +77,6 @@ const TestView = () => {
         type: imp['type'],
       }))
       .filter((tax: any) => tax.type === type)
-    console.log(type, newTaxes)
     if (type === 'sales') {
       setTaxesSale(newTaxes)
     } else {
@@ -79,8 +84,7 @@ const TestView = () => {
     }
   }
 
-  const fnc_search_taxes = async (type: string) => {
-    console.log(type)
+  const fnc_search_taxes = async () => {
     const dialogId = openDialog({
       title: 'Buscar: Impuesto',
       dialogContent: () => (
@@ -418,6 +422,15 @@ const TestView = () => {
                     </div>
                   </div>
                   */}
+                </div>
+              ) : null}
+              {hash === '#points-of-sale' ? (
+                <div className="app_settings_block " data-key="points-of-sale">
+                  <div id="">
+                    <h2>
+                      <span>Puntos de venta</span>
+                    </h2>
+                  </div>
                 </div>
               ) : null}
             </div>

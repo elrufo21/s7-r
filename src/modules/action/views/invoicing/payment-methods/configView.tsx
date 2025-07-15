@@ -1,6 +1,6 @@
 import { frmElementsProps } from '@/shared/shared.types'
 import { TextControlled } from '@/shared/ui'
-import { required } from '@/shared/helpers/validators'
+import { required } from '@/shared/helpers/Validators'
 
 export function FrmTitle({ control, errors, editConfig }: frmElementsProps) {
   return (

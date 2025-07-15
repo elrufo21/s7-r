@@ -1,15 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import useAppStore from '@/store/app/appStore'
 import {
-  AutocompleteControlled,
   CheckBoxControlled,
   SelectControlled,
   // SwitchControlled,
   TextControlled,
 } from '@/shared/ui'
 import { frmElementsProps } from '@/shared/shared.types'
-import CompanyField from '@/shared/components/extras/CompanyField'
 import { required } from '@/shared/helpers/validators'
+import FormRow from '@/shared/components/form/base/FormRow'
+import BaseAutocomplete from '@/shared/components/form/base/BaseAutocomplete'
+import CfCompany from '@/shared/components/extras/Cf_company'
 export function FrmTitle({ control, errors, editConfig }: frmElementsProps) {
   const style = {
     fontSize: 26,
@@ -32,7 +33,7 @@ export function FrmTitle({ control, errors, editConfig }: frmElementsProps) {
   )
 }
 
-export function FrmMiddle({ control, errors, editConfig }: frmElementsProps) {
+export function FrmMiddle({ control, errors, editConfig, setValue }: frmElementsProps) {
   const Options_calculo = [
     { label: 'Grupo de impuestos', value: 'group' },
     { label: 'Fijo', value: 'fixed' },
@@ -70,6 +71,9 @@ export function FrmMiddle({ control, errors, editConfig }: frmElementsProps) {
               control={control}
               errors={errors}
               options={Options_calculo}
+              onChange={(e) => {
+                setValue('calculation', e)
+              }}
             />
           </div>
         </div>
@@ -110,35 +114,52 @@ export function FrmMiddleRight({ control, errors, editConfig }: frmElementsProps
   ]
 
   const Options_timp = [
-    { label: 'Ventas', value: 'sales' },
-    { label: 'Compras', value: 'purchases' },
-    { label: 'Ninguno', value: 'none' },
+    { label: 'Ventas', value: 'S' },
+    { label: 'Compras', value: 'P' },
+    { label: 'Ninguno', value: 'N' },
   ]
 
   const Options_aimp = [
-    { label: '', value: '' },
     { label: 'Servicios', value: 'S' },
     { label: 'Bienes', value: 'B' },
   ]
-
+  /*
+  const Tax_codes = [
+    { label: '', value: '' },
+    { label: 'IGV - Impuesto General a las Ventas', value: 'IGV' },
+    { label: 'IVAP - Impuesto a la Venta Arroz Pilado', value: 'IVAP' },
+    { label: 'ISC - Impuesto Selectivo al Consumo', value: 'ISC' },
+    { label: 'ICBPER - Impuesto a la bolsa plástica', value: 'ICBPER' },
+    { label: 'EXP - Exportación', value: 'EXP' },
+    { label: 'GRA - Gratuito', value: 'GRA' },
+    { label: 'EXO - Exonerado', value: 'EXO' },
+    { label: 'INA - Inafecto', value: 'INA' },
+    { label: 'OTROS - Otros impuestos', value: 'OTROS' },
+  ]
+  const Affectation_reason = [
+    { label: '', value: '' },
+    { label: 'Servicios', value: 'S' },
+    { label: 'Bienes', value: 'B' },
+  ]*/
   return (
     <>
+      {/*
       <div className="d-sm-contents">
         <div className="o_cell o_wrap_label">
           <label className="o_form_label">Código</label>
         </div>
         <div className="o_cell">
           <div className="o_field">
-            {/* 
             <SelectControlled
               name={'tax_code_id'}
               control={control}
               errors={errors}
-              options={companies || []}
-            /> */}
+              options={Tax_codes}
+            />
           </div>
         </div>
       </div>
+      */}
       <div className="d-sm-contents">
         <div className="o_cell o_wrap_label">
           <label className="o_form_label">Código UNECE</label>
@@ -154,22 +175,23 @@ export function FrmMiddleRight({ control, errors, editConfig }: frmElementsProps
           </div>
         </div>
       </div>
+      {/*
       <div className="d-sm-contents">
         <div className="o_cell o_wrap_label">
           <label className="o_form_label">EDI Razón de afectación</label>
         </div>
         <div className="o_cell">
           <div className="o_field">
-            {/*             
             <SelectControlled
               name={'affectation_reason_id'}
               control={control}
               errors={errors}
-              options={aigv || []}
-            /> */}
+              options={Affectation_reason}
+            />
           </div>
         </div>
       </div>
+     */}
       <div className="d-sm-contents">
         <div className="o_cell o_wrap_label">
           <label className="o_form_label">Tipo de impuesto</label>
@@ -234,39 +256,7 @@ export function FrmMiddleRight({ control, errors, editConfig }: frmElementsProps
 }
 
 export function FrmTab0({ control, errors, editConfig, setValue, watch }: frmElementsProps) {
-  const createOptions = useAppStore((state) => state.createOptions)
   const formItem = useAppStore((state) => state.formItem)
-
-  const [tax_group, setTax_group] = useState<{ label: string; value: string }[]>([])
-
-  // tax_group - start
-  const fnc_load_data_tax_group = async () => {
-    const options = await createOptions({
-      fnc_name: 'fnc_tax_group',
-      filters: [{ column: 'state', value: 'A' }],
-      action: 's2',
-    })
-    if (!formItem) {
-      return setTax_group(options)
-    }
-    setTax_group([...options])
-  }
-  // tax_group - end
-
-  const loadData = () => {
-    if (formItem?.['tax_group_id']) {
-      setTax_group([
-        {
-          value: formItem['tax_group_id'],
-          label: formItem['tax_group_name'],
-        },
-      ])
-    }
-  }
-
-  useEffect(() => {
-    loadData()
-  }, [formItem])
 
   return (
     <>
@@ -306,43 +296,24 @@ export function FrmTab0({ control, errors, editConfig, setValue, watch }: frmEle
                 </div>
               </div>
             </div>
-            <div className="d-sm-contents">
-              <div className="o_cell o_wrap_label">
-                <label className="o_form_label">Grupo de impuestos</label>
-              </div>
-              <div className="o_cell">
-                <div className="o_field">
-                  <AutocompleteControlled
-                    name={'tax_group_id'}
-                    control={control}
-                    errors={errors}
-                    editConfig={{ config: editConfig }}
-                    rules={required()}
-                    enlace={true}
-                    options={tax_group}
-                    fnc_loadOptions={fnc_load_data_tax_group}
-                    // fnc_enlace={fnc_navigate_tax_group}
-                    // createItem={fnc_create_tax_group}
-                    // createAndEditItem={(data: string) => fnc_create_edit_tax_group(data)}
-                    // loadMoreResults={fnc_search_tax_group}
-                  />
+            <FormRow label="Grupo de impuestos">
+              <BaseAutocomplete
+                name="tax_group_id"
+                control={control}
+                errors={errors}
+                setValue={setValue}
+                formItem={formItem}
+                label="tax_group_name"
+                filters={[]}
+                editConfig={editConfig}
+                rulers={true}
+                config={{
+                  fncName: 'fnc_tax_group',
+                  primaryKey: 'tax_group_id',
+                }}
+              />
+            </FormRow>
 
-                  {/*               
-                  <AutocompleteControlled
-                    name={'tax_group_id'}
-                    placeholder={''}
-                    control={control}
-                    rules={required()}
-                    errors={errors}
-                    options={taxGroup || []}
-                    
-                    enlace={true}
-                    editConfig={{ config: editConfig }}
-                  />
-                   */}
-                </div>
-              </div>
-            </div>
             {/*
             <div className="d-sm-contents">
               <div className="o_cell o_wrap_label">
@@ -365,11 +336,13 @@ export function FrmTab0({ control, errors, editConfig, setValue, watch }: frmEle
             </div>
             */}
             {
-              <CompanyField
+              <CfCompany
                 control={control}
                 errors={errors}
-                setValue={setValue}
                 editConfig={{ config: editConfig }}
+                setValue={setValue}
+                isEdit={true}
+                label="Empresa"
                 watch={watch}
               />
             }

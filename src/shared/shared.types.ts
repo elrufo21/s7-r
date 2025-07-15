@@ -94,6 +94,7 @@ export enum FormActionEnum {
   REPLICATE = 'r',
   UPDATE_FAVORITE = 'uf',
   BASE = '',
+  SAVE_DRAFT = 'sd',
 }
 
 type Sublista = [number, string, string[], string, string]
@@ -138,6 +139,7 @@ export type ListInputItem = {
 }
 
 export type FormConfig = {
+  fieldLabels?: Record<string, string>
   fnc_name: string
   type_config?: ConfigType
   module: ModulesEnum
@@ -155,6 +157,12 @@ export type FormConfig = {
   isFavoriteColumn?: boolean
   formTitle?: string
   formButtons?: any
+  skipValidation?: boolean
+  ribbonList?: {
+    label: string
+    state: string
+    className: string
+  }[]
 
   fnc_valid: (data: any, formItem?: any) => any
 
@@ -203,6 +211,26 @@ export type FormConfig = {
 
     tabs?: Array<TabProp>
   }
+
+  statusBarConfig?: {
+    visibleStates?: Array<{
+      state: string | string[]
+      label: string
+    }>
+    allStates?: Array<{
+      state: string | string[]
+      label: string
+    }>
+    filterLogic?: (
+      currentState: string,
+      allStates: Array<{ state: string | string[]; label: string }>
+    ) => Array<{ state: string | string[]; label: string }>
+
+    stateField?: string
+    defaultState?: string
+    isStatic?: boolean
+    staticActiveIndex?: number
+  }
 }
 
 export interface TabProp {
@@ -220,6 +248,7 @@ export interface frmElementsProps {
   fnc_name?: string
   options?: any[]
   label?: boolean
+  setError?: any
 }
 
 export interface ContentElementsProps extends frmElementsProps {

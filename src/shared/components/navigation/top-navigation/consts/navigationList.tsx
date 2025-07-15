@@ -1,5 +1,7 @@
 import { ModulesEnum } from '@/shared/shared.types'
 import { MenuItemType } from '@/shared/components/navigation/navigation.types'
+import Frm_894_config from '@/modules/action/views/point-of-sale/order-detail-modal/config'
+import PosReportSessionConfig from '@/modules/action/views/point-of-sale/report-session-modal/config'
 
 export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
   [ModulesEnum.BASE]: null,
@@ -506,13 +508,12 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
             key: 'Usuarios-settings',
             path: '/action/2',
           },
-          /*
+
           {
             title: 'Empresas',
             key: 'Empresas-settings',
             path: '/action/4',
           },
-          */
         ],
       },
     ],
@@ -686,49 +687,121 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
         title: 'Órdenes',
         key: 'ordenes-menu',
         items: [
-          { title: 'Órdenes', key: 'ordenes', path: '/orders' },
-          { title: 'Sesiones', key: 'sesiones', path: '/sessions' },
-          { title: 'Pagos', key: 'pagos', path: '/payments' },
+          { title: 'Órdenes', key: 'ordenes', path: '/action/888' },
+          { title: 'Sesiones', key: 'sesiones', path: '/action/889' },
+          { title: 'Pagos', key: 'pagos', path: '/action/890' },
+          /*
           {
             title: 'Preparation Display',
             key: 'preparation-display',
             path: '/preparation-display',
           },
-          { title: 'Clientes', key: 'clientes', path: '/customers' },
+          */
+          { title: 'Clientes', key: 'clientes', path: '/action/895' },
         ],
       },
       {
         title: 'Productos',
         key: 'productos-menu',
         items: [
-          { title: 'Productos', key: 'productos', path: '/products' },
-          { title: 'Variantes de producto', key: 'variantes-producto', path: '/product-variants' },
-          { title: 'Opciones de los combos', key: 'opciones-combos', path: '/combo-options' },
-          { title: 'Listas de precios', key: 'listas-precios', path: '/price-lists' },
+          { title: 'Productos', key: 'productos', path: '/action/898' },
+          { title: 'Variantes de producto', key: 'variantes-producto', path: '/action/899' },
+          // { title: 'Opciones de los combos', key: 'opciones-combos', path: '/combo-options' },
+          // { title: 'Listas de precios', key: 'listas-precios', path: '/price-lists' },
         ],
       },
       {
         title: 'Reportes',
         key: 'reportes-menu',
         items: [
-          { title: 'Órdenes', key: 'ordenes', path: '/orders' },
-          { title: 'Detalles de las ventas', key: 'sesiones', path: '/sessions' },
-          { title: 'Reporte de la sesión', key: 'pagos', path: '/payments' },
-          { title: 'Tiempo de preparación', key: 'clientes', path: '/customers' },
+          { title: 'Órdenes', key: 'ordenes', path: '/action/893' },
+          {
+            title: 'Detalles de las ventas',
+            key: 'sesiones',
+            path: '/action/894', // ✅ Usar el path del config existente
+            openAsModal: true,
+            modalConfig: {
+              size: 'medium',
+              title: 'Detalle de la Sesión',
+              config: Frm_894_config,
+              customButtons: [
+                {
+                  text: 'Imprimir',
+                  type: 'confirm',
+                  onClick: () => {
+                    import('@/modules/invoicing/components/SalesReportPDF').then((module) => {
+                      const SalesReportPDF = module.default
+
+                      import('@react-pdf/renderer').then((pdfModule) => {
+                        const { pdf } = pdfModule
+                        pdf(SalesReportPDF())
+                          .toBlob()
+                          .then((blob) => {
+                            const url = URL.createObjectURL(blob)
+                            const link = document.createElement('a')
+                            link.href = url
+                            link.download = 'detalle-ventas.pdf'
+                            link.click()
+                            URL.revokeObjectURL(url)
+                          })
+                      })
+                    })
+                  },
+                },
+              ],
+            },
+          },
+          {
+            title: 'Reporte de la sesión',
+            key: 'pagos',
+            path: '#',
+            openAsModal: true,
+            modalConfig: {
+              size: 'medium',
+              title: 'Reporte de la sesión',
+              config: PosReportSessionConfig,
+              customButtons: [
+                {
+                  text: 'Imprimir',
+                  type: 'confirm',
+                  onClick: () => {
+                    import('@/modules/invoicing/components/SessionReportPDF').then((module) => {
+                      const SessionReportPDF = module.default
+
+                      import('@react-pdf/renderer').then((pdfModule) => {
+                        const { pdf } = pdfModule
+                        pdf(SessionReportPDF())
+                          .toBlob()
+                          .then((blob) => {
+                            const url = URL.createObjectURL(blob)
+                            const link = document.createElement('a')
+                            link.href = url
+                            link.download = 'reporte-sesion.pdf'
+                            link.click()
+                            URL.revokeObjectURL(url)
+                          })
+                      })
+                    })
+                  },
+                },
+              ],
+            },
+          },
+          // { title: 'Tiempo de preparación', key: 'clientes', path: '#' },
         ],
       },
       {
         title: 'Configuración',
         key: 'configuracion-menu',
         items: [
-          { title: 'Ajustes', key: 'ajustes', path: '/configuracion/ajustes' },
-          { title: 'Métodos de pago', key: 'metodos-pago', path: '/configuracion/metodos-pago' },
+          { title: 'Ajustes', key: 'ajustes', path: '/settings#points-of-sale' },
+          { title: 'Métodos de pago', key: 'metodos-pago', path: '/action/891' },
           {
             title: 'Monedas/billetes',
             key: 'monedas-billetes',
-            path: '/configuracion/monedas-billetes',
+            path: '/action/896',
           },
-          { title: 'Punto de venta', key: 'punto-venta', path: '/configuracion/punto-venta' },
+          { title: 'Punto de venta', key: 'punto-venta', path: '/action/892' },
           { title: 'Modelos de nota', key: 'modelos-nota', path: '/configuracion/modelos-nota' },
           /*
           {
@@ -757,16 +830,17 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
                 key: 'categories-pos-inventory',
                 path: '/action/93',
               },
-              { title: 'Atributos', key: 'atributos', path: '/configuracion/productos/atributos' },
-              {
+              { title: 'Atributos', key: 'atributos', path: '/action/897' },
+              /*  {
                 title: 'Etiquetas de producto',
                 key: 'etiquetas-producto',
                 path: '/configuracion/productos/etiquetas',
-              },
+              }*/
             ],
           },
         ],
       },
     ],
   },
+  [ModulesEnum.POS]: null,
 }

@@ -84,7 +84,7 @@ export const DndTable = <T extends { [key: string]: any }>({
           return row
         })
       )
-      setModifyData(true)
+      setModifyData?.(true)
     },
     [setData, id, setModifyData]
   )
@@ -109,7 +109,7 @@ export const DndTable = <T extends { [key: string]: any }>({
         // Usamos un setTimeout para asegurar que esta actualización
         // ocurra en el siguiente ciclo de renderizado
         setTimeout(() => {
-          setModifyData(true)
+          setModifyData?.(true)
           isUpdatingRef.current = false
         }, 0)
       }
@@ -211,7 +211,7 @@ export const DndTable = <T extends { [key: string]: any }>({
                 return prevData
               })
 
-              setModifyData(true)
+              setModifyData?.(true)
               if (onHandleDrag) onHandleDrag()
             }
           },
@@ -240,7 +240,7 @@ export const DndTable = <T extends { [key: string]: any }>({
     if (modifyData) {
       const timeoutId = setTimeout(() => {
         onDataChange?.(data)
-        setModifyData(false)
+        setModifyData?.(false)
       }, 0)
 
       return () => clearTimeout(timeoutId)

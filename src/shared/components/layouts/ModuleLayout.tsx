@@ -15,7 +15,8 @@ export const ModuleLayout = () => {
   const { config, viewType } = useAppStore()
   return (
     <>
-      <div className="o_control_panel d-flex flex-column gap-3 gap-lg-1 px-4 pt-2 pb-4">
+      {/* <div className="o_control_panel d-flex flex-column gap-3 gap-lg-1 px-4 pt-2 pb-4"> */}
+      <div className={`o_control_panel gap-lg-1 ${viewType === ViewTypeEnum.FORM ? 'form' : ''}`}>
         {viewType === ViewTypeEnum.FORM ? (
           <Suspense fallback={null}>
             <ControlPanelForm config={config} />

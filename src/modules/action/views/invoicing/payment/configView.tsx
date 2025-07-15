@@ -7,7 +7,7 @@ import { frmElementsProps, TypeContactEnum } from '@/shared/shared.types'
 import { AutocompleteControlled, RadioButtonControlled, TextControlled } from '@/shared/ui'
 import useAppStore from '@/store/app/appStore'
 import { useState } from 'react'
-import journalConfig from '@/modules/action/views/invoicing/diaries/config'
+import JournalConfig from '@/modules/action/views/invoicing/diaries/config'
 
 export const FrmTittle = ({ watch }: frmElementsProps) => {
   return (
@@ -141,7 +141,7 @@ export const FrmMiddleRight = ({
           filters={[]}
           allowSearchMore={true}
           config={{
-            modalConfig: journalConfig,
+            modalConfig: JournalConfig,
             modalTitle: 'Diarios',
             primaryKey: 'journal_id',
             fncName: 'fnc_journal',

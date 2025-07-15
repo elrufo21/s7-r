@@ -41,10 +41,10 @@ export const MainLayout = () => {
 
             <div className="o_menu_systray d-flex flex-shrink-0 ms-auto" role="menu">
               <div className="flex justify-end">
-                <div className="flex items-center mr-2">
+                <div className="flex items-center">
                   <MenuCompany />
                 </div>
-                <div className="flex items-center mr-1">
+                <div className="flex items-center">
                   <MenuAccount />
                 </div>
               </div>

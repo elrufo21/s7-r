@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { Tabs } from '@/shared/ui'
 import { toast } from 'sonner'
 import { uploadStringImages } from '@/data/storage/manager_files'
-import { FormConfig } from '@/shared/shared.types'
+import { FormConfig, ViewTypeEnum } from '@/shared/shared.types'
 
 interface FrmBaseDialogProps {
   config: FormConfig
@@ -16,6 +16,7 @@ interface FrmBaseDialogProps {
   onFinish?: (watch: any) => void
   parent_id?: any | null
   setGetData?: any
+  viewType?: ViewTypeEnum
 }
 
 export const FrmBaseDialog = ({
@@ -28,6 +29,7 @@ export const FrmBaseDialog = ({
   onFinish,
   //parent_id = null,
   setGetData,
+  viewType = ViewTypeEnum.FORM,
 }: FrmBaseDialogProps) => {
   const {
     frmConfigControls,
@@ -390,8 +392,8 @@ export const FrmBaseDialog = ({
                       )}
                       {(frm_middle || frm_middle_right) && (
                         <div className={`o_group ${frm_title !== undefined ? 'mt-4' : ''}`}>
-                          <div className="lg:w-1/2">
-                            <div className="o_inner_group grid">
+                          {viewType === ViewTypeEnum.LIBRE ? (
+                            <div className="">
                               {frm_middle &&
                                 frm_middle({
                                   control,
@@ -402,20 +404,36 @@ export const FrmBaseDialog = ({
                                   setValue,
                                 })}
                             </div>
-                          </div>
-                          <div className="lg:w-1/2">
-                            <div className="o_inner_group grid">
-                              {frm_middle_right &&
-                                frm_middle_right({
-                                  control,
-                                  errors,
-                                  editConfig: frmConfigControls,
-                                  frmState: frmDialogState,
-                                  watch,
-                                  setValue,
-                                })}
-                            </div>
-                          </div>
+                          ) : (
+                            <>
+                              <div className="lg:w-1/2">
+                                <div className="o_inner_group grid">
+                                  {frm_middle &&
+                                    frm_middle({
+                                      control,
+                                      errors,
+                                      editConfig: frmConfigControls,
+                                      frmState: frmDialogState,
+                                      watch,
+                                      setValue,
+                                    })}
+                                </div>
+                              </div>
+                              <div className="lg:w-1/2">
+                                <div className="o_inner_group grid">
+                                  {frm_middle_right &&
+                                    frm_middle_right({
+                                      control,
+                                      errors,
+                                      editConfig: frmConfigControls,
+                                      frmState: frmDialogState,
+                                      watch,
+                                      setValue,
+                                    })}
+                                </div>
+                              </div>
+                            </>
+                          )}
                         </div>
                       )}
                       {frm_middle_bottom && (

@@ -3,19 +3,30 @@ import CategorySelector from './CategorySelector'
 import ProductGrid from './ProductGrid'
 import { OrderList } from './OrderList'
 import CartItem from './CartItem'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { MdKeyboardArrowLeft } from 'react-icons/md'
 import Payment from './Payment'
 import Invoice from './Invoice'
 import useAppStore from '@/store/app/appStore'
 
-const Screens = () => {
-  const { screen, cart, getTotalPriceByOrder } = useAppStore()
-  const [total, setTotal] = useState(0)
+const Screens = ({ pointId }: { pointId: string }) => {
+  const { screen, cart, orderData, selectedOrder, setScreen, backToProducts, total } = useAppStore()
 
   useEffect(() => {
-    setTotal(getTotalPriceByOrder(cart[0]?.move_id || 0))
-  }, [cart])
+    if (
+      (screen === 'products' || screen === 'payment') &&
+      orderData?.find((item) => item.order_id === selectedOrder)?.state === 'Y' &&
+      backToProducts === false
+    ) {
+      setScreen('payment')
+    }
+    if (screen === 'payment' && backToProducts === true) {
+      setScreen('products')
+    }
+    if (orderData?.find((item) => item.order_id === selectedOrder)?.state === 'P') {
+      setScreen('invoice')
+    }
+  }, [orderData, selectedOrder, screen])
 
   switch (screen) {
     case 'products':
@@ -35,7 +46,7 @@ const Screens = () => {
       )
     case 'ticket':
       return (
-        <div className="ticket-screen h-full">
+        <div className="ticket-screen">
           <div className="screen-full-width d-flex w-100 h-100">
             <div className="rightpane pane-border d-flex flex-column flex-grow-1 w-100 h-100 h-lg-100 pe-lg-0 bg-view border-end overflow-y-auto">
               <OrderList />
@@ -77,7 +88,7 @@ const Screens = () => {
         </div>
       )
     case 'payment':
-      return <Payment />
+      return <Payment session_id={pointId} />
     case 'invoice':
       return <Invoice />
     default:

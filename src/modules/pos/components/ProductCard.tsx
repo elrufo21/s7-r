@@ -30,6 +30,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           addProductToOrder(selectedOrder, product, 1)
         }}
       >
+        {/*
         <div className="product-information-tag">
           <FaInfo
             className="product-information-tag-logo"
@@ -39,6 +40,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             }}
           />
         </div>
+        */}
 
         {product?.files?.[0]?.publicUrl && (
           <div className="product-img">

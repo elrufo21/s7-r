@@ -1,11 +1,18 @@
-import { useSearch } from '../context/SearchContext'
-import { MdAddCircle } from 'react-icons/md'
-import { IoMdArrowDropdown } from 'react-icons/io'
+import { useEffect, useCallback } from 'react'
+import { MdAddCircleOutline } from 'react-icons/md'
+// import { WiCloudUp } from 'react-icons/wi'
+// import { IoMdArrowDropdown } from 'react-icons/io'
 import { FaBarcode } from 'react-icons/fa'
-import { BiSave } from 'react-icons/bi'
 import useAppStore from '@/store/app/appStore'
+import { useNavigate } from 'react-router-dom'
+import PosCloseCashConfig from '../views/modal-close-cash-register/config'
+import { FrmBaseDialog } from '@/shared/components/core'
+import PosModalCashinAndOut from '../views/modal-cash-in-and-out/config'
+import { CustomHeaderCashInAndOut } from '../views/modal-cash-in-and-out/components/customHeader'
+import { ViewTypeEnum } from '@/shared/shared.types'
+import ModalButtons from './modal/components/ModalButtons'
 
-export default function Header() {
+export default function Header({ pointId }: { pointId: string }) {
   const {
     executeFnc,
     addNewOrder,
@@ -16,41 +23,249 @@ export default function Header() {
     screen,
     getTotalPriceByOrder,
     updateMoveId,
+    handleChange,
+    setHandleChange,
+    openDialog,
+    closeDialogWithData,
+    searchTerm,
+    setSearchTerm,
+    selectedNavbarMenu,
+    setSelectedNavbarMenu,
+    setOrderData,
+    setSelectedItem,
+    finalCustomer,
   } = useAppStore()
+  const { state } = JSON.parse(localStorage.getItem('session-store') ?? '{}')
+  const { userData } = state
+  const sessions = JSON.parse(localStorage.getItem('sessions') ?? '[]')
+  const { session_id } = sessions.find((s: any) => s.point_id === Number(pointId))
+  const navigate = useNavigate()
+  // const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  // const open = Boolean(anchorEl)
 
-  const { searchTerm, setSearchTerm, selectedNavbarMenu, setSelectedNavbarMenu } = useSearch()
-
-  const fnc_save_order = async () => {
-    const data = orderData.find((item) => item.move_id === selectedOrder)
-    if (!data) return
-
-    const updatedData = {
-      ...data,
-      move_lines: data.move_lines?.map((item: any, i: number) => ({
-        ...item,
-        order_id: i + 1,
-        tyle: 'L',
-      })),
-      move_id: selectedOrder,
-      amount_total: getTotalPriceByOrder(selectedOrder),
-    }
-
-    const rs = await executeFnc('fnc_account_move', typeof selectedOrder === 'string' ? 'i' : 'u', {
-      ...updatedData,
+  const handleClick = (/*event: React.MouseEvent<HTMLButtonElement >*/) => {
+    // setAnchorEl(event.currentTarget)
+    const dialogId = openDialog({
+      title: '',
+      dialogContent: () => (
+        <ModalButtons
+          handleCashInAndOut={handleCashInAndOut}
+          handleCloseCashRegister={handleCloseCashRegister}
+          returnToMain={() => {
+            closeDialogWithData(dialogId, {})
+            navigate('/points-of-sale')
+          }}
+        />
+      ),
+      buttons: [
+        {
+          text: 'Cerrar',
+          type: 'cancel',
+          onClick: () => closeDialogWithData(dialogId, {}),
+        },
+      ],
     })
+  }
 
-    // Si el ID cambió, actualizamos el estado con el nuevo move_id
-    if (
-      typeof selectedOrder === 'string' &&
-      rs?.oj_data?.move_id &&
-      rs?.oj_data?.move_id !== selectedOrder
-    ) {
-      updateMoveId(selectedOrder, rs.oj_data.move_id)
+  const handleClose = () => {
+    // setAnchorEl(null)
+  }
+
+  const handleCashInAndOut = async () => {
+    const dialogId = openDialog({
+      title: '',
+      customHeader: <CustomHeaderCashInAndOut />,
+
+      dialogContent: () => (
+        <FrmBaseDialog config={PosModalCashinAndOut} viewType={ViewTypeEnum.LIBRE} />
+      ),
+      buttons: [
+        {
+          text: 'Guardar',
+          type: 'confirm',
+          onClick: async () => {
+            closeDialogWithData(dialogId, null)
+          },
+        },
+        {
+          text: 'Cancelar',
+          type: 'cancel',
+          onClick: () => {
+            closeDialogWithData(dialogId, null)
+          },
+        },
+      ],
+    })
+  }
+
+  const handleCloseCashRegister = async () => {
+    const dialogId = openDialog({
+      title: 'Cerrando la caja registradora',
+      dialogContent: () => <FrmBaseDialog config={PosCloseCashConfig} />,
+      buttons: [
+        {
+          text: 'Cerrar caja registradora',
+          type: 'confirm',
+          onClick: async () => {
+            const rs = await executeFnc('fnc_pos_session', 'u', {
+              session_id: session_id,
+              state: 'R',
+              stop_at: new Date(),
+              final_cash: 0,
+              closing_note: '',
+            })
+            const currentData = JSON.parse(localStorage.getItem('sessions') ?? '[]')
+            const newSessions = currentData.map((s: any) =>
+              s.point_id === Number(pointId) ? { ...s, session_id: null } : s
+            )
+            localStorage.setItem('sessions', JSON.stringify(newSessions))
+            handleClose()
+            closeDialogWithData(dialogId, rs)
+            navigate('/points-of-sale')
+          },
+        },
+        {
+          text: 'Descartar',
+          type: 'cancel',
+          onClick: () => {
+            closeDialogWithData(dialogId, null)
+          },
+        },
+      ],
+    })
+  }
+  const fnc_save_order = async () => {
+    const date = new Date()
+    const peruDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+    switch (screen) {
+      case 'products': {
+        if (!handleChange) break
+
+        const data = orderData.find((item) => item.order_id === selectedOrder)
+        if (!data) return
+
+        const updatedData = {
+          ...data,
+          name: '',
+          state: orderData.find((item) => item.order_id === selectedOrder)?.state || 'I',
+          order_date:
+            orderData.find((item) => item.order_id === selectedOrder)?.order_date ||
+            peruDate.toISOString(),
+          user_id: userData?.user_id,
+          point_id: pointId,
+          session_id: session_id,
+          currency_id: 1,
+          company_id: userData?.company_id,
+          invoice_state:
+            orderData.find((item) => item.order_id === selectedOrder)?.invoice_state || 'P',
+          partner_id: finalCustomer?.partner_id,
+          lines: data.lines?.map((item: any, i: number) => ({
+            line_id: item?.line_id,
+            order_id: selectedOrder,
+            position: i + 1,
+            product_id: item?.product_id,
+            quantity: item?.quantity,
+            uom_id: item?.uom_id,
+            price_unit: item?.price_unit,
+            notes: null,
+            amount_untaxed: item?.price_unit,
+            amount_tax: 0,
+            amount_withtaxed: item?.price_unit,
+            amount_untaxed_total: item?.price_unit * item?.quantity,
+            amount_tax_total: item?.price_unit * item?.quantity,
+            amount_withtaxed_total: item?.price_unit * item?.quantity,
+          })),
+          order_id: selectedOrder,
+          amount_untaxed:
+            data.lines?.reduce((total: number, item: any) => total + (item?.price_unit || 0), 0) ||
+            0,
+          amount_withtaxed:
+            data.lines?.reduce(
+              (total: number, item: any) => total + (item?.price_unit || 0) * (item?.quantity || 0),
+              0
+            ) || 0,
+          amount_total: getTotalPriceByOrder(selectedOrder),
+        }
+
+        const rs = await executeFnc(
+          'fnc_pos_order',
+          typeof selectedOrder === 'string' ? 'i' : 'u',
+          {
+            ...updatedData,
+          }
+        )
+
+        if (rs?.oj_data?.order_id) {
+          const orders = await executeFnc('fnc_pos_order', 's_pos', [
+            [0, 'fequal', 'point_id', pointId],
+            [
+              0,
+              'multi_filter_in',
+              [
+                { key_db: 'state', value: 'I' },
+                { key_db: 'state', value: 'Y' },
+              ],
+            ],
+          ])
+          setOrderData(orders?.oj_data || [])
+          setSelectedOrder(rs?.oj_data?.order_id)
+        }
+
+        // Si el ID cambió, actualizamos el estado con el nuevo order_id
+        if (
+          typeof selectedOrder === 'string' &&
+          rs?.oj_data?.order_id &&
+          rs?.oj_data?.order_id !== selectedOrder
+        ) {
+          updateMoveId(selectedOrder, rs.oj_data.order_id)
+        }
+        setHandleChange(false)
+        break
+      }
+      case 'ticket': {
+        if (!handleChange) break
+        break
+      }
+      case 'payment': {
+        if (!handleChange) break
+        const data = orderData.find((item) => item.order_id === selectedOrder)
+        const newPayments = data?.payments?.filter((item: any) => item.amount !== 0)
+        const { oj_data } = await executeFnc(
+          'fnc_pos_order',
+          typeof data?.order_id === 'string' ? 'i' : 'u',
+          {
+            ...data,
+            session_id: typeof data?.order_id === 'string' ? session_id : undefined,
+            payments: newPayments,
+          }
+        )
+        if (oj_data?.order_id) {
+          setSelectedOrder(oj_data?.order_id)
+        }
+
+        const orders = await executeFnc('fnc_pos_order', 's_pos', [
+          [0, 'fequal', 'point_id', pointId],
+          [
+            0,
+            'multi_filter_in',
+            [
+              { key_db: 'state', value: 'I' },
+              { key_db: 'state', value: 'Y' },
+            ],
+          ],
+        ])
+        setOrderData(orders?.oj_data || [])
+        setHandleChange(false)
+        break
+      }
+      default:
+        break
     }
   }
 
   const fnc_change_order = (id_order: string) => {
     setScreen('products')
+    fnc_save_order()
     setSelectedNavbarMenu('R')
     setSelectedOrder(id_order)
     /* setOrderCart((prevOrderCart) =>
@@ -62,6 +277,25 @@ export default function Header() {
       })
     )*/
   }
+
+  const stableSaveOrder = useCallback(async () => {
+    await fnc_save_order()
+  }, [fnc_save_order])
+
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'hidden') {
+        console.log('El usuario cambió de pestaña o minimizó la ventana', handleChange)
+        await stableSaveOrder()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [handleChange, stableSaveOrder])
 
   return (
     <header className="pos-header">
@@ -91,6 +325,7 @@ export default function Header() {
             onClick={() => {
               fnc_save_order()
               setSelectedNavbarMenu('O')
+              setSelectedItem(null)
               setScreen('ticket')
             }}
           >
@@ -100,35 +335,51 @@ export default function Header() {
 
         <div className="navbar-orders">
           <button
-            className="btn2 btn2-secondary lh-lg w-auto min-h-[48px]"
+            // className="btn2 btn2-secondary lh-lg w-auto min-h-[48px]"
+            className="btn2 btn2-secondary lh-lg min-h-[48px]"
             onClick={() => {
-              addNewOrder()
+              addNewOrder({
+                date: new Date(),
+                user_id: userData?.user_id,
+                point_id: Number(pointId),
+                session_id: session_id,
+                company_id: userData?.company_id,
+                partner_id: finalCustomer?.partner_id,
+              })
             }}
           >
-            <MdAddCircle style={{ fontSize: '20px' }} />
+            <MdAddCircleOutline style={{ fontSize: '24px' }} />
           </button>
+          {/* 
           <button
             className="btn2 btn2-secondary lh-lg w-auto min-h-[48px]"
             onClick={() => {
+              setSelectedItem(null)
               fnc_save_order()
             }}
           >
-            <BiSave style={{ fontSize: '20px' }} />
+            <WiCloudUp style={{ fontSize: '34px' }} />
           </button>
+          */}
 
+          {/*
           <button
             className="btn2 btn2-secondary lh-lg w-auto min-h-[48px]"
             style={{ paddingLeft: '2px', paddingRight: '2px' }}
           >
             <IoMdArrowDropdown style={{ fontSize: '24px' }} />
           </button>
+          */}
 
           <div className="pos-orders">
             {orderData?.map((order, index) => (
               <button
-                key={order?.id_order}
-                className={`btn2 btn2-secondary btn2-lg lh-lg w-auto min-h-[48px] ${selectedOrder === order.move_id ? 'btn2-light active' : ''} `}
-                onClick={() => fnc_change_order(order.move_id)}
+                key={order?.order_id}
+                className={`btn2 btn2-secondary btn2-lg lh-lg w-auto min-h-[48px] ${selectedOrder === order.order_id ? 'btn2-light active' : ''} `}
+                onClick={() => {
+                  setSelectedItem(null)
+                  fnc_change_order(order.order_id)
+                }}
               >
                 {index + 1}
               </button>
@@ -138,11 +389,13 @@ export default function Header() {
       </div>
 
       <div className="pos-header-right">
-        <div className={`relative ${screen === 'ticket' ? 'hidden' : ''}`}>
+        <div
+          className={`relative ${screen === 'ticket' || screen === 'payment' || screen === 'invoice' ? 'hidden' : ''}`}
+        >
           <input
             type="text"
-            className="w-60 pl-10 pr-10 py-2 border rounded-md bg-white"
-            placeholder="Buscar productos..."
+            className="w-[20rem] pl-10 pr-10 py-2 border rounded-md bg-white text-[16px]"
+            placeholder="Buscar productos ..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             aria-label="Buscar productos"
@@ -203,12 +456,7 @@ export default function Header() {
           A
         </div> */}
 
-        <button
-          className="btn2 btn2-light lh-lg w-auto min-h-[48px]"
-          // style={{ paddingLeft: '2px', paddingRight: '2px' }}
-        >
-          {/* <FaBarcode style={{ fontSize: '24px' }} /> */}
-
+        <button className="btn2 btn2-light lh-lg w-auto min-h-[48px]" onClick={handleClick}>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-6 w-6"
@@ -225,6 +473,25 @@ export default function Header() {
             />
           </svg>
         </button>
+        {/**<Menu
+          anchorEl={anchorEl}
+          open={open}
+          onClose={handleClose}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
+        >
+          <MenuItem onClick={handleCashInAndOut}>Entrada/salida de efectivo</MenuItem>
+          <MenuItem onClick={() => navigate('/points-of-sale')}>
+            Regresar a la ventana principal
+          </MenuItem>
+          <MenuItem onClick={handleCloseCashRegister}>Cerrar caja registradora</MenuItem>
+        </Menu> */}
       </div>
     </header>
   )

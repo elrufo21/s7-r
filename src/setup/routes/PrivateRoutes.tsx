@@ -27,6 +27,14 @@ export const PrivateRoutes = () => {
         />
         <Route element={<ModuleLayout />}>
           <Route
+            path="points-of-sale/*"
+            element={
+              <Suspense fallback="">
+                <PointOfSalePage />
+              </Suspense>
+            }
+          />
+          <Route
             path="contacts/*"
             element={
               <Suspense fallback="">
@@ -67,14 +75,7 @@ export const PrivateRoutes = () => {
             </Suspense>
           }
         />
-        <Route
-          path="points-of-sale/*"
-          element={
-            <Suspense fallback="">
-              <PointOfSalePage />
-            </Suspense>
-          }
-        />
+
         <Route
           path="pos/*"
           element={

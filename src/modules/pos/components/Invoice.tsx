@@ -219,12 +219,16 @@ const styles = StyleSheet.create({
 })*/
 
 const Invoice = () => {
-  const { orderData, selectedOrder, getTotalPriceByOrder, finalCustomer } = useAppStore()
+  const { orderData, selectedOrder, finalCustomer, addNewOrder, executeFnc } = useAppStore()
   const [order, setOrder] = useState({})
   useEffect(() => {
-    setOrder(orderData.find((o) => o.move_id === selectedOrder))
+    const fetchOrder = async () => {
+      const { oj_data } = await executeFnc('fnc_pos_order', 's1', [selectedOrder])
+      setOrder(oj_data[0] || {})
+    }
+    fetchOrder()
   }, [orderData])
-  const info = { ...order, move_lines: order?.move_lines || [] }
+  const info = { ...order, lines: order?.lines || [] }
   return (
     <div className="receipt-screen screen h-100 bg-100">
       <div className="screen-content d-flex flex-column h-100">
@@ -237,7 +241,7 @@ const Invoice = () => {
                 </i>
                 <span className="fs-3 fw-bolder">Pago exitoso</span>
                 <div className="fs-4 fw-bold d-flex justify-content-center align-items-center gap-2">
-                  <span>S/&nbsp;{getTotalPriceByOrder(selectedOrder).toFixed(2)}</span>
+                  <span>S/&nbsp;{order?.amount_withtaxed?.toFixed(2)}</span>
                   <span className="bg-green-600 edit-order-payment badge bg-success text-white rounded cursor-pointer pt-1">
                     Editar pago
                   </span>
@@ -295,6 +299,7 @@ const Invoice = () => {
                 className="button next validation btn btn-primary btn-lg w-100 py-4 lh-lg highlight"
                 name="done"
                 type="button"
+                onClick={() => addNewOrder()}
               >
                 Nueva orden
               </button>
@@ -373,7 +378,7 @@ const Invoice = () => {
                           </View>
                         </View>
 
-                        {info?.move_lines?.map((item: MoveLine, index: number) => (
+                        {info?.lines?.map((item: MoveLine, index: number) => (
                           <View key={index} style={styles.tableRow}>
                             {item.type === TypeInvoiceLineEnum.SECTION ? (
                               <View style={styles.section_or_note}>

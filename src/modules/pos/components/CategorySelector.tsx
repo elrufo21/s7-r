@@ -1,9 +1,7 @@
 import useAppStore from '@/store/app/appStore'
-import { useSearch } from '../context/SearchContext'
 
 export default function CategorySelector() {
-  const { selectedCategory, setSelectedCategory } = useSearch()
-  const { categories } = useAppStore()
+  const { categories, selectedCategory, setSelectedCategory } = useAppStore()
 
   return (
     <div className="category-list">
@@ -11,9 +9,7 @@ export default function CategorySelector() {
         <button
           key={category.category_id}
           className={`category-button p-1 btn btn-light d-flex justify-content-center align-items-center rounded-3 ${
-            selectedCategory === category.category_id
-              ? 'bg-blue-100 text-blue-800'
-              : 'bg-gray-100 hover:bg-gray-200'
+            selectedCategory === category.category_id ? 'active' : ''
           }`}
           onClick={() =>
             setSelectedCategory(

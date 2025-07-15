@@ -9,7 +9,7 @@ type KanbanViewProps = {
 
 export const KanbanView = ({ config }: KanbanViewProps) => {
   const navigate = useNavigate()
-
+  const { setSessionId } = useAppStore()
   const {
     dataKanbanShow: { dataShow },
     setDataFormShow,
@@ -20,71 +20,126 @@ export const KanbanView = ({ config }: KanbanViewProps) => {
   const idRow = config.grid.idRow as keyof any
   const viewItem = async (item: any) => {
     setDataFormShow(dataShow)
+    setSessionId(item['session_id'])
     navigate(`${config.item_url}/${item?.[idRow]}`)
   }
-
-  if (fnc_name === 'fnc_point_of_sale')
+  if (fnc_name === 'fnc_pos_point')
     return (
-      <div className="oe_kanban_card flex">
-        <div
-          role="article"
-          className="o_kanban_record d-flex flex-grow-1 flex-md-shrink-1 flex-shrink-0"
-        >
-          <>
-            <div className="oe_kanban_details ">
-              <div className="o_kanban_record_top mb-0 ">
-                <div className="o_kanban_record_headings">
-                  <strong className="o_kanban_record_title">
-                    <span>Tienda 1</span>
-                  </strong>
+      <>
+        {dataShow.map((item, index) => (
+          <div key={index} className="oe_kanban_card flex pos_point">
+            <div
+              role="article"
+              className="o_kanban_record d-flex flex-grow-1 flex-md-shrink-1 flex-shrink-0"
+              //onClick={() => viewItem(item)}
+            >
+              <div className="oe_kanban_card oe_kanban_global_click flex">
+                {/*
+                <div className="imageEx_64">
+                  <div className="flex justify-center items-center w-full h-full "></div>
                 </div>
-              </div>
+                */}
 
-              <div className="row g-0 pb-4 ms-2 mt-auto">
-                <div className="col-6 d-flex flex-wrap align-items-center gap-3">
-                  <button
-                    className="btn btn-primary oe_kanban_action"
-                    onClick={() => {
-                      navigate('/pos')
-                    }}
-                  >
-                    Seguir vendiendo
-                  </button>
-                </div>
-                <div className="col-6">
-                  <div className="row">
-                    <div className="col-6">
-                      <span>Cierre</span>
+                <div className="oe_kanban_details ">
+                  <div className="o_kanban_record_top">
+                    <div className="o_kanban_record_headings ">
+                      <strong className="o_kanban_record_title">
+                        <span>{item['name']}</span>
+                      </strong>
                     </div>
-                    <span className="col-6">14/05/2025</span>
                   </div>
-                  <div className="row">
-                    <div className="col-6">
-                      <span>Balance</span>
+
+                  {/*
+                  <div className="w-full o_kanban_tags_section">
+                    <div className="d-flex flex-wrap gap-1">
+                      <p className="text-sm mt-1">
+                        <span>Cierre </span>
+                        <span className="col-6">02/07/2025</span>
+                      </p>{' '}
                     </div>
-                    <div
-                      className="o_field_widget o_readonly_modifier o_field_empty o_field_monetary col-6"
-                      data-name="last_session_closing_cash"
-                    >
-                      <span>S/&nbsp;0,00</span>
+                    <div className="d-flex flex-wrap gap-1">
+                      <p className="text-sm mt-1">
+                        <span>Balance</span>
+                        <span className="col-6">100000</span>
+                      </p>{' '}
                     </div>
+                  </div>
+                  */}
+
+                  <div className="w-full o_kanban_tags_section"></div>
+
+                  <div className="w-full">
+                    {item?.session_id ? (
+                      <button
+                        className="btn btn-primary oe_kanban_action"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const sessions = JSON.parse(localStorage.getItem('sessions') || '[]')
+                          const targetSession = {
+                            session_id: item.session_id ?? null,
+                            point_id: item.point_id,
+                          }
+                          const idx = sessions.findIndex((s: any) => s.point_id === item.point_id)
+                          const nextSessions =
+                            idx >= 0
+                              ? sessions.map((s: any, i: number) => (i === idx ? targetSession : s))
+                              : [...sessions, targetSession]
+
+                          localStorage.setItem('sessions', JSON.stringify(nextSessions))
+                          navigate(`/pos/${item.point_id}`)
+                        }}
+                      >
+                        Seguir vendiendo
+                      </button>
+                    ) : (
+                      <button
+                        className="btn btn-primary oe_kanban_action"
+                        onClick={(e) => {
+                          e.stopPropagation()
+
+                          const sessions = JSON.parse(localStorage.getItem('sessions') || '[]')
+
+                          const targetSession = {
+                            session_id: null,
+                            point_id: item.point_id,
+                          }
+
+                          const idx = sessions.findIndex((s: any) => s.point_id === item.point_id)
+
+                          const nextSessions =
+                            idx >= 0
+                              ? sessions.map((s: any, i: number) => (i === idx ? targetSession : s))
+                              : [...sessions, targetSession]
+
+                          localStorage.setItem('sessions', JSON.stringify(nextSessions))
+
+                          navigate(`/pos/${item.point_id}`)
+                        }}
+                      >
+                        Aperturar caja
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
-          </>
-        </div>
-      </div>
+          </div>
+        ))}
+      </>
     )
+
   if (frmLoading) {
     return null
   }
 
   if (!dataShow.length && fnc_name !== ' fnc_point_of_sale')
     return (
-      <div className="w-full h-full flex flex-col justify-center items-center gap-3">
-        <img src="/images/not-content.svg" />
-        <h2 className="text-lg text-center">{config.no_content_dsc}</h2>
+      <div className="o_view_nocontent">
+        <div className="w-full h-full flex flex-col justify-center items-center gap-3">
+          <img src="/images/not-content.svg" />
+          <h2 className="text-center text-[1.25rem] font-bold ">{config.no_content_title}</h2>
+          <h2 className="text-center text-[1rem]">{config.no_content_dsc}</h2>
+        </div>
       </div>
     )
 

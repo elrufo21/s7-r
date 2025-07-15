@@ -50,6 +50,8 @@ export const createAppSlice = (
   config: {} as FormConfig,
   setConfig: (config) => set({ config }),
   //breadcrumb reemplazo de appRoutes
+  listBreadcrumb: [],
+  setListBreadcrumb: (listBreadcrumb) => set({ listBreadcrumb }),
   breadcrumb: [],
   setBreadcrumb: (breadcrumb) => set({ breadcrumb }),
   //dataShow

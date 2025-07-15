@@ -34,8 +34,19 @@ import Frm_746_config from '@/modules/action/views/invoicing/documents-types/Con
 import Frm_742_config from '@/modules/action/views/invoicing/payment/config'
 import Frm_4_config from '@/modules/action/views/settings/companies/config'
 import Frm_2_config from '@/modules/action/views/settings/users/config'
-
+import Frm_888_config from '@/modules/action/views/point-of-sale/pos-order/config'
+import Frm_889_config from '@/modules/action/views/point-of-sale/pos-session/config'
+import Frm_890_config from '@/modules/action/views/point-of-sale/pos-payment/config'
+import Frm_891_config from '@/modules/action/views/point-of-sale/pos-payment-method/config'
+import Frm_892_config from '@/modules/action/views/point-of-sale/pos-point/config'
+import Frm_893_config from '@/modules/action/views/point-of-sale/pos-order-report/config'
 import Frm_93_config from '@/modules/action/views/point-of-sale/product-pos-category/config'
+import Frm_894_config from '@/modules/action/views/point-of-sale/order-detail-modal/config'
+import Frm_895_config from '@/modules/action/views/point-of-sale/pos-customers/config'
+import Frm_896_config from '@/modules/action/views/point-of-sale/coins-and-bills/config'
+import Frm_897_config from '@/modules/action/views/point-of-sale/pos-attributes/config'
+import Frm_898_config from '@/modules/action/views/point-of-sale/pos-products/config'
+import Frm_899_config from '@/modules/action/views/point-of-sale/pos-variants-product/config'
 
 import { FormConfigs } from '@/shared/shared.types'
 
@@ -77,4 +88,16 @@ export const forms: FormConfigs = {
   Frm_667_config,
   Frm_742_config,
   Frm_746_config,
+  Frm_888_config,
+  Frm_889_config,
+  Frm_890_config,
+  Frm_891_config,
+  Frm_892_config,
+  Frm_893_config,
+  Frm_894_config,
+  Frm_895_config,
+  Frm_896_config,
+  Frm_897_config,
+  Frm_898_config,
+  Frm_899_config,
 }

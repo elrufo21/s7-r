@@ -10,6 +10,8 @@ import useUserStore from '@/store/persist/persistStore'
 import { useQueryClient } from '@tanstack/react-query'
 import { useActionModule } from '@/shared/hooks/useModule'
 import { StatusContactEnum } from './viewTypes.types'
+import { getRequiredFieldErrors } from '@/shared/helpers/validators'
+import { FrmBarStatus } from '@/shared/components/form/bars/FrmBarStatus'
 
 export const FormView = ({ item }: { item?: any }) => {
   const navigate = useNavigate()
@@ -32,8 +34,6 @@ export const FormView = ({ item }: { item?: any }) => {
     setCanChangeGroupBy,
     breadcrumb,
     setBreadcrumb,
-    setFormItem,
-    previousDataBeforeMenu,
   } = useAppStore((state) => state)
 
   const {
@@ -66,9 +66,9 @@ export const FormView = ({ item }: { item?: any }) => {
     setFrmLoading(isPending)
   }, [isPending, setFrmLoading])
 
-  useEffect(() => {
+  /*  useEffect(() => {
     setFormItem(previousDataBeforeMenu.formItem)
-  }, [])
+  }, [])*/
   const {
     control,
     watch,
@@ -76,6 +76,7 @@ export const FormView = ({ item }: { item?: any }) => {
     reset,
     setValue,
     trigger,
+
     formState: { errors, isDirty },
   } = useForm<any>({ defaultValues: default_values })
 
@@ -310,6 +311,7 @@ export const FormView = ({ item }: { item?: any }) => {
   const handleChange = () => {
     setFrmIsChanged(isDirty)
   }
+
   const queryClient = useQueryClient()
   const executeAction = async (action: FormActionEnum) => {
     let isValid: boolean
@@ -322,9 +324,49 @@ export const FormView = ({ item }: { item?: any }) => {
         if (isValid) {
           handleSubmit(() => saveCore())()
         } else {
+          // Obtener campos faltantes y mostrar toast específico
+          const missingFields = getRequiredFieldErrors(errors, config.fieldLabels)
+
+          if (missingFields.length > 0) {
+            toast.error(
+              <div className="flex items-start gap-3">
+                <div className="flex-1">
+                  <div className="font-semibold text-gray-900 mb-3 text-sm">Campos no válidos:</div>
+                  <ul className="space-y-2">
+                    {missingFields.map((field, index) => (
+                      <li key={index} className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                        <span className="text-sm text-gray-700">{field}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>,
+              {
+                duration: 5000,
+                closeButton: true,
+                className: 'custom-validation-toast',
+                style: {
+                  background: '#FEFEFE',
+                  border: '1px solid #FCA5A5',
+                  borderLeft: '4px solid #EF4444',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+                  minWidth: '300px',
+                },
+              }
+            )
+          } else {
+            toast.error('Error al validar el formulario')
+          }
+
           setFrmLoading(false)
           setFrmAction(FormActionEnum.BASE)
         }
+        break
+      case FormActionEnum.SAVE_DRAFT:
+        saveCore()
         break
       case FormActionEnum.UPDATE_STATE:
         handleSubmit(dialogChangeStatus)()
@@ -372,16 +414,14 @@ export const FormView = ({ item }: { item?: any }) => {
   useEffect(() => {
     //setFrmConfigControls(config.configControls)
   }, [config.configControls, setFrmConfigControls])
-
-  console.log('config.fnc_name', config.fnc_name)
   return (
     <div className="o_content">
       <div className="o_form_renderer o_form_editable d-flex flex-nowrap h-100 o_form_saved">
         <div
-          className={`o_form_sheet_bg ${frm_bar_buttons || frm_bar_status ? '' : 'pt-[16px]'}`}
+          className={`o_form_sheet_bg ${frm_bar_buttons || frm_bar_status || config.statusBarConfig ? '' : 'pt-[16px]'}`}
           style={{ overflowX: 'hidden' }}
         >
-          {(frm_bar_buttons || frm_bar_status) && (
+          {(frm_bar_buttons || frm_bar_status || config.statusBarConfig) && (
             <div className="o_form_bar">
               <div className="o_form_bar_buttons">
                 {frm_bar_buttons && (
@@ -397,16 +437,20 @@ export const FormView = ({ item }: { item?: any }) => {
                 )}
               </div>
 
-              {frm_bar_status && (
+              {(frm_bar_status || config.statusBarConfig) && (
                 <div className="o_form_bar_status">
                   <div className="bar_status">
-                    {frm_bar_status({
-                      watch,
-                      errors,
-                      control,
-                      setValue,
-                      editConfig: frmConfigControls,
-                    })}
+                    {config.statusBarConfig ? (
+                      <FrmBarStatus />
+                    ) : (
+                      frm_bar_status?.({
+                        watch,
+                        errors,
+                        control,
+                        setValue,
+                        editConfig: frmConfigControls,
+                      })
+                    )}
                   </div>
                 </div>
               )}
@@ -414,9 +458,20 @@ export const FormView = ({ item }: { item?: any }) => {
           )}
 
           <div
-            className={`o_form_sheet position-relative ${frm_bar_buttons || frm_bar_status ? 'border-top-width-0' : ''}`}
+            className={`o_form_sheet position-relative ${frm_bar_buttons || frm_bar_status || config.statusBarConfig ? 'border-top-width-0' : ''}`}
           >
-            {/* {(frm_bar_buttons || frm_bar_status) && <div className="ribbon-simple">PAGADO</div>} */}
+            {(() => {
+              const currentState = watch('state')
+              const matchingRibbon = config.ribbonList?.find(
+                (ribbon) => ribbon.state === currentState
+              )
+
+              return matchingRibbon ? (
+                <div className={`${matchingRibbon.className}`}>{matchingRibbon.label}</div>
+              ) : null
+            })()}
+
+            {/* {(frm_bar_buttons || frm_bar_status) && <div className="ribbon-simple">PAGADO</div>} 
             {(frm_bar_buttons || frm_bar_status) && config.fnc_name === 'fnc_account_move' && (
               <div className="ribbon-simple reversed">REVERTIDO</div>
             )}
@@ -426,7 +481,7 @@ export const FormView = ({ item }: { item?: any }) => {
                 <div className="ribbon">Archivado</div>
               )}
             </>
-
+          */}
             <form onChange={handleChange}>
               {frm_photo &&
                 frm_photo({

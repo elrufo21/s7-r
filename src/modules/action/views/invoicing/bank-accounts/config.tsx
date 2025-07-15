@@ -17,11 +17,8 @@ const BankAccountsConfig: FormConfig = {
   item_url: '/action/112/detail',
   new_url: '/action/112/detail/new',
   module_url: '/action/112',
-
   no_content_title: 'Crear una cuenta bancaria',
-  no_content_dsc:
-    'Desde aquí puede administrar todas las cuentas bancarias que están vinculadas a usted y a sus contactos.',
-
+  no_content_dsc: 'Desde aquí puede administrar todas las cuentas bancarias que están vinculadas a usted y a sus contactos.',
   fnc_valid: (data) => {
     if (!data['number']) {
       return null

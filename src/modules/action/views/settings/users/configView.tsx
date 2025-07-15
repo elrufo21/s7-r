@@ -3,7 +3,7 @@ import { AutocompleteControlled, ImageInput, MultiSelectObject, TextControlled }
 import useAppStore from '@/store/app/appStore'
 import Chip from '@mui/material/Chip'
 import { frmElementsProps } from '@/shared/shared.types'
-import { required } from '@/shared/helpers/validators'
+import { required } from '@/shared/helpers/Validators'
 
 export function Frm_bar_buttons() {
   return <button className="btn btn-secondary">Enviar un correo de invitación</button>

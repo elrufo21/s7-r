@@ -26,6 +26,7 @@ type AutocompleteControlledProps = {
   fnc_enlace?: (value: any, name: any) => void
   is_edit?: boolean
 }
+
 export const AutocompleteControlled = ({
   name,
   errors,
@@ -64,6 +65,7 @@ export const AutocompleteControlled = ({
       setEnlaceLoading(false)
     }
   }
+
   return (
     <Controller
       name={name}
@@ -75,7 +77,10 @@ export const AutocompleteControlled = ({
           return (
             <div className={className}>
               {recordOption ? (
-                <div className="text-teal-600 cursor-pointer" onClick={() => executeEnlace(value)}>
+                <div
+                  className={fnc_enlace ? 'text-teal-600 cursor-pointer' : 'text-black'}
+                  onClick={fnc_enlace ? () => executeEnlace(value) : undefined}
+                >
                   {recordOption?.label || value}
                 </div>
               ) : (
@@ -149,11 +154,6 @@ export const AutocompleteControlled = ({
                   </li>
                 )
               }}
-              /**               
-              onInputChange={(_, value, reason) => {
-                if (reason === 'reset') return ''
-              }}
-               */
               renderInput={(params) => (
                 <TextField
                   {...params}

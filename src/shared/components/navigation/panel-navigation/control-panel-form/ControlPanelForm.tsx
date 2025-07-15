@@ -3,7 +3,6 @@ import { useAppStore } from '@/store/app/appStore'
 import Stack from '@mui/material/Stack'
 import { IconButton } from '@mui/material'
 import Tooltip from '@mui/material/Tooltip'
-import { TbCloudCheck, TbCloudOff, TbSettings } from 'react-icons/tb'
 import { RiInboxArchiveLine, RiInboxUnarchiveLine } from 'react-icons/ri'
 import { HiOutlineDuplicate } from 'react-icons/hi'
 import { GrTrash } from 'react-icons/gr'
@@ -19,6 +18,27 @@ import { PageCounterForm } from './PageCounterForm'
 import StatsButtonBox from '@/shared/components/extras/StatsButtonBox'
 import useUserStore from '@/store/persist/persistStore'
 import { Breadcrumb } from '@/shared/ui/Breadcrumb/Breadcrumb'
+
+// import { TbCloudCheck, TbCloudOff, TbSettings } from 'react-icons/tb'
+import { /*TbCloudUp, TbCloudX, TbCloudOff,*/ TbSettings } from 'react-icons/tb'
+
+//import { TbCloudUpload } from 'react-icons/tb'
+//import { MdCancelPresentation } from 'react-icons/md'
+//import { IoIosUndo } from 'react-icons/io'
+//import { IoArrowUndoOutline } from 'react-icons/io5'
+//import { IoCloseSharp } from 'react-icons/io5'
+//import { TbCloud } from 'react-icons/tb' // bien
+import { WiCloudUp } from 'react-icons/wi' // bien +++
+//import { LiaCloudUploadAltSolid } from 'react-icons/lia'
+
+//import { IoIosClose } from 'react-icons/io'
+
+//import { WiCloudRefresh } from 'react-icons/wi'
+//import { MdOutlineCloudOff } from 'react-icons/md'
+import { MdCloudOff } from 'react-icons/md'
+//import { MdCloudQueue } from 'react-icons/md'
+//import { useForm } from 'react-hook-form'
+//import { StatusInvoiceEnum } from '@/modules/invoicing/invoice.types'
 
 type ControlPanelFormProps = {
   config: FormConfig
@@ -41,7 +61,7 @@ const ControlPanelForm = ({ config }: ControlPanelFormProps) => {
     setFormItem,
     setViewType,
     setTableData,
-    setSettingsBreadcrumb,
+    setListBreadcrumb,
     setBreadcrumb,
     breadcrumb,
     stats,
@@ -85,7 +105,7 @@ const ControlPanelForm = ({ config }: ControlPanelFormProps) => {
     aditionalFilters,
     filters,
     setFilters,
-    setSettingsBreadcrumb,
+    setListBreadcrumb,
     setBreadcrumb,
     breadcrumb,
     setFrmAction,
@@ -121,7 +141,12 @@ const ControlPanelForm = ({ config }: ControlPanelFormProps) => {
 
   const handleBtnSave = () => {
     setFrmLoading(true)
-    setFrmAction(FormActionEnum.PRE_SAVE)
+    if (config?.skipValidation) {
+      setFrmAction(FormActionEnum.SAVE_DRAFT)
+    } else {
+      setFrmAction(FormActionEnum.PRE_SAVE)
+    }
+
     setTableData([])
     setFrmIsChangedItem(false)
   }
@@ -162,150 +187,166 @@ const ControlPanelForm = ({ config }: ControlPanelFormProps) => {
   }*/
 
   return (
-    <div className="w-full flex gap-3 items-center">
-      <div className="w-1/3 flex gap-2">
-        <div className="flex items-center">
-          <button className="btn btn-primary" onClick={handleBtnNew}>
-            Nuevo
-          </button>
+    // <div className="o_control_panel_main d-flex flex-wrap flex-lg-nowrap justify-content-between align-items-lg-start gap-2 gap-lg-3 flex-grow-1">
+    <div className="o_control_panel_main d-flex flex-wrap flex-lg-nowrap justify-content-between gap-2 gap-lg-3 flex-grow-1">
+      <div className="o_control_panel_breadcrumbs d-flex align-items-center gap-1 order-0 h-lg-100">
+        <div className="o_control_panel_main_buttons d-flex gap-1 d-empty-none d-print-none">
+          <div className="d-inline-flex gap-1">
+            {config.new_url && (
+              <button className="btn btn-primary mr-[5px]" onClick={handleBtnNew}>
+                Nuevo
+              </button>
+            )}
+          </div>
         </div>
 
-        <div>
-          <div className="flex items-center c_NavMenuListEx">
-            <Breadcrumb />
-          </div>
+        <div className="ls_breadcrumb">
+          <Breadcrumb />
 
-          <div className="flex items-center">
-            <div className="mt-1 mr-1 text-truncate" style={{ maxWidth: '300px' }}>
-              {pathname.includes('/new')
-                ? 'Nuevo'
-                : ((displayItem?.[config.dsc_view] !== '' ? (
-                    displayItem?.[config.dsc_view]
-                  ) : (
-                    <span className="italic pr-px text-amber-700">Sin nombre</span>
-                  )) ?? 'Sin nombre')}
+          <div className="d-flex gap-1 text-truncate pt-[5px]">
+            <div className="o_last_breadcrumb_item active d-flex gap-2 align-items-center min-w-0 lh-sm">
+              <span className="min-w-0 mr-[2px] text-truncate">
+                {pathname.includes('/new') ? (
+                  'Nuevo'
+                ) : displayItem?.[config.dsc_view] !== '' ? (
+                  displayItem?.[config.dsc_view]
+                ) : (
+                  <span className="italic pr-px text-amber-700">Sin nombre</span>
+                )}
+              </span>
             </div>
 
+            <div className="o_control_panel_breadcrumbs_actions d-inline-flex d-print-none">
+              <div className="o_cp_action_menus d-flex align-items-center gap-1">
+                <div className="lh-1">
+                  <Stack className="grow" direction="row">
+                    <>
+                      <Tooltip arrow title="Acciones">
+                        <IconButton
+                          className="button_action actions"
+                          disableRipple={true}
+                          disabled={frmLoading}
+                          onClick={(event) => {
+                            setAnchorEl(event.currentTarget)
+                          }}
+                        >
+                          <TbSettings style={{ fontSize: '19.5px' }} />
+                        </IconButton>
+                      </Tooltip>
+
+                      <StyledMenu
+                        className="menuEx"
+                        anchorEl={anchorEl}
+                        open={open}
+                        onClose={handleClose}
+                      >
+                        <div>
+                          {displayItem?.state === 'A' && (
+                            <MenuItem onClick={handleChangeStatus}>
+                              <ListItemIcon>
+                                <RiInboxArchiveLine style={{ fontSize: '16px' }} />
+                              </ListItemIcon>
+                              <ListItemText>Archivar</ListItemText>
+                            </MenuItem>
+                          )}
+
+                          {displayItem?.state === 'I' && (
+                            <MenuItem onClick={handleChangeStatus}>
+                              <ListItemIcon>
+                                <RiInboxUnarchiveLine style={{ fontSize: '16px' }} />
+                              </ListItemIcon>
+                              <ListItemText>Desarchivar</ListItemText>
+                            </MenuItem>
+                          )}
+                        </div>
+                        {!pathname.includes('/new') && (
+                          <MenuItem onClick={handleDuplicate}>
+                            <ListItemIcon>
+                              <HiOutlineDuplicate style={{ fontSize: '16px' }} />
+                            </ListItemIcon>
+                            <ListItemText>Duplicar</ListItemText>
+                          </MenuItem>
+                        )}
+                      </StyledMenu>
+                    </>
+
+                    {!pathname.includes('/new') && displayItem?.[idRow] && (
+                      <Tooltip arrow title="Eliminar registro">
+                        <IconButton
+                          className="hover:text-red-400 button_action delete"
+                          disableRipple={true}
+                          disabled={frmLoading}
+                          onClick={handleDelete}
+                        >
+                          <div style={{ paddingTop: '2.5px' }}>
+                            <GrTrash style={{ fontSize: '16px' }} />
+                          </div>
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </Stack>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="ls_form_status_indicator">
+          <div className="ls_form_status_indicator_buttons">
             <Stack className="grow" direction="row">
-              <>
-                <Tooltip arrow title="Acciones">
-                  <IconButton
-                    disableRipple={true}
-                    disabled={frmLoading}
-                    onClick={(event) => {
-                      setAnchorEl(event.currentTarget)
-                    }}
-                  >
-                    <TbSettings style={{ fontSize: '20px' }} />
-                  </IconButton>
-                </Tooltip>
-
-                <StyledMenu
-                  className="menuEx"
-                  anchorEl={anchorEl}
-                  open={open}
-                  onClose={handleClose}
-                >
-                  <div>
-                    {displayItem?.state === 'A' && (
-                      <MenuItem onClick={handleChangeStatus}>
-                        <ListItemIcon>
-                          <RiInboxArchiveLine style={{ fontSize: '16px' }} />
-                        </ListItemIcon>
-                        <ListItemText>Archivar</ListItemText>
-                      </MenuItem>
-                    )}
-
-                    {displayItem?.state === 'I' && (
-                      <MenuItem onClick={handleChangeStatus}>
-                        <ListItemIcon>
-                          <RiInboxUnarchiveLine style={{ fontSize: '16px' }} />
-                        </ListItemIcon>
-                        <ListItemText>Desarchivar</ListItemText>
-                      </MenuItem>
-                    )}
-                  </div>
-                  {!pathname.includes('/new') && (
-                    <MenuItem onClick={handleDuplicate}>
-                      <ListItemIcon>
-                        <HiOutlineDuplicate style={{ fontSize: '16px' }} />
-                      </ListItemIcon>
-                      <ListItemText>Duplicar</ListItemText>
-                    </MenuItem>
-                  )}
-                </StyledMenu>
-              </>
-              {!pathname.includes('/new') && displayItem?.[idRow] && (
-                <Tooltip arrow title="Eliminar registro">
-                  <IconButton
-                    className="hover:text-red-400"
-                    disableRipple={true}
-                    style={{ width: '34px', height: '34px' }}
-                    disabled={frmLoading}
-                    onClick={handleDelete}
-                  >
-                    <div style={{ paddingTop: '2.5px' }}>
-                      <GrTrash style={{ fontSize: '16px' }} />
-                    </div>
-                  </IconButton>
-                </Tooltip>
-              )}
-
               {/*((frmState === "n" && permissions.opt_2) || (frmState === "e" && permissions.opt_3)) && (*/}
               <>
                 {(frmIsChanged || frmIsChangedItem) && (
                   <>
                     <Tooltip arrow title="Guardar cambios">
                       <IconButton
+                        className="button_action save"
                         disableRipple={true}
-                        style={{
-                          width: '34px',
-                          height: '34px',
-                          marginLeft: '4px',
-                          paddingTop: '9px',
-                        }}
                         disabled={frmLoading}
                         onClick={handleBtnSave}
                       >
                         <div style={{ paddingTop: '1px' }}>
-                          <TbCloudCheck style={{ fontSize: '22px' }} />
+                          {/* <MdCloudQueue style={{ fontSize: '22px' }} /> */}
+                          <WiCloudUp style={{ fontSize: '32px' }} />
+                          {/* <LiaCloudUploadAltSolid style={{ fontSize: '28px' }} /> */}
                         </div>
                       </IconButton>
                     </Tooltip>
 
                     <Tooltip arrow title="Descartar cambios">
                       <IconButton
+                        className="button_action undo"
                         disableRipple={true}
-                        style={{
-                          width: '34px',
-                          height: '34px',
-                          marginLeft: '2px',
-                        }}
                         disabled={frmLoading}
                         onClick={handleBtnUndo}
                       >
-                        <div style={{ paddingTop: '2px' }}>
-                          <TbCloudOff style={{ fontSize: '20px' }} />
+                        <div style={{ paddingTop: '1px' }}>
+                          <MdCloudOff style={{ fontSize: '23px' }} />
                         </div>
                       </IconButton>
                     </Tooltip>
                   </>
                 )}
               </>
-              {/*)*/}
             </Stack>
           </div>
         </div>
+
+        <div className="me-auto"></div>
       </div>
 
-      {config?.formButtons && stats?.length > 0 ? (
-        <StatsButtonBox statsData={enrichButtons(config.formButtons)} />
-      ) : (
-        <div className="form-buttonbox w-1/3 flex items-center justify-center"></div>
+      {config?.formButtons && stats?.length > 0 && (
+        <div className="o_control_panel_actions d-flex align-items-center justify-content-start justify-content-lg-around order-2 order-lg-1 w-100 mw-100 w-lg-auto">
+          <div className="ls-form-buttonbox d-print-none position-relative d-flex w-md-auto o_full w-100">
+            <StatsButtonBox statsData={enrichButtons(config.formButtons)} />
+          </div>
+        </div>
       )}
 
-      <div className="w-1/3 flex justify-end">
-        <PageCounterForm />
+      <div className="o_control_panel_navigation order-1 order-lg-2">
+        <div className="o_cp_pager text-nowrap d-flex">
+          <PageCounterForm />
+        </div>
       </div>
     </div>
   )

@@ -67,7 +67,11 @@ export const ContactAutocomplete = ({
 
     setBreadcrumb([
       ...breadcrumb,
-      { title: formItem.name, url: pathname, viewType: ViewTypeEnum.FORM },
+      {
+        title: formItem?.name,
+        url: pathname,
+        viewType: ViewTypeEnum.FORM,
+      },
     ])
   }
 

@@ -13,7 +13,6 @@ import { ViewTypeEnum } from '@/shared/shared.types'
 import { InvoiceData } from '@/shared/components/view-types/viewTypes.types'
 import EditableDraggableTable from './components/InvoiceLines'
 import { Frm_bar_buttons } from './components/Frm_bar_buttons'
-import { Frm_bar_status } from './components/Frm_bar_status'
 import { BsCardChecklist } from 'react-icons/bs'
 
 const InvoiceIndexConfig: FormConfig = {
@@ -29,8 +28,34 @@ const InvoiceIndexConfig: FormConfig = {
   new_url: '/invoicing/new',
   filters_columns: [],
   visibility_columns: {},
+  skipValidation: false,
+
+  statusBarConfig: {
+    allStates: [
+      { state: StatusInvoiceEnum.BORRADOR, label: 'Borrador' },
+      { state: StatusInvoiceEnum.PUBLICADO, label: 'Registrado' },
+      { state: StatusInvoiceEnum.CANCELADO, label: 'Cancelado' },
+    ],
+    defaultState: StatusInvoiceEnum.BORRADOR,
+    filterLogic: (currentState, allStates) => {
+      if (currentState === StatusInvoiceEnum.CANCELADO) {
+        return allStates.filter(
+          (item) =>
+            item.state === StatusInvoiceEnum.BORRADOR || item.state === StatusInvoiceEnum.CANCELADO
+        )
+      }
+
+      return allStates.filter(
+        (item) =>
+          item.state === StatusInvoiceEnum.BORRADOR || item.state === StatusInvoiceEnum.PUBLICADO
+      )
+    },
+  },
 
   fnc_valid: (data) => {
+    if (!data.move_lines?.length && data.state != StatusInvoiceEnum.BORRADOR) {
+      return null
+    }
     if (data.payment_term_id) data.invoice_date_due = null
     data.move_lines = (data?.move_lines || []).map((elem: MoveLine, index: number) => ({
       ...elem,
@@ -43,22 +68,20 @@ const InvoiceIndexConfig: FormConfig = {
 
     if (data.invoice_date) formatDateToDDMMYYYY(data.invoice_date)
     if (data.invoice_date_due) formatDateToDDMMYYYY(data.invoice_date_due)
-
-    if (!data['name']) {
-      return null
-    }
+    const { name, ...d } = data
+    console.log(name)
     //delete
-    return data
+    return d
   },
 
   default_values: {
     company_id: null,
     // tdoc: '',
-    state: 'B',
+    state: 'D',
     state2: '',
-    name: 'Borrador',
+    name: null,
     partner_id: null,
-    invoice_date: '',
+    invoice_date: new Date(),
     payment_reference: '',
     invoice_date_due: null,
     payment_term_id: null,
@@ -71,7 +94,7 @@ const InvoiceIndexConfig: FormConfig = {
     fiscal_position_id: null,
     typed: '',
     amount_total: 0,
-    move_id: 0,
+    move_id: null,
     group_id: null,
     move_lines: [],
   },
@@ -82,14 +105,42 @@ const InvoiceIndexConfig: FormConfig = {
       value: '5',
       onClick: (context: any) => {
         context.setAditionalFilters([[0, 'fequal', 'move_id', context?.formItem?.move_id]])
+        // Siempre aseguramos que el breadcrumb tenga el listado y el form
+        // Si el breadcrumb ya tiene el listado opcional, apila el registro sobre ese breadcrumb
+        /*let newBreadcrumb = []
+        if (context.breadcrumb && context.breadcrumb.length > 0) {
+          newBreadcrumb = [
+            ...context.breadcrumb,
+            {
+              title: context.formItem?.name,
+              url: context?.pathname,
+              viewType: ViewTypeEnum.FORM,
+            },
+          ]
+        } else {
+          // Si no hay breadcrumb previo, crea el stack Listado + Formulario
+          newBreadcrumb = [
+            {
+              title: context.config?.title || 'Listado',
+              url: context.config?.module_url || '/',
+              viewType: ViewTypeEnum.LIST,
+            },
+            {
+              title: context.formItem?.name,
+              url: context?.pathname,
+              viewType: ViewTypeEnum.FORM,
+            },
+          ]
+        }*/
         context.setBreadcrumb([
+          ...context.breadcrumb,
           {
-            title: context.formItem?.name,
-            url: context?.pathname,
+            title: context.formItem?.name || 'Listado',
+            url: context.pathname || '/',
             viewType: ViewTypeEnum.FORM,
+            haveSecondaryList: true,
           },
         ])
-        // context.setSettingsBreadcrumb(true)
         context.navigate('/action/742')
       },
     },
@@ -501,16 +552,16 @@ const InvoiceIndexConfig: FormConfig = {
   form_inputs: {
     imagenFields: [],
     auditoria: true,
-    frm_bar_buttons: ({ watch, control, errors, editConfig = {}, setValue }) => (
+    frm_bar_buttons: ({ watch, control, errors, editConfig = {}, setValue, setError }) => (
       <Frm_bar_buttons
         control={control}
         errors={errors}
         setValue={setValue}
         editConfig={editConfig}
         watch={watch}
+        setError={setError}
       />
     ),
-    frm_bar_status: () => <Frm_bar_status />,
     frm_title: ({ watch, control, errors, editConfig = {}, setValue }) => (
       <FrmTitle
         control={control}
@@ -543,7 +594,7 @@ const InvoiceIndexConfig: FormConfig = {
     tabs: [
       {
         name: 'Líneas de factura',
-        content: ({ watch, control, errors, editConfig = {}, setValue }) => (
+        content: ({ watch, control, errors, editConfig, setValue }) => (
           <EditableDraggableTable
             control={control}
             errors={errors}
@@ -555,7 +606,7 @@ const InvoiceIndexConfig: FormConfig = {
       },
       {
         name: 'Otra información',
-        content: ({ watch, control, errors, editConfig = {}, setValue }) => (
+        content: ({ watch, control, errors, editConfig, setValue }) => (
           <FrmTab1
             control={control}
             errors={errors}
@@ -567,7 +618,7 @@ const InvoiceIndexConfig: FormConfig = {
       },
       {
         name: 'Facturación electrónica peruana',
-        content: ({ watch, control, errors, editConfig = {}, setValue }) => (
+        content: ({ watch, control, errors, editConfig, setValue }) => (
           <FrmTab2
             control={control}
             errors={errors}
@@ -578,6 +629,12 @@ const InvoiceIndexConfig: FormConfig = {
         ),
       },
     ],
+  },
+
+  fieldLabels: {
+    journal_id: 'Diario',
+    currency_id: 'Moneda',
+    document_type_id: 'Tipo de Documento',
   },
 }
 

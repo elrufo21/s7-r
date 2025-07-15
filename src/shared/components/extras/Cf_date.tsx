@@ -1,12 +1,14 @@
 import { frmElementsProps } from '@/shared/shared.types'
 import { DatepickerControlled } from '@/shared/ui'
 import { required } from '@/shared/helpers/validators'
+import { useEffect } from 'react'
 
 interface custom_frm_elementsProps extends frmElementsProps {
   fieldName: string
   startToday?: boolean
   labelName?: string
-  rulers?: boolean
+  rules?: boolean
+  watch: any
 }
 
 const Cf_date = ({
@@ -17,14 +19,20 @@ const Cf_date = ({
   startToday = false,
   labelName = 'Fecha',
   rules,
+  watch,
+  setValue,
 }: custom_frm_elementsProps) => {
-  console.log('starttoday', startToday)
   /* useEffect(() => {
     if(!formItem?.[fieldName] &&){
 
     }
     setValue(fieldName, new Date())
   }, [])*/
+  useEffect(() => {
+    if (!watch(fieldName) && startToday) {
+      setValue(fieldName, new Date())
+    }
+  }, [watch(fieldName)])
   return (
     <div className="d-sm-contents">
       <div className="o_cell o_wrap_label">

@@ -419,7 +419,7 @@ export const InvoicePDF = ({ watch }: { watch: any }) => {
                 <Text style={[]}>Total</Text>
               </View>
               <View style={styles.width_50}>
-                <Text style={styles.textAlignRight}>S/ {info?.amount_total.toFixed(2)}</Text>
+                <Text style={styles.textAlignRight}>S/ {info?.amount_total?.toFixed(2)}</Text>
               </View>
             </View>
           </View>

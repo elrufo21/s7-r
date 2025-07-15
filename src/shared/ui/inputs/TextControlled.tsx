@@ -52,8 +52,21 @@ export const TextControlled = ({
       render={({ field }) => {
         if (config?.[name]?.isEdit) {
           return (
-            <div className={'DivEx ' + className}>
-              {field.value ? field.value : <span className="text-transparent">-</span>}
+            <div className={`DivEx  ${className}`}>
+              {field.value ? (
+                <span
+                  onClick={() => {
+                    if (typeof navigateLink === 'function') {
+                      navigateLink()
+                    }
+                  }}
+                  className={`${typeof navigateLink === 'function' ? 'cursor-pointer text-teal-600' : ''}`}
+                >
+                  {field.value}
+                </span>
+              ) : (
+                <span className="text-transparent">-</span>
+              )}
             </div>
           )
         }

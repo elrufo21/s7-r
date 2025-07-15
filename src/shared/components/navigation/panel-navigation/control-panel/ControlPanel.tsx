@@ -97,7 +97,7 @@ const ControlPanel = ({ config, viewType }: FrmWebOptionsProps) => {
     listGroupBy,
     setListViewData,
     dataListShow: { counterPage, totalPages },
-    settingsBreadcrumb,
+    breadcrumb,
   } = useAppStore()
   const views = config.views
   const changeView = (view: ViewTypeEnum) => {
@@ -142,8 +142,7 @@ const ControlPanel = ({ config, viewType }: FrmWebOptionsProps) => {
         <div className="o_breadcrumb d-flex gap-1 text-truncate">
           <div className="o_last_breadcrumb_item active d-flex fs-4 min-w-0 align-items-center">
             <div className="text-gray-800 text-base text-truncate" style={{ marginBottom: '1px' }}>
-              {settingsBreadcrumb && <Breadcrumb />}
-
+              {breadcrumb.find((item) => item.haveSecondaryList) && <Breadcrumb />}
               {config.title}
             </div>
           </div>
@@ -178,7 +177,7 @@ const ControlPanel = ({ config, viewType }: FrmWebOptionsProps) => {
         </div>
       </div>
 
-      <div className="o_control_panel_actions d-empty-none d-flex align-items-center justify-content-start justify-content-lg-around order-2 order-lg-1 w-100 w-lg-auto">
+      <div className="o_control_panel_actions d-empty-none d-flex align-items-center justify-content-start justify-content-lg-around order-2 order-lg-1 w-100 w-lg-auto self-center">
         {ViewTypeEnum.LIST && Object.values(rowSelection).filter((valor) => valor).length > 0 ? (
           <SelectRowsOptions config={config} />
         ) : (
@@ -208,9 +207,9 @@ const ControlPanel = ({ config, viewType }: FrmWebOptionsProps) => {
       </div>
 
       <div
-        className={`o_control_panel_navigation d-flex flex-wrap flex-md-nowrap justify-content-end order-1 order-lg-2 flex-grow-1 h-lg-100 align-items-center ${config?.views?.length > 1 ? 'gap-3 gap-lg-1 gap-xl-3' : ''}`}
+        className={`o_control_panel_navigation flex-md-nowrap order-1 order-lg-2 flex-grow-1 h-lg-100 ${config?.views?.length > 1 ? 'gap-3 gap-lg-1 gap-xl-3' : ''}`}
       >
-        <div role="search" className="o_cp_pager text-nowrap ">
+        <div role="search" className="o_cp_pager text-nowrap">
           <nav className="o_pager d-flex gap-2 h-100">
             {(!!dataKanbanShow.dataLength || !!dataListShow.dataLength) && (
               <Stack direction="row" className={`${views?.length > 1 && 'ml-2'}`}>

@@ -22,6 +22,8 @@
 
   --border-radius: 0.25rem;
   --border-width: 1px;
+
+  --breadcrumb-divider-color: rgba(55, 65, 81, 0.76);
 }
 
 .nav-main {
@@ -307,6 +309,17 @@ dark ::-webkit-calendar-picker-indicator {
   height: 64px;
 
   object-fit: contain;
+}
+
+.c_imageEx_50 {
+  min-width: 50px;
+  max-width: 50px;
+  width: 50px;
+  min-height: 50px;
+  max-height: 50px;
+  height: 50px;
+
+  margin-right: 8px;
 }
 
 .css-1cw4hi4 {
@@ -826,6 +839,13 @@ label {
   color: #000;
 }
 
+/* Clase para cambiar color cuando está en modo edición */
+.o_form_label.no-edit,
+.o_form_view .o_form_label.no-edit,
+.o_form_view label.o_form_label.no-edit > span {
+  color: #2b2a2abb !important; /* Azul cuando está en modo edición */
+}
+
 /* S7 */
 .InputEx input,
 .InputEx textarea {
@@ -931,6 +951,19 @@ html #root > .o_action_manager > .o_action {
   /* border-bottom: var(--ControlPanel-border-bottom, 1px solid #d8dadd); */
   border-bottom: 1px solid #d8dadd;
   background-color: white;
+
+  /* new */
+  padding-top: 6px;
+  padding-bottom: 15px;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  
+  display: flex;
+  flex-direction: column;
+}
+.o_control_panel.form
+{
+  padding-bottom: 13px !important;
 }
 
 /* 7434 */
@@ -4058,6 +4091,10 @@ input {
   cursor: pointer;
 }
 
+.o_main_navbar .MuiButtonBase-root {
+  padding-bottom: 3px !important;
+}
+
 .MenuButtonEx:not(.MenuButtonExList):hover,
 .o_main_navbar .MuiButtonBase-root:hover {
   background-color: var(--NavBar-entry-backgroundColor--hover, #e7e9ed);
@@ -4639,6 +4676,7 @@ Form bar
 .o_form_bar_status {
   /* border: 1px solid red; */
   /* width: 200px; */
+  width: 100%;
   display: flex;
   justify-content: flex-end;
 
@@ -6448,6 +6486,15 @@ span {
   height: 100%;
 }
 
+.pos_point .oe_kanban_card
+{
+  padding: 15px !important;
+}
+.pos_point .oe_kanban_card .o_kanban_record_top
+{
+  margin-bottom: 15px !important;
+}
+
 .o_kanban_renderer .o_kanban_record > div::after {
   content: '';
   position: absolute;
@@ -7954,18 +8001,19 @@ span {
 }
 
 /*MIO*/
-
 .breadcrumb {
+  --bs-breadcrumb-font-size: 0.8125rem;
+
   --bs-breadcrumb-padding-x: 0;
   --bs-breadcrumb-padding-y: 0;
   --bs-breadcrumb-margin-bottom: 1rem;
   --bs-breadcrumb-divider-color: #7e8299;
-  --bs-breadcrumb-item-padding-x: 0.5rem;
+  --bs-breadcrumb-item-padding-x: 0.35rem;
   --bs-breadcrumb-item-active-color: #009ef7;
   display: flex;
   flex-wrap: wrap;
   padding: var(--bs-breadcrumb-padding-y) var(--bs-breadcrumb-padding-x);
-  margin-bottom: var(--bs-breadcrumb-margin-bottom);
+  margin-bottom: 0; /*var(--bs-breadcrumb-margin-bottom);*/
   font-size: var(--bs-breadcrumb-font-size);
   list-style: none;
   background-color: var(--bs-breadcrumb-bg);
@@ -7977,13 +8025,14 @@ span {
 .breadcrumb-item + .breadcrumb-item::before {
   float: left;
   padding-right: var(--bs-breadcrumb-item-padding-x);
-  color: var(--bs-breadcrumb-divider-color);
+  color: var(--breadcrumb-divider-color);
   content: var(--bs-breadcrumb-divider, '/');
 }
 .breadcrumb-item.active {
   color: var(--bs-breadcrumb-item-active-color);
 }
 
+/*
 .breadcrumb {
   --bs-breadcrumb-bg: var(--kt-breadcrumb-bg);
   --bs-breadcrumb-divider-color: var(--kt-breadcrumb-divider-color);
@@ -7994,20 +8043,23 @@ span {
   padding: 0;
   margin: 0;
 }
+*/
 .breadcrumb .breadcrumb-item {
   display: flex;
   align-items: center;
-  padding-left: 0;
-  padding-right: 0.5rem;
+  /* padding-left: 0; */
+  /* padding-right: 0.5rem; */
 }
 .breadcrumb .breadcrumb-item:last-child {
   padding-right: 0;
 }
+/*
 .breadcrumb .breadcrumb-item:after {
   content: '/';
 }
+*/
 .breadcrumb .breadcrumb-item:before {
-  display: none;
+  /* display: none; */
 }
 .breadcrumb .breadcrumb-item:last-child:after {
   display: none;
@@ -9105,6 +9157,7 @@ img, svg {
   line-height: 1.5;
   
   text-align: center;
+  text-align: -webkit-center;
   vertical-align: middle;
   cursor: pointer;
   user-select: none;
@@ -9272,7 +9325,7 @@ img, svg {
   
   position: relative;
   
-  //border: 0;
+  /* border: 0; */
   border: 1px solid var(--border-color);
 
   /* border-radius: 0 0 0 0; */
@@ -9474,10 +9527,19 @@ img, svg {
   gap: 8px;
 }
 
+.navbar-orders .btn2
+{
+  /* padding-left: 1.04rem; */
+  /* padding-right: 1.04rem; */
+  width: 60px !important;
+  min-width: 60px !important;
+}
 .pos-orders .btn2
 {
-  padding-left: 1rem;
-  padding-right: 1rem;
+  /* padding-left: 1.5rem; */
+  /* padding-right: 1.5rem; */
+  width: 60px !important;
+  min-width: 60px !important;
 }
 
 .btn2-lg
@@ -9562,10 +9624,13 @@ img, svg {
     --background-color: RGBA(249, 250, 251, var(--bg-opacity, 1));
     background-color: var(--background-color) !important;
 }
+
 /*23197*/
+/*
 .paymentlines-container .total {
     font-size: clamp(24px, 3vw, 64px);
 }
+*/
 
 /*16058*/
 
@@ -9580,12 +9645,6 @@ img, svg {
     padding-inline: 150px;}
 
 /*23207*/
-
-.paymentline.selected {
-    background: #e6f2f3;
-    border: 1px solid #017e84;
-    color: #111827;
-}
 
 /*9294*/
 
@@ -9783,13 +9842,13 @@ img, svg {
   min-width: 7.5em;
   border-radius: 0;
 }
-.form-buttonbox > .stat_button:active
+.ls-form-buttonbox > .stat_button:active
 {
   z-index: 2;
   border-right-color: var(--btn-active-border-color) !important;
 }
 /*
-.form-buttonbox > .stat_button:active
+.ls-form-buttonbox > .stat_button:active
 {
   border-color: red !important;
   border-right: 1px;
@@ -9799,26 +9858,26 @@ img, svg {
 */
 /* ------------------------------------------- */
 
-.form-buttonbox > .stat_button:not(:last-child)
+.ls-form-buttonbox > .stat_button:not(:last-child)
 {
   /* border-right: 0; */
   border-right-color: transparent;
 }
 
-/* .form-buttonbox:not(.o-form-buttonbox-small) > * + * */
+/* .ls-form-buttonbox:not(.ls-form-buttonbox-small) > * + * */
 /*
-.form-buttonbox > * + *
+.ls-form-buttonbox > * + *
 {
   margin-left: -1px;
 }
 */
 /* ------------------------------------------- */
-.form-buttonbox > .stat_button:first-child
+.ls-form-buttonbox > .stat_button:first-child
 {
   border-top-left-radius: 0.25rem;
   border-bottom-left-radius: 0.25rem;
 }
-.form-buttonbox > .stat_button:last-child
+.ls-form-buttonbox > .stat_button:last-child
 {
   border-top-right-radius: 0.25rem;
   border-bottom-right-radius: 0.25rem;
@@ -9864,4 +9923,250 @@ img, svg {
 
 }
 
+/* RadioButton */
+.cRadioButton .MuiFormControlLabel-root .MuiRadio-root
+{
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
 
+/* CheckBox */
+.o_CheckBox.MuiFormControlLabel-root
+{
+  margin-left: 0;
+  position: relative;
+  top: -2px;
+}
+
+.o_control_panel_navigation
+{
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  flex-grow: 1;
+  gap: 4px;
+}
+
+.o_control_panel_navigation button,
+.form-button-navigation button
+{
+  height: 35px;
+}
+
+.ls_topbar_company
+{
+  cursor: pointer;
+  padding-top: 3px;
+  padding-bottom: 2px;
+  padding-left: 9px;
+  padding-right: 9px;
+}
+
+.ls_user_avatar
+{
+  width: 1.5rem;
+  height: 1.5rem;
+  background-color: rgb(22 163 74 / 1);
+  display: flex;
+  margin-right: 1rem;
+  margin-left: 3px;
+  border-radius: 0.25rem;
+  justify-content: center;
+  align-items: center;
+}
+
+
+/*
+.button_action
+{
+  width: 20px;
+  height: 20px;
+  padding: 0 !important;
+}
+
+.button_action.actions
+{
+  padding-top: 2px !important;
+  margin-right: 10px !important;
+}
+.button_action.delete
+{
+}
+.button_action.save
+{
+  padding-top: 2px !important;
+  margin-left: 25px;
+  margin-right: 14px !important;
+}
+.button_action.undo
+{
+  padding-top: 1px !important;
+}
+*/
+
+.button_action
+{
+  width: 20px;
+  height: 20px;
+  padding: 0 !important;
+}
+.button_action.delete
+{
+  margin-left: 5px;
+  padding-bottom: 2px !important;
+}
+.button_action.save
+{
+  margin-left: 10px;
+  /* margin-right: 9px !important; */
+  margin-right: 11px !important;
+}
+.button_action.undo
+{
+  padding-top: 1px !important;
+}
+
+/* AutocompleteChip2Ex ini */
+.AutocompleteChip2Ex .MuiAutocomplete-inputRoot
+{
+  gap: 4px;
+}
+.AutocompleteChip2Ex .MuiChip-label
+{
+  font-size: 0.85em;
+  font-weight: 500;
+}
+/* AutocompleteChip2Ex fin */
+
+.menuEx .MuiPaper-root li.MuiMenuItem-root
+{
+  padding-top: 3px !important;
+  padding-bottom: 3px !important;
+  min-height: 27px !important;
+}
+
+.o_control_panel_main
+{
+}
+
+.ls_breadcrumb
+{
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-self: stretch;
+  min-width: 0px;
+}
+
+.ls_form_status_indicator
+{
+  /* display: flex; */
+  /* margin-inline-end: auto; */
+  align-items: center;
+  align-self: flex-end;
+}
+
+.ls_form_status_indicator_buttons
+{
+  display: flex;
+}
+
+.o_control_panel.form .o_control_panel_navigation 
+{
+  /* height: -webkit-fill-available; */
+}
+
+.ticket-screen
+{
+  height: 100%;
+  border: 1px solid #e5e7eb;
+}
+
+.pos-content .payment-methods-container
+{
+  background-color: var(--btn-bg-pos);
+  border-radius: 0.25rem 0.25rem 0.25rem 0.25rem;
+
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.pos-content .payment-methods-container .payment-methods .btn2
+{
+  padding: 0.375rem 0.75rem;
+}
+
+.pos-content .payment-line
+{
+  background-color: #FFF;
+  display: flex;
+  border: 1px solid #FFF;
+  border-radius: 0.5rem;
+  align-items: center;
+  padding-inline: 1rem;
+
+  padding-top: 0.7rem;
+  padding-bottom: 0.7rem;
+}
+
+.pos-content .payment-line.select
+{
+  border: 1px solid #017e84;
+  background: #e6f2f3;
+  color: #000;
+}
+
+.pos-content .payment-line .payment-info
+{
+  width: 100%;
+  display: flex;
+  font-size: 1.25rem;
+  /*
+  padding-top: 1.05rem;
+  padding-bottom: 1.05rem;
+  padding-right: 0;
+  padding-left: 1rem;
+  */
+  align-items: center;
+  cursor: pointer;
+  justify-content: space-between;
+}
+
+.pos-content .product-screen .center-content
+{
+  background-color: var(--btn-bg-pos);
+}
+
+.pos-content .product-screen .payment-result
+{
+  /* border-top: 1px solid #d8dadd; */
+  border-top: 1px solid #acaeb0;
+  /* border-top: var(--border-width) var(--border-style) var(--border-color) !important */
+}
+
+/*
+.payment-line.selected {
+    background: #e6f2f3;
+    border: 1px solid #017e84;
+    color: #111827;
+}
+*/
+
+/*TOAST VALIDATION STYLES*/
+.custom-validation-toast {
+  background: #FEFEFE !important;
+  border: 1px solid #FCA5A5 !important;
+  border-left: 4px solid #EF4444 !important;
+  border-radius: 8px !important;
+  padding: 16px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  min-width: 300px !important;
+}
+
+.custom-validation-toast [data-close-button] {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  left: auto !important;
+}

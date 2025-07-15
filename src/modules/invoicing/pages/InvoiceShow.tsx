@@ -4,11 +4,14 @@ import useAppStore from '@/store/app/appStore'
 import { ViewTypeEnum, ModulesEnum } from '@/shared/shared.types'
 import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
+import InvoiceIndexConfig from '@/modules/invoicing/views/invoice-index/config'
 
 export const InvoiceShow = () => {
   const { id } = useParams()
+  const { setViewType, setFormItem, setFrmLoading, setStats, setConfig } = useAppStore()
 
-  const { setViewType, setFormItem, setFrmLoading, config, setStats } = useAppStore()
+  const config = InvoiceIndexConfig
+
   const { data, isLoading } = useModuleItemById({
     id: id ?? '',
     fncName: config.fnc_name,
@@ -25,16 +28,18 @@ export const InvoiceShow = () => {
 
   useEffect(() => {
     if (data?.data) {
-      setFormItem(data?.data)
+      setFormItem(data.data)
     }
   }, [data?.data, setFormItem])
 
   useEffect(() => {
-    if (!data?.stat) return
+    setConfig(config)
+  }, [config, setConfig])
 
+  useEffect(() => {
+    if (!data?.stat) return
     const payments = data.stat.payments ?? 0
     const hasPayments = payments !== 0
-
     if (hasPayments) {
       setStats([data.stat])
       if (config?.formButtons?.[0]) {
@@ -43,9 +48,7 @@ export const InvoiceShow = () => {
     } else {
       setStats([])
     }
-  }, [data, isLoading])
+  }, [data, isLoading, config?.formButtons, setStats])
 
-  //if (isLoading) return <KanbanLaoder />
-  //if (!invoice) return <>esta factura no existe</>
   return <FormView item={data?.data} />
 }

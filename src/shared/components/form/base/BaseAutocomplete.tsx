@@ -62,6 +62,9 @@ interface BaseAutocompleteProps {
   allowCreateAndEdit?: boolean
   allowSearchMore?: boolean
   config: BaseConfig
+  // Nueva propiedad para controlar navegación en modo no editable
+  allowNavigationWhenNotEditable?: boolean
+  draftLabel?: string // Etiqueta para borradores, si aplica
 }
 
 const BaseAutocomplete = ({
@@ -78,6 +81,7 @@ const BaseAutocomplete = ({
   config,
   allowCreateAndEdit = false,
   allowSearchMore = false,
+  allowNavigationWhenNotEditable = false, // Nueva prop
 }: BaseAutocompleteProps) => {
   const navigate = useNavigate()
   const { pathname } = useLocation()
@@ -108,7 +112,11 @@ const BaseAutocomplete = ({
       navigate(`${config.basePath}/${value}`)
       setBreadcrumb([
         ...breadcrumb,
-        { title: formItem.name, url: pathname, viewType: ViewTypeEnum.FORM },
+        {
+          title: formItem?.name,
+          url: pathname,
+          viewType: ViewTypeEnum.FORM,
+        },
       ])
     }
   }
@@ -208,6 +216,19 @@ const BaseAutocomplete = ({
     })
   }
 
+  // Determinar si se debe mostrar el enlace de navegación
+  const shouldShowNavigationLink = () => {
+    // Si no hay basePath, nunca mostrar enlace
+    if (!config.basePath) return false
+
+    // Si está en modo editable, siempre mostrar enlace (comportamiento original)
+    const isEditable = !(editConfig?.config?.[name]?.isEdit || false)
+    if (isEditable) return true
+
+    // Si no es editable, solo mostrar si allowNavigationWhenNotEditable es true
+    return allowNavigationWhenNotEditable
+  }
+
   return (
     <AutocompleteControlled
       name={name}
@@ -220,7 +241,7 @@ const BaseAutocomplete = ({
       createAndEditItem={allowCreateAndEdit ? fnc_create_edit : undefined}
       editConfig={{ config: editConfig }}
       placeholder={placeholder}
-      fnc_enlace={config.basePath ? fncEnlace : undefined}
+      fnc_enlace={shouldShowNavigationLink() ? fncEnlace : undefined}
       rules={rulers ? required() : {}}
     />
   )

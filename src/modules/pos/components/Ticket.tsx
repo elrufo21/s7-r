@@ -1,6 +1,5 @@
 import { Document, Page, Text, View, StyleSheet, PDFViewer } from '@react-pdf/renderer'
 
-// Crear estilos
 const styles = StyleSheet.create({
   page: {
     backgroundColor: '#fff',
@@ -52,14 +51,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 5,
   },
-  itemNumber: {
-    width: '5%',
+  itemQty: {
+    width: '10%',
   },
-  itemDescription: {
+  itemDetails: {
     width: '60%',
+    flexDirection: 'column',
   },
-  itemPrice: {
-    width: '35%',
+  itemUnitPrice: {
+    fontSize: 8,
+    color: '#333',
+  },
+  itemTotal: {
+    width: '30%',
     textAlign: 'right',
   },
   summary: {
@@ -83,45 +87,40 @@ const styles = StyleSheet.create({
   },
 })
 
-// Componente principal del Ticket
 const TicketPDF = ({ info, finalCustomer }: any) => {
-  // Esta función calcula el total de los move_lines (si los hubiera)
   const getTotalPrice = () => {
-    if (!info.move_lines || info.move_lines.length === 0) {
+    if (!info.lines || info.lines.length === 0) {
       return '0.00'
     }
 
-    return info.move_lines
+    return info.lines
       .filter((item: any) => item.type !== 'SECTION' && item.type !== 'NOTE')
       .reduce((total: number, item: any) => total + (item.quantity * item.price_unit || 0), 0)
       .toFixed(2)
   }
+  const total = parseFloat(getTotalPrice())
+  const subtotal = total / 1.18
+  const igv = total - subtotal
+
   function formatDateToDDMMYYYY(date: any) {
-    // Si recibimos un string, lo convertimos a objeto Date
     const d = date instanceof Date ? date : new Date(date)
 
-    // Verificar si la fecha es válida
     if (isNaN(d.getTime())) {
       return 'Fecha inválida'
     }
 
-    // Obtener componentes de la fecha
-    const day = d.getDate() // día sin ceros a la izquierda
-    const month = d.getMonth() + 1 // mes sin ceros a la izquierda (enero es 0)
+    const day = d.getDate()
+    const month = d.getMonth() + 1
     const year = d.getFullYear()
 
-    // Obtener componentes de la hora
     let hours = d.getHours()
-    const minutes = d.getMinutes().toString().padStart(2, '0') // minutos con ceros a la izquierda
+    const minutes = d.getMinutes().toString().padStart(2, '0')
 
-    // Determinar si es a.m. o p.m.
     const period = hours >= 12 ? 'p.m.' : 'a.m.'
 
-    // Convertir a formato de 12 horas
     hours = hours % 12
-    hours = hours ? hours : 12 // las 0 horas deben mostrarse como 12 en formato 12h
+    hours = hours ? hours : 12
 
-    // Construir el string de fecha formateado
     return `${day}/${month}/${year}, ${hours}:${minutes} ${period}`
   }
 
@@ -130,7 +129,7 @@ const TicketPDF = ({ info, finalCustomer }: any) => {
       <Document>
         <Page size={[226, 500]} style={styles.page}>
           <View style={styles.header}>
-            <Text style={styles.logoPlaceholder}>🖼 Your logo</Text>
+            <Text style={styles.logoPlaceholder}>S7</Text>
           </View>
 
           <View style={styles.ticketInfo}>
@@ -142,43 +141,35 @@ const TicketPDF = ({ info, finalCustomer }: any) => {
           </View>
 
           <View style={styles.items}>
-            {info.move_lines &&
-              info.move_lines.map((item: any, index: number) => (
+            {info.lines &&
+              info.lines.map((item: any, index: number) => (
                 <View key={index} style={styles.item}>
-                  <Text style={styles.itemNumber}>{item.quantity}</Text>
-                  <Text style={styles.itemDescription}>{item.name}</Text>
-                  <Text style={styles.itemPrice}>
-                    S/ {item.price_unit ? item.price_unit.toFixed(2) : '0.00'}
+                  <Text style={styles.itemQty}>{item.quantity}</Text>
+                  <View style={styles.itemDetails}>
+                    <Text>{item.name}</Text>
+                    <Text style={styles.itemUnitPrice}>
+                      S/ {item.price_unit ? item.price_unit.toFixed(2) : '0.00'} / Unidades
+                    </Text>
+                  </View>
+                  <Text style={styles.itemTotal}>
+                    S/ {item.price_unit ? (item.quantity * item.price_unit).toFixed(2) : '0.00'}
                   </Text>
                 </View>
               ))}
-            {/* Fallback para demostración si no hay move_lines */}
           </View>
 
           <View style={styles.summary}>
             <View style={styles.summaryRow}>
               <Text>Subtotal</Text>
-              <Text>
-                S/{' '}
-                {parseFloat(getTotalPrice()) > 0
-                  ? (parseFloat(getTotalPrice()) * 0.82).toFixed(2)
-                  : '20.00'}
-              </Text>
+              <Text>S/ {subtotal.toFixed(2)}</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text>IGV</Text>
-              <Text>
-                S/{' '}
-                {parseFloat(getTotalPrice()) > 0
-                  ? (parseFloat(getTotalPrice()) * 0.18).toFixed(2)
-                  : '3.60'}
-              </Text>
+              <Text>S/ {igv.toFixed(2)}</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.bold}>Total</Text>
-              <Text style={styles.bold}>
-                S/ {parseFloat(getTotalPrice()) > 0 ? getTotalPrice() : '23.60'}
-              </Text>
+              <Text style={styles.bold}>S/ {total.toFixed(2)}</Text>
             </View>
           </View>
 

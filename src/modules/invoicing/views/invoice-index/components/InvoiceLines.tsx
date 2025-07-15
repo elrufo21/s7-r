@@ -143,7 +143,6 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
     tableData,
     setFrmDialogAction,
   } = useAppStore()
-
   const {
     options: productOptions,
     loadOptions: loadProductOptions,
@@ -378,11 +377,12 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
     setBreadcrumb([
       ...breadcrumb,
       {
-        title: formItem?.name || 'Producto',
+        title: formItem.name,
         url: pathname,
         viewType: ViewTypeEnum.FORM,
       },
     ])
+
     navigate(`/action/303/detail/${value}`)
   }
   const navToUom = (value: number) => {
@@ -434,7 +434,7 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
       name,
       // Establecemos valores predeterminados limpios para evitar mensajes de error al abrir
       state: 'A',
-      type: 'B',
+      type: 'D',
     }
 
     const dialogId = openDialog({
@@ -507,7 +507,7 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
         data: [
           {
             state: 'A',
-            type: 'B',
+            type: 'D',
             name: input,
             uom_id: 368,
           },
@@ -702,7 +702,6 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
         setData(tableData)
         return
       }
-      console.log('formItem', formItem)
       if (!data.length) {
         const formatLines = formItem?.move_lines
           ? formItem?.move_lines.map((item: MoveLine) => ({
@@ -713,7 +712,6 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
           : []
         setData(formatLines)
       }
-      console.log('formItem', formItem)
 
       const formatLines = formItem?.move_lines
         ? formItem?.move_lines.map((item: MoveLine) => ({
@@ -722,12 +720,10 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
             _resetKey: Date.now(),
           }))
         : []
-      console.log('formatLines', formatLines)
       setData(formatLines)
     }
   }, [formItem, frmAction, tableData, errors])
 
-  console.log('FormItem', formItem?.move_lines, watch('move_lines'))
   const debounceQuantityRef = useRef<any>(null)
   const debounceePriceRef = useRef<any>(null)
   // Handlers para cambios inmediatos (onChange)
@@ -925,9 +921,24 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
         },
       },
       {
-        header: 'Importe',
+        header: 'amount_tax',
+        accessorKey: 'amount_tax',
+        size: 150,
+
+        minSize: 80,
+        enableSorting: true,
+        meta: {
+          align: 'right',
+        },
+        cell: ({ row }) => (
+          <div className="text-right">{formatCurrency(row.original.amount_tax)}</div>
+        ),
+      },
+      {
+        header: 'amount_untaxed',
         accessorKey: 'amount_untaxed',
-        size: 80,
+        size: 150,
+
         minSize: 80,
         enableSorting: true,
         meta: {
@@ -937,26 +948,34 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
           <div className="text-right">{formatCurrency(row.original.amount_untaxed)}</div>
         ),
       },
+      {
+        header: 'amount_withtaxed',
+        accessorKey: 'amount_withtaxed',
+        size: 150,
+        minSize: 80,
+        enableSorting: true,
+        meta: {
+          align: 'right',
+        },
+        cell: ({ row }) => (
+          <div className="text-right">{formatCurrency(row.original.amount_withtaxed)}</div>
+        ),
+      },
+
       /** FULL WIDTH */
       {
         accessorKey: 'label',
         header: '',
         maxSize: 10,
         cell: ({ row, table }) => {
-          const isNote = row.original.type === TypeInvoiceLineEnum.NOTE
-          const isSection = row.original.type === TypeInvoiceLineEnum.SECTION
-          if (isNote || isSection) {
-            return (
-              <textarea
-                value={row.original.label || ''}
-                placeholder={`Ingrese una ${isNote ? 'nota' : 'sección'}...`}
-                className={`italic w-full ${isNote ? '' : 'font-bold'} disabled:bg-transparent mt-[7px]`}
-                onChange={(e) => handleChangeLabel(e, row, table)}
-                disabled={isReadOnly}
-              />
-            )
-          }
-          return null
+          return (
+            <textarea
+              value={row.original.label || ''}
+              className={`italic w-full disabled:bg-transparent mt-[7px]`}
+              onChange={(e) => handleChangeLabel(e, row, table)}
+              disabled={isReadOnly}
+            />
+          )
         },
         size: 0,
       },
@@ -1053,7 +1072,6 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
 export const TableActions = ({
   onAddRow,
   disabled = false,
-  watch,
 }: {
   onAddRow: (type: TypeInvoiceLineEnum) => void
   disabled?: boolean
@@ -1064,16 +1082,8 @@ export const TableActions = ({
       label: 'Agregar línea',
       type: TypeInvoiceLineEnum.LINE,
     },
-    {
-      label: 'Agregar sección',
-      type: TypeInvoiceLineEnum.SECTION,
-    },
-    {
-      label: 'Agregar nota',
-      type: TypeInvoiceLineEnum.NOTE,
-    },
   ]
-  const isReadOnly = watch('state') === StatusInvoiceEnum.PUBLICADO
+  const isReadOnly = false
   return (
     <>
       {isReadOnly ? (

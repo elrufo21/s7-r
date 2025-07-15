@@ -21,10 +21,18 @@ function PaperComponent(props: any) {
 export const NewMultiDialog = () => {
   const { newAppDialogs, setNewAppDialogs } = useAppStore()
 
-  // Cerrar diálogo por ID en lugar de índice
+  // Cerrar diálogo por ID con validación de disableClose
   const handleCloseDialog = (dialogId: string) => {
+    const dialog = newAppDialogs.find((d) => d.id === dialogId)
+
+    // ✅ Si el diálogo tiene disableClose: true, no lo cerrar
+    if (dialog?.disableClose) {
+      return
+    }
+
     setNewAppDialogs(newAppDialogs.filter((dialog) => dialog.id !== dialogId))
   }
+
   return (
     <>
       {newAppDialogs.map((dialog) => {
@@ -32,7 +40,8 @@ export const NewMultiDialog = () => {
           <Dialog
             key={dialog.id}
             open={dialog.open}
-            onClose={() => handleCloseDialog(dialog.id)}
+            onClose={dialog.disableClose ? undefined : () => handleCloseDialog(dialog.id)}
+            disableEscapeKeyDown={dialog.disableClose}
             maxWidth={false}
             scroll={'paper'}
             PaperComponent={PaperComponent}
@@ -46,7 +55,7 @@ export const NewMultiDialog = () => {
                 <span className="modal-title fs-4">{dialog.title}</span>
               )}
             </DialogTitle>
-            {!dialog.customHeader && (
+            {!dialog.customHeader && !dialog.disableClose && (
               <IconButton
                 aria-label="close"
                 onClick={() => handleCloseDialog(dialog.id)}
@@ -67,12 +76,14 @@ export const NewMultiDialog = () => {
 
             <DialogActions className="modal-footer !p-[15px]">
               {dialog.customHeader ? (
-                <button
-                  className="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
-                  onClick={() => handleCloseDialog(dialog.id)}
-                >
-                  Descartar
-                </button>
+                dialog.buttons.map((button) => (
+                  <button
+                    className="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                    onClick={button.onClick}
+                  >
+                    {button.text}
+                  </button>
+                ))
               ) : (
                 <div className="o_form_buttons_edit d-flex">
                   {dialog.buttons.map((button, index) => (

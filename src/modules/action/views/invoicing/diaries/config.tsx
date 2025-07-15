@@ -10,7 +10,7 @@ import {
 } from './configView'
 import { BsBook } from 'react-icons/bs'
 
-const PaymentTermsConfig: FormConfig = {
+const JournalConfig: FormConfig = {
   fnc_name: 'fnc_journal',
   title: 'Diarios',
   dsc: 'Nombre del diario',
@@ -78,7 +78,6 @@ const PaymentTermsConfig: FormConfig = {
   default_values: {
     journal_id: null,
     group_id: null,
-    company_id: null,
     state: ItemStatusTypeEnum.ACTIVE,
     name: '',
     use_documents: false,
@@ -250,4 +249,4 @@ const PaymentTermsConfig: FormConfig = {
   },
 }
 
-export default PaymentTermsConfig
+export default JournalConfig

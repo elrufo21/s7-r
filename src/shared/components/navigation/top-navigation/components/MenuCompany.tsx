@@ -193,8 +193,8 @@ export const MenuCompany = () => {
   return (
     <>
       <div
+        className="ls_topbar_company"
         onClick={handleClick}
-        className="text-sm text-gray-600 cursor-pointer dark:text-gray-300 focus:outline-none pt-0.5"
       >
         {isLoading ? (
           <span className="animate-pulse">Cargando...</span>

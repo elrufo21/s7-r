@@ -669,11 +669,12 @@ export function FrmTab1({ control, errors, editConfig, watch, setValue }: frmEle
                 setValue={setValue}
                 formItem={formItem}
                 label="customer_payment_term_name"
-                filters={[{ column: 'state', value: 'A' }]}
+                filters={[]}
                 allowSearchMore={true}
                 config={{
                   fncName: 'fnc_payment_term',
                   primaryKey: 'payment_term_id',
+                  basePath: '/action/613/detail',
                   modalConfig: ModalPaymentTermConfig,
                   modalTitle: 'Término de pago',
                 }}

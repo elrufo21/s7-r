@@ -26,6 +26,7 @@ import { required } from '@/shared/helpers/validators'
 import BaseAutocomplete from '@/shared/components/form/base/BaseAutocomplete'
 import FormRow from '@/shared/components/form/base/FormRow'
 import uomConfig from '@/modules/action/views/inventory/unit-measurement/config'
+import BaseTextControlled from '@/shared/components/form/base/BaseTextControlled'
 
 export function FrmPhoto({ watch, setValue, control, editConfig }: frmElementsProps) {
   return (
@@ -70,7 +71,7 @@ export function FrmStar({ setValue }: frmElementsProps) {
     }
   }, [formItem])
   return (
-    <div className="o_field_widget o_field_priority mr-3">
+    <div className="o_field_widget o_field_priority mr-3 mt-[2px]">
       <div
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
@@ -214,6 +215,7 @@ export function FrmTab0({
     const taxes = await createOptions({
       fnc_name: 'fnc_tax',
       action: 's2',
+      filters: [['s2', ['tax_id', 'name', 'type']]],
     })
     const newTaxes = taxes
       .map((imp: any) => ({
@@ -315,7 +317,7 @@ export function FrmTab0({
               </div>
               <div className="o_cell">
                 <div className="o_field">
-                  <div className="w-full flex">
+                  <div className="w-full flex cRadioButton">
                     <RadioButtonControlled
                       name={'type'}
                       control={control}
@@ -323,7 +325,7 @@ export function FrmTab0({
                       options={[
                         { label: 'Bienes', value: TypeProductEnum.GOODS },
                         { label: 'Servicios', value: TypeProductEnum.SERVICES },
-                        { label: 'Combo', value: TypeProductEnum.COMBO },
+                        // { label: 'Combo', value: TypeProductEnum.COMBO },
                       ]}
                       editConfig={{ config: editConfig }}
                     />
@@ -331,31 +333,23 @@ export function FrmTab0({
                 </div>
               </div>
             </div>
+
             <div className="d-sm-contents">
               <div className="o_cell o_wrap_label">
                 <label className="o_form_label">Rastrear inventario</label>
               </div>
               <div className="o_cell">
                 <div className="o_field">
-                  <div className="w-full flex">
-                    <CheckBoxControlled
-                      className="mr-0 ml-0"
-                      name={'is_storable'}
-                      control={control}
-                      editConfig={{ config: editConfig }}
-                    />
-                    <SelectControlled
-                      name={''}
-                      control={control}
-                      editConfig={{ config: editConfig }}
-                      options={[]}
-                      errors={errors}
-                    />
-                  </div>
+                  <CheckBoxControlled
+                    className="o_CheckBox"
+                    name={'is_storable'}
+                    control={control}
+                    editConfig={{ config: editConfig }}
+                  />
                 </div>
               </div>
             </div>
-
+            {/*
             <div className="d-sm-contents">
               <div className="o_cell o_wrap_label">
                 <label className="o_form_label">Politica de Facturación</label>
@@ -381,6 +375,8 @@ export function FrmTab0({
                 </div>
               </div>
             </div>
+            */}
+            {/*
             <div className="d-sm-contents">
               <div className="o_cell o_wrap_label"></div>
               <div className="o_cell o_wrap_label">
@@ -396,13 +392,14 @@ export function FrmTab0({
                 )}
               </div>
             </div>
+             */}
           </div>
         </div>
         <div className="lg:w-1/2">
           <div className="o_inner_group grid">
             <div className="d-sm-contents">
               <div className="o_cell o_wrap_label">
-                <label className="o_form_label mr-2 ">Precio de venta</label>
+                <label className="o_form_label">Precio de venta</label>
               </div>
               <div className="o_cell">
                 <div className="o_field">
@@ -422,8 +419,7 @@ export function FrmTab0({
                     </>
                     {watch('type') !== TypeProductEnum.COMBO && (
                       <>
-                        <span className="div_simbol text-gray-600 font-semibold">Por</span>
-
+                        <span className="text-gray-600 mx-[0.5rem]">por</span>
                         <div className="w-4/6">
                           <div className="o_field">
                             <BaseAutocomplete
@@ -458,6 +454,7 @@ export function FrmTab0({
                 </div>
               </div>
             </div>
+
             {watch('type') !== TypeProductEnum.COMBO && watch('purchase_ok') === true ? (
               <div className="d-sm-contents">
                 <div className="o_cell o_wrap_label">
@@ -502,7 +499,7 @@ export function FrmTab0({
                         <span className="div_simbol text-gray-600">
                           {formItem?.currency_symbol}
                         </span>
-                        <div className="w-36 pr-7">
+                        <div className="w-2/6">
                           <TextControlled
                             name="cost"
                             control={control}
@@ -511,48 +508,34 @@ export function FrmTab0({
                             editConfig={{ config: editConfig }}
                           />
                         </div>
-                        <div className="o_field_widget o_label_importe font-semibold">
-                          <span className="div_simbol text-gray-600 font-semibold">Por</span>
-                          <span>{costUnit}</span>
+                        <span className="text-gray-600 mx-[0.5rem]">por</span>
+                        <div className="w-4/6">
+                          <div className="o_field">
+                            <span className="text-gray-600">{costUnit}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="d-sm-contents">
-                  <div className="o_cell o_wrap_label">
-                    <label className="o_form_label">Referencia interna</label>
-                  </div>
-                  <div className="o_cell">
-                    <div className="o_field">
-                      <TextControlled
-                        name="internal_code"
-                        control={control}
-                        errors={errors}
-                        placeholder=""
-                        editConfig={{ config: editConfig }}
-                      />
-                    </div>
-                  </div>
-                </div>
+                <BaseTextControlled
+                  label="Referencia interna"
+                  name={'internal_code'}
+                  control={control}
+                  errors={errors}
+                  placeholder={''}
+                  editConfig={{ config: editConfig }}
+                />
 
-                <div className="d-sm-contents">
-                  <div className="o_cell o_wrap_label">
-                    <label className="o_form_label">Código de barras</label>
-                  </div>
-                  <div className="o_cell">
-                    <div className="o_field">
-                      <TextControlled
-                        name="barcode"
-                        control={control}
-                        errors={errors}
-                        placeholder=""
-                        editConfig={{ config: editConfig }}
-                      />
-                    </div>
-                  </div>
-                </div>
+                <BaseTextControlled
+                  label="Código de barras"
+                  name={'barcode'}
+                  control={control}
+                  errors={errors}
+                  placeholder={''}
+                  editConfig={{ config: editConfig }}
+                />
               </>
             )}
             {watch('type') !== TypeProductEnum.COMBO && watch('purchase_ok') === true ? (
@@ -598,7 +581,6 @@ export function FrmTab0({
                   modalTitle: 'Categoría',
                   fncName: fnc_name || 'fnc_create_category',
                   primaryKey: 'category_id',
-
                   createDataBuilder: (data: any) => ({
                     name: data,
                     state: ItemStatusTypeEnum.ACTIVE,
@@ -648,7 +630,7 @@ export function FrmTab1({ control, errors, editConfig }: frmElementsProps) {
     <>
       {/* <div className="o_group mt-4"> */}
       <div className="o_group">
-        <div className="lg:w-1/2">
+        <div className="w-1/2">
           <div className="o_inner_group grid">
             <div className="g-col-sm-2">
               <div className="o_horizontal_separator mt-6 mb-4 text-uppercase fw-bolder small">
@@ -656,19 +638,20 @@ export function FrmTab1({ control, errors, editConfig }: frmElementsProps) {
               </div>
             </div>
           </div>
-
           <div className="w-full">
             <TextControlled
               name={'description_sale'}
+              className={'InputNoLineEx w-full'}
+              placeholder={'Esta nota se agrega a las órdenes de ventas y facturas'}
+              multiline={true}
               control={control}
               errors={errors}
-              multiline={true}
-              className={'InputNoLineEx w-full'}
-              placeholder={'Esta nota se agrega a las órdenes de ventas y facturas.'}
               editConfig={{ config: editConfig }}
             />
           </div>
         </div>
+
+        <div className="w-1/2"></div>
       </div>
     </>
   )
@@ -699,7 +682,7 @@ export function FrmTab2({ control, errors, editConfig }: frmElementsProps) {
     <>
       {/* <div className="o_group mt-4"> */}
       <div className="o_group">
-        <div className="lg:w-1/2">
+        <div className="w-1/2">
           <div className="o_inner_group grid">
             <div className="g-col-sm-2">
               <div className="o_horizontal_separator mt-6 mb-4 text-uppercase fw-bolder small">
@@ -707,19 +690,20 @@ export function FrmTab2({ control, errors, editConfig }: frmElementsProps) {
               </div>
             </div>
           </div>
-
           <div className="w-full">
             <TextControlled
               name={'description_purchase'}
+              className={'InputNoLineEx w-full'}
+              placeholder={'Esta nota se agrega a las órdenes de compra'}
+              multiline={true}
               control={control}
               errors={errors}
-              multiline={true}
-              className={'InputNoLineEx w-full'}
-              placeholder={'Esta nota se agrega a las órdenes de compra.'}
               editConfig={{ config: editConfig }}
             />
           </div>
         </div>
+
+        <div className="w-1/2"></div>
       </div>
     </>
   )
@@ -729,15 +713,14 @@ export function FrmTab3({ control, errors, editConfig }: frmElementsProps) {
   const { formItem } = useAppStore((state) => state)
   return (
     <>
-      <div className="o_group mt-4">
-        <div className="lg:w-1/2"></div>
-
-        {formItem?.attributes && formItem?.attributes.length === 0 && (
-          <div className="lg:w-1/2">
+      {formItem?.attributes && formItem?.attributes.length === 0 && (
+        <div className="o_group mt-4">
+          <div className="w-1/2"></div>
+          <div className="w-1/2">
             <div className="o_inner_group grid">
               <div className="d-sm-contents ">
                 <div className="o_cell o_wrap_label">
-                  <label className="o_form_label">Peso </label>
+                  <label className="o_form_label">Peso</label>
                 </div>
                 <div className="o_cell">
                   <div className="o_field">
@@ -759,7 +742,7 @@ export function FrmTab3({ control, errors, editConfig }: frmElementsProps) {
 
               <div className="d-sm-contents">
                 <div className="o_cell o_wrap_label">
-                  <label className="o_form_label mr-2 whitespace-nowrap">Volumen </label>
+                  <label className="o_form_label mr-2 whitespace-nowrap">Volumen</label>
                 </div>
                 <div className="o_cell">
                   <div className="o_field">
@@ -793,7 +776,6 @@ export function FrmTab3({ control, errors, editConfig }: frmElementsProps) {
                           editConfig={{ config: editConfig }}
                         />
                       </div>
-
                       <span className="text-gray-400 ml-2">dias</span>
                     </div>
                   </div>
@@ -801,10 +783,13 @@ export function FrmTab3({ control, errors, editConfig }: frmElementsProps) {
               </div>
             </div>
           </div>
-        )}
-      </div>
-      <div className="o_group mt-4">
-        <div className="lg:w-1/2">
+        </div>
+      )}
+
+      {/* <div className="o_group mt-4"> */}
+      <div className="o_group">
+        {/* <div className="lg:w-1/2"> */}
+        <div className="w-1/2">
           <div className="o_inner_group grid">
             <div className="g-col-sm-2">
               <div className="o_horizontal_separator mt-6 mb-4 text-uppercase fw-bolder small">
@@ -821,14 +806,15 @@ export function FrmTab3({ control, errors, editConfig }: frmElementsProps) {
               multiline={true}
               className={'InputNoLineEx w-full'}
               placeholder={
-                'Esta nota se agrega a las órdenes de recepción (por ejemplo, dónde guardar el producto dentro del almacén).'
+                'Esta nota se agrega a las órdenes de recepción (por ejemplo, dónde guardar el producto dentro del almacén)'
               }
               editConfig={{ config: editConfig }}
             />
           </div>
         </div>
 
-        <div className="lg:w-1/2">
+        {/* <div className="lg:w-1/2"> */}
+        <div className="w-1/2">
           <div className="o_inner_group grid">
             <div className="g-col-sm-2">
               <div className="o_horizontal_separator mt-6 mb-4 text-uppercase fw-bolder small">
@@ -841,7 +827,7 @@ export function FrmTab3({ control, errors, editConfig }: frmElementsProps) {
             <TextControlled
               name={'description_pickingout'}
               className={'InputNoLineEx w-full'}
-              placeholder={'Esta nota se agrega a las órdenes de entrega.'}
+              placeholder={'Esta nota se agrega a las órdenes de entrega'}
               multiline={true}
               control={control}
               errors={errors}
@@ -885,8 +871,9 @@ export function FrmTab4({ control, errors, editConfig }: frmElementsProps) {
 
   return (
     <>
-      <div className="o_group mt-4">
-        <div className="lg:w-1/2">
+      {/* <div className="o_group mt-4"> */}
+      <div className="o_group">
+        <div className="w-1/2">
           <div className="o_inner_group grid">
             <div className="g-col-sm-2">
               <div className="o_horizontal_separator mt-6 mb-4 text-uppercase fw-bolder small">
@@ -915,6 +902,8 @@ export function FrmTab4({ control, errors, editConfig }: frmElementsProps) {
             </div>
           </div>
         </div>
+
+        <div className="w-1/2"></div>
       </div>
     </>
   )

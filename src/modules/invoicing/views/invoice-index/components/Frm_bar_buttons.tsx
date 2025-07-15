@@ -21,12 +21,17 @@ export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
     const errors: string[] = []
     if (!watch('partner_id')) {
       errors.push(
-        'El campo "Factura de cliente" es obligatorio, complételo para validar la factura del cliente.'
+        'El campo "Cliente" es obligatorio, complételo para validar la factura del cliente.'
       )
     }
-    if (!watch('name')) {
+    if (!watch('c51_id')) {
       errors.push(
-        'El campo "Cliente" es obligatorio, complételo para validar la factura del cliente.'
+        'El campo "Tipo de operacion" es obligatorio, complételo para validar la factura del cliente.'
+      )
+    }
+    if (!watch('document_type_id')) {
+      errors.push(
+        'El campo "Tipo de documento" es obligatorio, complételo para validar la factura del cliente.'
       )
     }
 
@@ -43,7 +48,8 @@ export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
     </div>
   )
 
-  const onConfirm = () => {
+  const onConfirm = async () => {
+    setFrmAction(FormActionEnum.PRE_SAVE)
     const errors = validateForm(watch)
 
     if (errors.length > 0) {
@@ -55,9 +61,15 @@ export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
       })
       return
     }
-
-    setValue('state', StatusInvoiceEnum.PUBLICADO)
-    setFrmAction(FormActionEnum.PRE_SAVE)
+    if (
+      watch('journal_id') &&
+      watch('currency_id') &&
+      watch('document_type_id') &&
+      watch('c51_id') &&
+      watch('partner_id')
+    ) {
+      setValue('state', StatusInvoiceEnum.PUBLICADO)
+    }
   }
   const onCancel = () => {
     const errors = validateForm(watch)
@@ -80,33 +92,75 @@ export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
     setFrmAction(FormActionEnum.PRE_SAVE)
   }
   const isEdit =
-    watch('state') === StatusInvoiceEnum.PUBLICADO || watch('state') === StatusInvoiceEnum.CANCELADO
+    watch('state') === StatusInvoiceEnum.PUBLICADO ||
+    watch('state') === StatusInvoiceEnum.CANCELADO ||
+    watch('name')
 
   useEffect(() => {
-    setFrmConfigControls({
-      name: {
-        isEdit,
-      },
-      partner_id: {
-        isEdit,
-      },
-      invoice_date: {
-        isEdit,
-      },
-      reference: {
-        isEdit,
-      },
-      invoice_date_due: {
-        isEdit,
-      },
-      payment_term_id: {
-        isEdit,
-      },
-      currency_id: {
-        isEdit,
-      },
-    })
-  }, [setFrmConfigControls, isEdit])
+    if (
+      !watch('name') ||
+      watch('state') === StatusInvoiceEnum.CANCELADO ||
+      watch('state') === StatusInvoiceEnum.PUBLICADO
+    ) {
+      console.log('watch', watch('name'))
+
+      setFrmConfigControls({
+        name: {
+          isEdit,
+        },
+        partner_id: {
+          isEdit,
+        },
+        invoice_date: {
+          isEdit,
+        },
+        reference: {
+          isEdit,
+        },
+        payment_term_id: {
+          isEdit,
+        },
+        currency_id: {
+          isEdit,
+        },
+        fiscal_position_id: {
+          isEdit,
+        },
+        delivery_date: {
+          isEdit,
+        },
+        journal_id: {
+          isEdit,
+        },
+        document_type_id: {
+          isEdit,
+        },
+        document_number: {
+          isEdit,
+        },
+        c51_id: {
+          isEdit,
+        },
+      })
+      return
+    }
+    if (
+      watch('name') &&
+      watch('name') !== 'Borrador' &&
+      watch('state') === StatusInvoiceEnum.BORRADOR
+    ) {
+      console.log('watch', watch('name'))
+
+      setFrmConfigControls({
+        journal_id: {
+          isEdit,
+        },
+        document_type_id: {
+          isEdit,
+        },
+      })
+    }
+  }, [setFrmConfigControls, isEdit, watch('move_id')])
   const openModal = () => {
     let getData = () => ({})
     const dialog = openDialog({

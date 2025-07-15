@@ -17,13 +17,14 @@ export const NavigationLinks = ({ links }: NavigationLinksProps): ReactNode => {
   if (links.length === 0) {
     return <></>
   }
-
   const redirectToUrl = (link: LinkItem) => {
     setViewType(link.viewType)
     setTableData([])
     const index = links.findIndex((item) => item.url === link.url)
+
     const newLinks = links.slice(0, index)
     if (links.length === 1) return
+
     setBreadcrumb(newLinks)
     handleClose()
   }
@@ -39,19 +40,25 @@ export const NavigationLinks = ({ links }: NavigationLinksProps): ReactNode => {
   const visibleLinks = links.length > 2 ? links.slice(-2) : links
   const menuLinks = links.length > 2 ? links.slice(0, -2).reverse() : []
   return (
-    <ul className="breadcrumb font-semibold mt-1">
+    // <ul className="breadcrumb font-semibold mt-1">
+    <ul className="breadcrumb flex-nowrap text-nowrap lh-sm    font-semibold">
       {menuLinks.length > 0 && (
         <li
-          className="breadcrumb-item text-muted"
+          // className="breadcrumb-item text-muted"
+          className="breadcrumb-item d-inline-flex min-w-0"
           style={{ display: 'flex', alignItems: 'flex-start' }}
         >
           <IconButton
-            size="medium"
+            size="small"
             aria-label="more"
             style={{
-              width: 28,
-              height: 28,
+              width: 23,
+              height: 15,
               borderRadius: 4,
+              color: '#374151',
+              alignSelf: 'end',
+              paddingBottom: 0,
+              paddingTop: '8px',
             }}
             onClick={handleClick}
           >
@@ -66,8 +73,8 @@ export const NavigationLinks = ({ links }: NavigationLinksProps): ReactNode => {
                 }}
               >
                 <Tooltip title={'Regresar a "' + link.title + '"'}>
-                  <Link to={link.url} className="link-primary">
-                    {link.title} &nbsp;
+                  <Link to={link.url} className="text-truncate link-primary">
+                    {link.title}
                   </Link>
                 </Tooltip>
               </MenuItem>
@@ -77,11 +84,16 @@ export const NavigationLinks = ({ links }: NavigationLinksProps): ReactNode => {
       )}
 
       {visibleLinks.map((link, i) => (
-        <li key={i} className="breadcrumb-item text-muted cursor-none">
+        // <li key={i} className="breadcrumb-item text-muted cursor-none">
+        <li key={i} className="breadcrumb-item d-inline-flex min-w-0">
           {link.url != null ? (
             <Tooltip title={'Regresar a "' + link.title + '"'}>
-              <Link to={link.url} className="link-primary" onClick={() => redirectToUrl(link)}>
-                {link.title} &nbsp;
+              <Link
+                to={link.url}
+                className="text-truncate link-primary"
+                onClick={() => redirectToUrl(link)}
+              >
+                {link.title}
               </Link>
             </Tooltip>
           ) : (

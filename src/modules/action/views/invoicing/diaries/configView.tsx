@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useEffect, useState, useRef, memo } from 'react'
-import CompanyField from '@/shared/components/extras/CompanyField'
 import Custom_field_currency from '@/shared/components/extras/custom_field_currency'
 import { ActionTypeEnum, FormActionEnum, frmElementsProps } from '@/shared/shared.types'
 import {
@@ -19,6 +18,7 @@ import { required } from '@/shared/helpers/validators'
 import { useLocation } from 'react-router-dom'
 import { SwitchableTextField } from '@/shared/components/table/drag-editable-table/base-components/inputs'
 import useUserStore from '@/store/persist/persistStore'
+import CfCompany from '@/shared/components/extras/Cf_company'
 export function FrmTitle({ control, errors, editConfig }: frmElementsProps) {
   return (
     <TextControlled
@@ -228,11 +228,14 @@ export function FrmMiddle({ control, errors, editConfig, setValue, watch }: frmE
             <label className="o_form_label">Usa documentos</label>
           </div>
           <div className="o_cell">
-            <CheckBoxControlled
-              name={'use_documents'}
-              control={control}
-              editConfig={{ config: editConfig }}
-            />
+            <div className="o_field">
+              <CheckBoxControlled
+                className="o_CheckBox"
+                name={'use_documents'}
+                control={control}
+                editConfig={{ config: editConfig }}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -258,13 +261,18 @@ export function FrmMiddle({ control, errors, editConfig, setValue, watch }: frmE
 export function FrmMiddleRight({ control, errors, editConfig, setValue, watch }: frmElementsProps) {
   return (
     <>
-      <CompanyField
+      <CfCompany
         control={control}
         errors={errors}
         setValue={setValue}
         editConfig={{ config: editConfig }}
+        label={'Empresa'}
+        //idField={'company_id'}
+        navigate={true}
+        name={watch('name')}
+        // isEdit={false}
+        //createAndEdit
         watch={watch}
-        isEdit={true}
       />
     </>
   )

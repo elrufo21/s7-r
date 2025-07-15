@@ -15,7 +15,7 @@ const StatsButtonBox = ({ statsData }: Props) => {
   const stats = statsData
 
   return (
-    <div className="form-buttonbox w-1/3 flex items-center justify-center">
+    <>
       {stats.map((stat, index) => (
         <StatButton
           key={index}
@@ -25,7 +25,7 @@ const StatsButtonBox = ({ statsData }: Props) => {
           onClick={stat.onClick}
         />
       ))}
-    </div>
+    </>
   )
 }
 

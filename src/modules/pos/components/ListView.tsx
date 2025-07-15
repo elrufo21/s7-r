@@ -9,11 +9,12 @@ import {
   PaginationState,
 } from '@tanstack/react-table'
 import { BiLoader, BiSearch } from 'react-icons/bi'
-import { SelectControlled } from '@/shared/ui'
-import { useForm } from 'react-hook-form'
 
 import { IoMdArrowDropleft } from 'react-icons/io'
 import { IoMdArrowDropright } from 'react-icons/io'
+import HierarchicalDropdown from './hierarchical-dropdown'
+import useAppStore from '@/store/app/appStore'
+import { useParams } from 'react-router-dom'
 
 export type DataTableProps<TData extends object, TValue = any> = {
   columns: ColumnDef<TData, TValue>[]
@@ -45,13 +46,13 @@ export function DataTable<TData extends { isSelected?: boolean }, TValue = any>(
   statusOptions,
   onStatusChange,
   onSearchChange,
-  noDataMessage = 'No data found',
+  noDataMessage = 'No se encontraron resultados',
   className = '',
   isLoading = false,
   header = false,
 }: DataTableProps<TData, TValue>) {
-  const { control } = useForm()
-
+  const { executeFnc, setPaidOrders } = useAppStore()
+  const { pointId } = useParams()
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: pageSize,
@@ -62,9 +63,28 @@ export function DataTable<TData extends { isSelected?: boolean }, TValue = any>(
   const [selectedStatus, setSelectedStatus] = useState<string>(
     statusOptions && statusOptions.length > 0 ? statusOptions[0].value : ''
   )
+  const [displayData, setDisplayData] = useState<TData[]>([])
+
+  useEffect(() => {
+    const fetchDataForStatus = async () => {
+      if (selectedStatus === 'P') {
+        const rs = await executeFnc('fnc_pos_order', 's_pos', [
+          [0, 'fequal', 'point_id', pointId],
+          [0, 'multi_filter_in', [{ key_db: 'state', value: 'P' }]],
+        ])
+        setPaidOrders(rs?.oj_data || [])
+        setDisplayData(rs?.oj_data || [])
+      } else if (selectedStatus === 'A') {
+        setDisplayData(data)
+      } else {
+        setDisplayData(data.filter((item: any) => item?.state === selectedStatus))
+      }
+    }
+    fetchDataForStatus()
+  }, [data, selectedStatus, executeFnc, pointId])
 
   const table = useReactTable({
-    data,
+    data: displayData,
     columns,
     state: {
       pagination,
@@ -114,14 +134,10 @@ export function DataTable<TData extends { isSelected?: boolean }, TValue = any>(
               // <div className="flex items-center px-4 py-3">
               <div className="flex items-center">
                 <div className="relative inline-block">
-                  <SelectControlled
-                    name="status"
+                  <HierarchicalDropdown
                     options={statusOptions}
-                    onChange={handleStatusChange}
-                    control={control}
-                    value={selectedStatus}
-                    className="w-[80px] text-xl"
-                    errors={{}}
+                    selectedValue={selectedStatus}
+                    onSelect={handleStatusChange}
                   />
 
                   {/*

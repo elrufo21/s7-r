@@ -24,7 +24,7 @@ export const PointOfSaleIndex = () => {
 
   const { data, isLoading } = useModuleFilterList({
     filters,
-    fncName: 'fnc_pos',
+    fncName: 'fnc_pos_point',
     module: ModulesEnum.POINTS_OF_SALE,
   })
 
@@ -54,7 +54,7 @@ export const PointOfSaleIndex = () => {
       })
     }
   }, [data, setInitialData, viewType, listCurrentPage])
-  console.log('config', config)
+  console.log('data', data)
 
   return <ManagerContent />
 }

@@ -37,6 +37,7 @@ export interface PreviousDataBeforeMenu {
   formItem: any
   breadcrumb: any[] | null
   url: string | null
+  dataFormShow?: any[] 
 }
 
 export interface AppSliceState {
@@ -87,11 +88,26 @@ export interface AppSliceState {
   setViewType: (viewType: ViewTypeEnum) => void
   config: FormConfig
   setConfig: (config: FormConfig) => void
+  listBreadcrumb: {
+    title: string
+    url: string
+    viewType: ViewTypeEnum
+    diary?: { title: string; value: number }
+  }[]
+  setListBreadcrumb: (
+    listBreadcrumb: {
+      title: string
+      url: string
+      viewType: ViewTypeEnum
+      diary?: { title: string; value: number }
+    }[]
+  ) => void
   breadcrumb: {
     title: string
     url: string
     viewType: ViewTypeEnum
     diary?: { title: string; value: number }
+    haveSecondaryList?: boolean
   }[]
   setBreadcrumb: (
     breadcrumb: {
@@ -99,6 +115,7 @@ export interface AppSliceState {
       url: string
       viewType: ViewTypeEnum
       diary?: { title: string; value: number }
+      haveSecondaryList?: boolean
     }[]
   ) => void
 
@@ -221,6 +238,7 @@ export interface OpenDialogProps {
   contactModal?: boolean
   customHeader?: any
   fullScreen?: boolean
+  disableClose?: boolean
 }
 export interface NewAppDialogProps {
   id: string
@@ -320,6 +338,48 @@ interface Product {
   uom_id?: string
 }
 export interface PointsOfSaleSliceState {
+  total: number
+  setTotal: (total: number) => void
+  paidOrders: any[]
+  setPaidOrders: (paidOrders: any[]) => void
+  paymentMethods: any[]
+  setPaymentMethods: (paymentMethods: any[]) => void
+  defaultPosSessionData: {
+    partner_id: number
+    name: string
+    currency_id?: number
+  }
+  setDefaultPosSessionData: (defaultPosSessionData: {
+    partner_id: number
+    name: string
+    currency_id?: number
+  }) => void
+  backToProducts: boolean
+  setBackToProducts: (backToProducts: boolean) => void
+  selectedCategory: string
+  setSelectedCategory: (category: string) => void
+  selectedNavbarMenu: string
+  setSelectedNavbarMenu: (menu: string) => void
+  filteredProducts: Product[]
+  setFilteredProducts: (products: Product[]) => void
+  filterProducts: () => void
+  fetchProducts: () => Promise<void>
+  displayValue: string
+  setDisplayValue: (value: string) => void
+  clearOnNextDigit: boolean
+  setClearOnNextDigit: (clear: boolean) => void
+  addDigit: (digit: string) => void
+  clearDisplay: () => void
+  handleChange: boolean
+  setHandleChange: (handleChange: boolean) => void
+  payments: any[]
+  setPayments: (payments: any[]) => void
+  addPaymentToOrder: (order_id: string, payment: any) => void
+  updatePaymentInOrder: (order_id: string, updatedPayment: any) => void
+  removePaymentFromOrder: (order_id: string, payment_id: string) => void
+  setFinalCustomer: (finalCustomer: any) => void
+  session_id: number | null
+  setSessionId: (session_id: number | null) => void
   operation: Operation
   setOperation: (operation: Operation) => void
   screen: string
@@ -337,12 +397,23 @@ export interface PointsOfSaleSliceState {
   setOrderData: (orderData: any[]) => void
   selectedItem: string | null
   setSelectedItem: (selectedItem: string | null) => void
-  orderData: any[]
+  orderData: {
+    order_id: string
+    name: string
+    lines: any[]
+    state: string
+    payments?: any[]
+    pos_status?: string
+    partner_id?: number
+    partner_name?: string
+    order_date?: Date
+    invoice_state?: string
+  }[]
   finalCustomer: any
   categories: any[]
   setCategories: (categories: any[]) => void
   addProductToOrder: (order_id: number | string, product: Product, new_quantity: number) => void
-  addNewOrder: () => void
+  addNewOrder: ({date ,user_id, point_id, session_id,company_id,partner_id}: {date: Date, user_id: number, point_id: number, session_id: number,company_id: number,partner_id: number}) => void
   setProductQuantityInOrder: (
     order_id: number | string,
     product: string | number,
@@ -359,5 +430,9 @@ export interface PointsOfSaleSliceState {
   deleteOrder: (order_id: number | string) => void
   updateOrderFromServer: (updatedOrder: any) => void
   changeToPayment: (order_id: number | string) => void
+  changeToPaymentLocal: (order_id: number | string) => void
   updateMoveId: (oldMoveId: string, newMoveId: string) => void
+
+  // Nueva función para centralizar la carga
+  initializePointOfSale: (pointId: string) => Promise<void>
 }
