@@ -70,7 +70,7 @@ export const MenuCompany = () => {
     setAnchorEl(event.currentTarget)
   }
   const isSelected = (emp: CompaniesType) => {
-    return usersEmpSelected.some((item) => item.company_id === emp.company_id)
+    return usersEmpSelected.some((item: CompaniesType) => item.company_id === emp.company_id)
   }
   const handleChange = (emp: CompaniesType) => {
     const empresaTieneHijos = (empresaId: number) => {
@@ -81,7 +81,7 @@ export const MenuCompany = () => {
     }
 
     const existeEmpresaSeleccionada = usersEmpSelected.some(
-      (item) => item.company_id === emp.company_id
+      (item: CompaniesType) => item.company_id === emp.company_id
     )
 
     if (existeEmpresaSeleccionada) {
@@ -92,7 +92,8 @@ export const MenuCompany = () => {
 
       const hijosIds = empresaTieneHijos(emp.company_id)
       const nuevaLista = usersEmpSelected.filter(
-        (item) => !hijosIds.includes(item.company_id) && item.company_id !== emp.company_id
+        (item: CompaniesType) =>
+          !hijosIds.includes(item.company_id) && item.company_id !== emp.company_id
       )
 
       // Verificar si estamos desmarcando la empresa predeterminada
@@ -130,7 +131,7 @@ export const MenuCompany = () => {
       return
     }
 
-    setCompanies(usersEmpSelected.map((item) => item.company_id))
+    setCompanies(usersEmpSelected.map((item: CompaniesType) => item.company_id))
     changeEmpPred(defaultCompany.company_id)
     setIsChange(false)
     handleClose()
@@ -138,7 +139,7 @@ export const MenuCompany = () => {
   }
   const handleRedo = () => {
     const empresas = companies
-      .map((id) => data.find((item) => item.company_id === id))
+      .map((id: number) => data.find((item) => item.company_id === id))
       .filter((item): item is CompaniesType => item !== undefined)
     setUsersEmpSelected(empresas)
 
@@ -192,10 +193,7 @@ export const MenuCompany = () => {
   }
   return (
     <>
-      <div
-        className="ls_topbar_company"
-        onClick={handleClick}
-      >
+      <div className="ls_topbar_company" onClick={handleClick}>
         {isLoading ? (
           <span className="animate-pulse">Cargando...</span>
         ) : (

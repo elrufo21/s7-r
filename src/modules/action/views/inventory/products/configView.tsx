@@ -1,24 +1,24 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import {
   AutocompleteControlled,
   CheckBoxControlled,
   ImageInput,
   MultiSelectObject,
   TextControlled,
-  SelectControlled,
   RadioButtonControlled,
 } from '@/shared/ui'
 import useAppStore from '@/store/app/appStore'
 import Chip from '@mui/material/Chip'
+import Stack from '@mui/material/Stack'
+import ClickAwayListener from '@mui/material/ClickAwayListener'
 
 import { RiStarLine, RiStarFill } from 'react-icons/ri'
 
-import Stack from '@mui/material/Stack'
 import FormControl from '@mui/material/FormControl'
 import FormGroup from '@mui/material/FormGroup'
 import { FormActionEnum, frmElementsProps, ItemStatusTypeEnum } from '@/shared/shared.types'
 import { OptionsType } from '@/shared/ui/inputs/input.types'
-import { InvoicePolicyEnum, TaxType, TypeProductEnum } from './products.type'
+import { TaxType, TypeProductEnum } from './products.type'
 import modalCategoryConfig from '@/modules/action/views/inventory/products-category/config'
 
 import CompanyField from '@/shared/components/extras/CompanyField'
@@ -27,6 +27,21 @@ import BaseAutocomplete from '@/shared/components/form/base/BaseAutocomplete'
 import FormRow from '@/shared/components/form/base/FormRow'
 import uomConfig from '@/modules/action/views/inventory/unit-measurement/config'
 import BaseTextControlled from '@/shared/components/form/base/BaseTextControlled'
+
+export const ColorOptions = [
+  { label: 'Sin color', value: 0 },
+  { label: 'Rojo', value: 1 },
+  { label: 'Naranja', value: 2 },
+  { label: 'Amarillo', value: 3 },
+  { label: 'Cian', value: 4 },
+  { label: 'Morado', value: 5 },
+  { label: 'Almendra', value: 6 },
+  { label: 'Turquesa', value: 7 },
+  { label: 'Azul', value: 8 },
+  { label: 'Frambuesa', value: 9 },
+  { label: 'Verde', value: 10 },
+  { label: 'Violeta', value: 11 },
+]
 
 export function FrmPhoto({ watch, setValue, control, editConfig }: frmElementsProps) {
   return (
@@ -71,7 +86,7 @@ export function FrmStar({ setValue }: frmElementsProps) {
     }
   }, [formItem])
   return (
-    <div className="o_field_widget o_field_priority mr-3 mt-[2px]">
+    <div className="o_field_widget o_field_priority mr-[0.5rem] mt-[2px]">
       <div
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
@@ -905,6 +920,213 @@ export function FrmTab4({ control, errors, editConfig }: frmElementsProps) {
 
         <div className="w-1/2"></div>
       </div>
+    </>
+  )
+}
+// ----------------------------------
+
+export function FrmTab5({ setValue, control, watch, errors, editConfig }: frmElementsProps) {
+  const formItem = useAppStore((state) => state.formItem)
+  const createOptions = useAppStore((state) => state.createOptions)
+  const executeFnc = useAppStore((state) => state.executeFnc)
+  const frmCreater = useAppStore((state) => state.frmCreater)
+  const [tags, setTags] = useState<any[]>([])
+  const [openPopup, setOpenPopup] = useState(false)
+  const [tagSelected, setTagSelected] = useState<Record<string, any>>({})
+  const [color, setColor] = useState(0)
+  const [popupAnchor, setPopupAnchor] = useState<HTMLElement | null>(null)
+  const colorOptionsRef = useRef(null)
+
+  const loadTags = async () => {
+    setTags(
+      await createOptions({
+        fnc_name: 'fnc_product_template_pos_category',
+        filters: [['s2', ['category_id', 'full_name']]],
+        action: 's2',
+      })
+    )
+  }
+
+  const fnc_createTag = async (data: any) => {
+    const ndata = data[data.length - 1]
+    await frmCreater(
+      'fnc_product_template_pos_category',
+      { name: ndata?.value, state: 'A' },
+      'category_id',
+      async (res: any) => {
+        const ntags = await createOptions({
+          fnc_name: 'fnc_product_template_pos_category',
+          action: 's2',
+        })
+        const ntag = ntags.find((tag) => tag['category_id'] === res)
+        data[data.length - 1] = ntag
+        setValue('categories', data, { shouldDirty: true })
+      }
+    )
+  }
+
+  const onChipClick = (e: any, option: any) => {
+    setOpenPopup(!openPopup)
+    setTagSelected(option)
+    setColor(option.color || 0)
+    setPopupAnchor(e.currentTarget)
+  }
+
+  const changeColorTag = (colorIndex: number) => {
+    let ntag = { ...tagSelected }
+    ntag['color'] = colorIndex
+
+    //actualizar registro
+    executeFnc('fnc_product_template_pos_category', 'u', ntag)
+    let listTags = watch('categories')
+    let nlistTags = listTags.map((tag: any) => (tag.value === ntag.value ? ntag : tag))
+    setValue('categories', nlistTags)
+    setColor(colorIndex)
+    setOpenPopup(false)
+    setPopupAnchor(null)
+  }
+
+  const fnc_renderTags = (value: any, getTagProps: any) => {
+    const fn_click = (e: any, option: any) => {
+      onChipClick(e, option)
+    }
+
+    return value.map((option: any, index: number) => (
+      <Chip
+        {...getTagProps({ index })}
+        key={index}
+        size="small"
+        className={`text-gray-100 ${option?.color || option?.value ? `o_colorlist_item_color_${option.color || option.value}` : ''}`}
+        label={option['full_name']}
+        onClick={(e: any) => fn_click(e, option)}
+      />
+    ))
+  }
+
+  const handleEsc = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setOpenPopup(false)
+      setPopupAnchor(null)
+    }
+  }
+
+  const handleBlur = () => {
+    if (openPopup) {
+      setOpenPopup(false)
+      setPopupAnchor(null)
+    }
+  }
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleEsc)
+    return () => {
+      window.removeEventListener('keydown', handleEsc)
+    }
+  }, [])
+
+  const loadData = () => {}
+
+  useEffect(() => {
+    if (formItem) {
+      loadData()
+    }
+  }, [formItem])
+
+  return (
+    <>
+      <div className="o_group">
+        <div className="w-1/2">
+          <div className="o_inner_group grid">
+            <div className="g-col-sm-2">
+              <div className="o_horizontal_separator mt-6 mb-4 text-uppercase fw-bolder small">
+                Punto de venta
+              </div>
+            </div>
+          </div>
+
+          <div className="o_inner_group grid">
+            <FormRow label="Categoría">
+              <MultiSelectObject
+                name={'categories'}
+                control={control}
+                options={tags}
+                errors={errors}
+                fnc_loadOptions={loadTags}
+                renderTags={fnc_renderTags}
+                fnc_create={fnc_createTag}
+                createOpt={true}
+                searchOpt={true}
+                editConfig={{ config: editConfig }}
+              />
+            </FormRow>
+          </div>
+        </div>
+
+        <div className="w-1/2">
+          <div className="o_inner_group grid">
+            <div className="g-col-sm-2">
+              <div className="o_horizontal_separator mt-6 mb-4 text-uppercase fw-bolder small">
+                Descripción
+              </div>
+            </div>
+          </div>
+
+          <div className="w-full">
+            <TextControlled
+              name={'description_pickingout'}
+              className={'InputNoLineEx w-full'}
+              placeholder={'Información sobre su producto'}
+              multiline={true}
+              control={control}
+              errors={errors}
+              editConfig={{ config: editConfig }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {openPopup && popupAnchor && (
+        <ClickAwayListener onClickAway={handleBlur}>
+          <div
+            style={{
+              position: 'fixed',
+              top: popupAnchor.getBoundingClientRect().bottom + 5,
+              left: popupAnchor.getBoundingClientRect().left,
+              zIndex: 1000,
+              backgroundColor: 'white',
+              border: '1px solid #ccc',
+              borderRadius: '4px',
+              padding: '8px',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+            }}
+          >
+            <div
+              ref={colorOptionsRef}
+              className="o_colorlist d-flex flex-wrap align-items-center mw-100 gap-2"
+            >
+              {ColorOptions.map((option, index) => {
+                return (
+                  <button
+                    key={option.value}
+                    onClick={() => changeColorTag(option.value)}
+                    type="button"
+                    tabIndex={index}
+                    title={option.label}
+                    className={`btn p-0 rounded-0 o_colorlist_item_color_${
+                      option.value
+                    } ${color === option.value && 'o_colorlist_selected'}`}
+                    style={{
+                      width: '24px',
+                      height: '24px',
+                      border: color === option.value ? '2px solid #000' : '1px solid #ccc',
+                    }}
+                  ></button>
+                )
+              })}
+            </div>
+          </div>
+        </ClickAwayListener>
+      )}
     </>
   )
 }

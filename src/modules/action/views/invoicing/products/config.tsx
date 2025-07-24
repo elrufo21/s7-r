@@ -6,6 +6,7 @@ import {
   FrmTab2,
   FrmTab3,
   FrmTab4,
+  FrmTab5,
   FrmStar,
   FrmTitle,
   Subtitle,
@@ -25,6 +26,15 @@ const ProductsConfig: FormConfig = {
   item_url: '/action/302/detail',
   new_url: '/action/302/detail/new',
   isFavoriteColumn: true,
+  no_content_title: 'Crear nuevo producto',
+  no_content_dsc: 'Defina productos y categorías para su empresa',
+  ribbonList: [
+    {
+      label: 'ARCHIVADO',
+      state: 'I',
+      className: 'ribbon',
+    },
+  ],
 
   fnc_valid: (data, formItem) => {
     const { taxes_sale, taxes_purchase } = data
@@ -357,6 +367,18 @@ const ProductsConfig: FormConfig = {
         name: 'Ventas',
         content: ({ watch, control, errors, editConfig = {}, setValue }) => (
           <FrmTab1
+            watch={watch}
+            control={control}
+            errors={errors}
+            editConfig={editConfig}
+            setValue={setValue}
+          />
+        ),
+      },
+      {
+        name: 'Punto de venta',
+        content: ({ watch, control, errors, editConfig = {}, setValue }) => (
+          <FrmTab5
             watch={watch}
             control={control}
             errors={errors}

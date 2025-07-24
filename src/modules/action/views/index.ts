@@ -47,6 +47,7 @@ import Frm_896_config from '@/modules/action/views/point-of-sale/coins-and-bills
 import Frm_897_config from '@/modules/action/views/point-of-sale/pos-attributes/config'
 import Frm_898_config from '@/modules/action/views/point-of-sale/pos-products/config'
 import Frm_899_config from '@/modules/action/views/point-of-sale/pos-variants-product/config'
+import Frm_900_config from '@/modules/action/views/point-of-sale/containers/config'
 
 import { FormConfigs } from '@/shared/shared.types'
 
@@ -100,4 +101,5 @@ export const forms: FormConfigs = {
   Frm_897_config,
   Frm_898_config,
   Frm_899_config,
+  Frm_900_config,
 }

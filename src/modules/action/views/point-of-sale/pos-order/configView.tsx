@@ -50,9 +50,28 @@ const defaultPosPayment: Partial<PosPayment> = {
   action: ActionTypeEnum.INSERT,
 }
 
-export function FrmMiddle({ control, errors, editConfig, setValue }: frmElementsProps) {
-  const { formItem } = useAppStore()
-
+export function FrmMiddle({ control, errors, editConfig, setValue, watch }: frmElementsProps) {
+  const { formItem, setFrmConfigControls } = useAppStore()
+  const isEdit = watch('state') === PosOrderStateEnum.PAID
+  useEffect(() => {
+    setFrmConfigControls({
+      name: {
+        isEdit: isEdit,
+      },
+      order_date: {
+        isEdit: isEdit,
+      },
+      point_name: {
+        isEdit: isEdit,
+      },
+      session_name: {
+        isEdit: isEdit,
+      },
+      user_name: {
+        isEdit: isEdit,
+      },
+    })
+  }, [isEdit, watch('state')])
   return (
     <>
       <BaseTextControlled
@@ -154,10 +173,10 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
   }
 
   useEffect(() => {
-    if (formItem || frmAction === FormActionEnum.UNDO) {
-      setData(formItem?.payments || [])
+    if (formItem || frmAction === FormActionEnum.UNDO || watch('payments')) {
+      setData(formItem?.payments || watch('payments'))
     }
-  }, [formItem, frmAction])
+  }, [formItem, frmAction, watch('payments')])
 
   // Manejadores de cambios directos sobre el estado
   const handleUpdatePayment = (paymentId: number, newValues: Partial<PosPayment>) => {

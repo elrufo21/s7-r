@@ -11,50 +11,61 @@ import PosModalCashinAndOut from '../views/modal-cash-in-and-out/config'
 import { CustomHeaderCashInAndOut } from '../views/modal-cash-in-and-out/components/customHeader'
 import { ViewTypeEnum } from '@/shared/shared.types'
 import ModalButtons from './modal/components/ModalButtons'
+import { usePosActions } from '../hooks/usePosActions'
 
 export default function Header({ pointId }: { pointId: string }) {
   const {
-    executeFnc,
     addNewOrder,
     orderData,
     selectedOrder,
     setSelectedOrder,
     setScreen,
     screen,
-    getTotalPriceByOrder,
-    updateMoveId,
-    handleChange,
-    setHandleChange,
     openDialog,
     closeDialogWithData,
     searchTerm,
     setSearchTerm,
     selectedNavbarMenu,
     setSelectedNavbarMenu,
-    setOrderData,
     setSelectedItem,
     finalCustomer,
+    executeFnc,
   } = useAppStore()
+
+  const { saveCurrentOrder } = usePosActions()
+
   const { state } = JSON.parse(localStorage.getItem('session-store') ?? '{}')
   const { userData } = state
   const sessions = JSON.parse(localStorage.getItem('sessions') ?? '[]')
   const { session_id } = sessions.find((s: any) => s.point_id === Number(pointId))
   const navigate = useNavigate()
-  // const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-  // const open = Boolean(anchorEl)
 
-  const handleClick = (/*event: React.MouseEvent<HTMLButtonElement >*/) => {
-    // setAnchorEl(event.currentTarget)
+  const handleVisibilityChange = useCallback(async () => {
+    if (document.visibilityState === 'hidden') {
+      await saveCurrentOrder()
+    }
+  }, [saveCurrentOrder])
+
+  useEffect(() => {
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [handleVisibilityChange])
+
+  const handleClick = () => {
     const dialogId = openDialog({
       title: '',
       dialogContent: () => (
         <ModalButtons
+          pointId={pointId}
           handleCashInAndOut={handleCashInAndOut}
           handleCloseCashRegister={handleCloseCashRegister}
           returnToMain={() => {
             closeDialogWithData(dialogId, {})
             navigate('/points-of-sale')
           }}
+          closeDialog={() => closeDialogWithData(dialogId, {})}
         />
       ),
       buttons: [
@@ -67,15 +78,10 @@ export default function Header({ pointId }: { pointId: string }) {
     })
   }
 
-  const handleClose = () => {
-    // setAnchorEl(null)
-  }
-
   const handleCashInAndOut = async () => {
     const dialogId = openDialog({
       title: '',
       customHeader: <CustomHeaderCashInAndOut />,
-
       dialogContent: () => (
         <FrmBaseDialog config={PosModalCashinAndOut} viewType={ViewTypeEnum.LIBRE} />
       ),
@@ -119,7 +125,6 @@ export default function Header({ pointId }: { pointId: string }) {
               s.point_id === Number(pointId) ? { ...s, session_id: null } : s
             )
             localStorage.setItem('sessions', JSON.stringify(newSessions))
-            handleClose()
             closeDialogWithData(dialogId, rs)
             navigate('/points-of-sale')
           },
@@ -134,168 +139,16 @@ export default function Header({ pointId }: { pointId: string }) {
       ],
     })
   }
-  const fnc_save_order = async () => {
-    const date = new Date()
-    const peruDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-    switch (screen) {
-      case 'products': {
-        if (!handleChange) break
 
-        const data = orderData.find((item) => item.order_id === selectedOrder)
-        if (!data) return
-
-        const updatedData = {
-          ...data,
-          name: '',
-          state: orderData.find((item) => item.order_id === selectedOrder)?.state || 'I',
-          order_date:
-            orderData.find((item) => item.order_id === selectedOrder)?.order_date ||
-            peruDate.toISOString(),
-          user_id: userData?.user_id,
-          point_id: pointId,
-          session_id: session_id,
-          currency_id: 1,
-          company_id: userData?.company_id,
-          invoice_state:
-            orderData.find((item) => item.order_id === selectedOrder)?.invoice_state || 'P',
-          partner_id: finalCustomer?.partner_id,
-          lines: data.lines?.map((item: any, i: number) => ({
-            line_id: item?.line_id,
-            order_id: selectedOrder,
-            position: i + 1,
-            product_id: item?.product_id,
-            quantity: item?.quantity,
-            uom_id: item?.uom_id,
-            price_unit: item?.price_unit,
-            notes: null,
-            amount_untaxed: item?.price_unit,
-            amount_tax: 0,
-            amount_withtaxed: item?.price_unit,
-            amount_untaxed_total: item?.price_unit * item?.quantity,
-            amount_tax_total: item?.price_unit * item?.quantity,
-            amount_withtaxed_total: item?.price_unit * item?.quantity,
-          })),
-          order_id: selectedOrder,
-          amount_untaxed:
-            data.lines?.reduce((total: number, item: any) => total + (item?.price_unit || 0), 0) ||
-            0,
-          amount_withtaxed:
-            data.lines?.reduce(
-              (total: number, item: any) => total + (item?.price_unit || 0) * (item?.quantity || 0),
-              0
-            ) || 0,
-          amount_total: getTotalPriceByOrder(selectedOrder),
-        }
-
-        const rs = await executeFnc(
-          'fnc_pos_order',
-          typeof selectedOrder === 'string' ? 'i' : 'u',
-          {
-            ...updatedData,
-          }
-        )
-
-        if (rs?.oj_data?.order_id) {
-          const orders = await executeFnc('fnc_pos_order', 's_pos', [
-            [0, 'fequal', 'point_id', pointId],
-            [
-              0,
-              'multi_filter_in',
-              [
-                { key_db: 'state', value: 'I' },
-                { key_db: 'state', value: 'Y' },
-              ],
-            ],
-          ])
-          setOrderData(orders?.oj_data || [])
-          setSelectedOrder(rs?.oj_data?.order_id)
-        }
-
-        // Si el ID cambió, actualizamos el estado con el nuevo order_id
-        if (
-          typeof selectedOrder === 'string' &&
-          rs?.oj_data?.order_id &&
-          rs?.oj_data?.order_id !== selectedOrder
-        ) {
-          updateMoveId(selectedOrder, rs.oj_data.order_id)
-        }
-        setHandleChange(false)
-        break
-      }
-      case 'ticket': {
-        if (!handleChange) break
-        break
-      }
-      case 'payment': {
-        if (!handleChange) break
-        const data = orderData.find((item) => item.order_id === selectedOrder)
-        const newPayments = data?.payments?.filter((item: any) => item.amount !== 0)
-        const { oj_data } = await executeFnc(
-          'fnc_pos_order',
-          typeof data?.order_id === 'string' ? 'i' : 'u',
-          {
-            ...data,
-            session_id: typeof data?.order_id === 'string' ? session_id : undefined,
-            payments: newPayments,
-          }
-        )
-        if (oj_data?.order_id) {
-          setSelectedOrder(oj_data?.order_id)
-        }
-
-        const orders = await executeFnc('fnc_pos_order', 's_pos', [
-          [0, 'fequal', 'point_id', pointId],
-          [
-            0,
-            'multi_filter_in',
-            [
-              { key_db: 'state', value: 'I' },
-              { key_db: 'state', value: 'Y' },
-            ],
-          ],
-        ])
-        setOrderData(orders?.oj_data || [])
-        setHandleChange(false)
-        break
-      }
-      default:
-        break
-    }
-  }
-
-  const fnc_change_order = (id_order: string) => {
-    setScreen('products')
-    fnc_save_order()
-    setSelectedNavbarMenu('R')
-    setSelectedOrder(id_order)
-    /* setOrderCart((prevOrderCart) =>
-      prevOrderCart.map((item) => {
-        if (item.id_order === selectedOrder) {
-          return { ...item, cart: cart }
-        }
-        return item
-      })
-    )*/
-  }
-
-  const stableSaveOrder = useCallback(async () => {
-    await fnc_save_order()
-  }, [fnc_save_order])
-
-  useEffect(() => {
-    const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'hidden') {
-        console.log('El usuario cambió de pestaña o minimizó la ventana', handleChange)
-        await stableSaveOrder()
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [handleChange, stableSaveOrder])
+  const fnc_change_order = useCallback(
+    (id_order: string) => {
+      setScreen('products')
+      saveCurrentOrder()
+      setSelectedNavbarMenu('R')
+      setSelectedOrder(id_order)
+    },
+    [setScreen, saveCurrentOrder, setSelectedNavbarMenu, setSelectedOrder]
+  )
 
   return (
     <header className="pos-header">
@@ -323,7 +176,7 @@ export default function Header({ pointId }: { pointId: string }) {
               selectedNavbarMenu === 'O' ? 'active' : ''
             }`}
             onClick={() => {
-              fnc_save_order()
+              saveCurrentOrder()
               setSelectedNavbarMenu('O')
               setSelectedItem(null)
               setScreen('ticket')
@@ -355,7 +208,7 @@ export default function Header({ pointId }: { pointId: string }) {
             className="btn2 btn2-secondary lh-lg w-auto min-h-[48px]"
             onClick={() => {
               setSelectedItem(null)
-              fnc_save_order()
+              saveCurrentOrder()
             }}
           >
             <WiCloudUp style={{ fontSize: '34px' }} />
@@ -377,8 +230,10 @@ export default function Header({ pointId }: { pointId: string }) {
                 key={order?.order_id}
                 className={`btn2 btn2-secondary btn2-lg lh-lg w-auto min-h-[48px] ${selectedOrder === order.order_id ? 'btn2-light active' : ''} `}
                 onClick={() => {
-                  setSelectedItem(null)
-                  fnc_change_order(order.order_id)
+                  if (selectedOrder !== order.order_id) {
+                    setSelectedItem(null)
+                    fnc_change_order(order.order_id)
+                  }
                 }}
               >
                 {index + 1}

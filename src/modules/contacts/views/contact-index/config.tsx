@@ -27,7 +27,8 @@ const ContactIndexConfig: FormConfig = {
   item_url: '/contacts',
   new_url: '/contacts/new',
   no_content_title: 'Crear un contacto en su libreta de direcciones',
-  no_content_dsc: 'S7 le ayuda a llevar seguimiento de todas las actividades relacionadas con sus contactos.',
+  no_content_dsc:
+    'S7 le ayuda a llevar seguimiento de todas las actividades relacionadas con sus contactos.',
   ribbonList: [
     {
       label: 'ARCHIVADO',

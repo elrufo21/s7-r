@@ -1,18 +1,15 @@
 import type { Product } from '../types'
-import { FaInfo } from 'react-icons/fa'
 import useAppStore from '@/store/app/appStore'
-import ProductInfoConfig from '../views/product-info/config'
-import { FrmBaseDialog } from '@/shared/components/core'
 
 interface ProductCardProps {
   product: Product
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const { openDialog, addProductToOrder, getProductQuantityInOrder, selectedOrder } = useAppStore()
+  const { addProductToOrder, getProductQuantityInOrder, selectedOrder } = useAppStore()
   const quantity = getProductQuantityInOrder(selectedOrder, product.product_id)
 
-  const fnc_open_product_info = async (product: Product) => {
+  /* const fnc_open_product_info = async (product: Product) => {
     const dialog = openDialog({
       title: product.name,
       dialogContent: () => (
@@ -21,7 +18,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     })
     console.log(dialog)
   }
-
+*/
   return (
     <>
       <article
@@ -55,7 +52,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
 
         <div className="product-category-color"></div>
-        {quantity > 0 && <div className="product-cart-qty">{quantity}</div>}
+        {quantity !== 0 && <div className="product-cart-qty">{quantity}</div>}
       </article>
     </>
   )

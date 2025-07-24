@@ -7,12 +7,14 @@ import useAppStore from '@/store/app/appStore'
 import { ModalBase } from '@/shared/components/modals/ModalBase'
 import { CustomHeader } from './CustomHeader'
 import { FrmBaseDialog } from '@/shared/components/core'
-import { ActionTypeEnum, ViewTypeEnum } from '@/shared/shared.types'
+import { ActionTypeEnum } from '@/shared/shared.types'
 import noteConfig from '../views/notes/config'
 import { Product } from '../types'
 import { Operation } from '../types'
 
-import MoreOptionsModalConfig from '../views/modal-more-options/config'
+import ModalMoreOptions from './modal/components/ModalMoreOptions'
+import { useParams } from 'react-router-dom'
+import productInfoConfig from '../views/product-info/config'
 
 export default function CartPanel() {
   const {
@@ -23,6 +25,8 @@ export default function CartPanel() {
     setModalData,
     setProductPriceInOrder,
     setProductQuantityInOrder,
+    toggleProductQuantitySign,
+    toggleProductPriceSign,
     orderData,
     deleteProductInOrder,
     getTotalPriceByOrder,
@@ -42,8 +46,10 @@ export default function CartPanel() {
     setBackToProducts,
     backToProducts,
     defaultPosSessionData,
+    setOrderData,
+    setSelectedOrder,
   } = useAppStore()
-
+  const { pointId } = useParams()
   const [cart, setCart] = useState<Product[]>([])
   // const [finalCustomer, setFinalCustomer] = useState<any>({})
 
@@ -423,31 +429,105 @@ export default function CartPanel() {
   }
   const handleSymbolsClick = () => {
     if (!selectedItem) return
-    const isPrice = operation === Operation.PRICE
-    const currentValue =
-      cart
-        .find(
-          (item) => item.product_template_id === selectedItem || item.product_id === selectedItem
-        )
-        ?.[isPrice ? 'sale_price' : 'quantity']?.toString() || '0'
 
-    const newValue = currentValue.startsWith('-') ? currentValue.substring(1) : '-' + currentValue
+    const isPrice = operation === Operation.PRICE
 
     if (isPrice) {
-      setLocalPrice(newValue)
+      setHandleChange(true)
+      toggleProductPriceSign(selectedOrder, selectedItem)
     } else {
-      setLocalValue(newValue)
+      setHandleChange(true)
+      toggleProductQuantitySign(selectedOrder, selectedItem)
     }
 
-    updateValue(newValue)
+    const updatedCart =
+      orderData
+        ?.find((item) => item.order_id === selectedOrder)
+        ?.lines?.filter((item: any) => item.action !== ActionTypeEnum.DELETE) || []
+
+    const updatedProduct = updatedCart.find((item) => item.product_id === selectedItem)
+
+    if (updatedProduct) {
+      const newQuantity = updatedProduct.quantity?.toString() || '0'
+      const newPrice = updatedProduct.price_unit?.toString() || '0'
+
+      setLocalValue(newQuantity)
+      setLocalPrice(newPrice)
+
+      clearDisplay()
+      const valueToDisplay = isPrice ? newPrice : newQuantity
+      for (const digit of valueToDisplay) {
+        addDigit(digit)
+      }
+    }
+
+    setHandleChange(true)
     setShouldReplaceValue(false)
+  }
+
+  const fnc_customer_note = () => {
+    const dialogId = openDialog({
+      title: 'Nota de cliente',
+      dialogContent: () => <FrmBaseDialog config={noteConfig} />,
+      buttons: [
+        {
+          text: 'Guardar',
+          type: 'confirm',
+          onClick: () => closeDialogWithData(dialogId, {}),
+        },
+        {
+          text: 'Cerrar',
+          type: 'cancel',
+          onClick: () => closeDialogWithData(dialogId, {}),
+        },
+      ],
+    })
+  }
+  const fnc_more_info = () => {
+    const dialogId = openDialog({
+      title: 'Producto',
+      dialogContent: () => <FrmBaseDialog config={productInfoConfig} />,
+      buttons: [
+        {
+          text: 'Cerrar',
+          type: 'cancel',
+          onClick: () => closeDialogWithData(dialogId, {}),
+        },
+      ],
+    })
+  }
+  const fnc_cancel_order = async () => {
+    const rs = await executeFnc('fnc_pos_order', 'u', {
+      order_id: selectedOrder,
+      state: 'C',
+    })
+    if (rs.oj_data.length > 0) {
+      const newOrders = await executeFnc('fnc_pos_order', 's_pos', [
+        [0, 'fequal', 'point_id', pointId],
+        [
+          0,
+          'multi_filter_in',
+          [
+            { key_db: 'state', value: 'I' },
+            { key_db: 'state', value: 'Y' },
+          ],
+        ],
+      ])
+      setSelectedOrder(newOrders.oj_data[0].order_id)
+      setOrderData(newOrders.oj_data)
+    }
   }
 
   const fnc_open_more_options_modal = () => {
     const dialogId = openDialog({
       title: 'Opciones',
       dialogContent: () => (
-        <FrmBaseDialog config={MoreOptionsModalConfig} viewType={ViewTypeEnum.LIBRE} />
+        <ModalMoreOptions
+          closeDialog={() => closeDialogWithData(dialogId, {})}
+          handleCustomerNote={fnc_customer_note}
+          moreInfo={fnc_more_info}
+          handleCancelOrder={fnc_cancel_order}
+        />
       ),
       buttons: [
         {
@@ -510,6 +590,7 @@ export default function CartPanel() {
   }
 
   const itemRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
+
   return (
     <>
       <div className="order-container">

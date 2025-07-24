@@ -52,6 +52,7 @@ export const OrderList = () => {
     deleteOrder,
     setSelectedNavbarMenu,
     paidOrders,
+    setOrderSelected,
     setTotal,
   } = useAppStore()
 
@@ -157,7 +158,7 @@ export const OrderList = () => {
   )
   useEffect(() => {
     if (orderData.length === 0) {
-      addNewOrder()
+      addNewOrder({})
     }
   }, [orderData])
   const handleDeleteClick = async (row: Order) => {
@@ -198,6 +199,7 @@ export const OrderList = () => {
       }, 0)
 
       setTotal(total)
+      setOrderSelected({ order_id: row.order_id, state: row.state })
     } else {
       setCart([])
       setTotal(0)

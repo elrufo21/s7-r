@@ -6,6 +6,7 @@ import {
   FrmTab2,
   FrmTab3,
   FrmTab4,
+  FrmTab5,
   FrmStar,
   FrmTitle,
   Subtitle,
@@ -26,6 +27,15 @@ const ProductsConfig: FormConfig = {
   item_url: '/action/301/detail',
   new_url: '/action/301/detail/new',
   isFavoriteColumn: true,
+  no_content_title: 'Crear nuevo producto',
+  no_content_dsc: 'Defina productos y categorías para su empresa',
+  ribbonList: [
+    {
+      label: 'ARCHIVADO',
+      state: 'I',
+      className: 'ribbon',
+    },
+  ],
 
   fnc_valid: (data, formItem) => {
     if (!data.name) return null
@@ -110,6 +120,12 @@ const ProductsConfig: FormConfig = {
       order_id: index + 1,
     }))
 
+    // agregado hoy
+    const areSameTags =
+      JSON.stringify((formItem?.categories || []).map((tag: any) => tag.label)) !==
+      JSON.stringify((data?.categories || []).map((tag: any) => tag.label))
+    data.categories_change = areSameTags
+
     return data
   },
 
@@ -146,6 +162,8 @@ const ProductsConfig: FormConfig = {
     tax_buys: null,
     taxes: [],
     parent_id: null,
+    categories: [],
+    sw_categories: false,
   },
 
   grid: {
@@ -425,6 +443,18 @@ const ProductsConfig: FormConfig = {
         name: 'Ventas',
         content: ({ watch, control, errors, editConfig = {}, setValue }) => (
           <FrmTab1
+            watch={watch}
+            control={control}
+            errors={errors}
+            editConfig={editConfig}
+            setValue={setValue}
+          />
+        ),
+      },
+      {
+        name: 'Punto de venta',
+        content: ({ watch, control, errors, editConfig = {}, setValue }) => (
+          <FrmTab5
             watch={watch}
             control={control}
             errors={errors}

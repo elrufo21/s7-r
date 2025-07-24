@@ -238,8 +238,8 @@ const PosOrderLines = ({ watch, setValue, control, errors, editConfig }: frmElem
     }
 
     // Si no hay tableData, intentar usar formItem
-    if (formItem?.lines) {
-      return formItem.lines.map((item: PosOrderLine) => ({
+    if (formItem?.lines || watch('lines')) {
+      return (formItem?.lines || watch('lines')).map((item: PosOrderLine) => ({
         ...item,
         type: item.type || TypeInvoiceLineEnum.LINE,
         hasLabel: !!item.label,
@@ -251,14 +251,14 @@ const PosOrderLines = ({ watch, setValue, control, errors, editConfig }: frmElem
 
   useEffect(() => {
     setData(
-      formItem?.lines?.map((item: PosOrderLine) => ({
+      (formItem?.lines || watch('lines'))?.map((item: PosOrderLine) => ({
         ...item,
         type: item.type || TypeInvoiceLineEnum.LINE,
         hasLabel: !!item.label,
         _resetKey: Date.now(),
       })) || []
     )
-  }, [formItem])
+  }, [formItem, watch('lines')])
 
   const handleNumericFieldChange = async (
     row: Row<PosOrderLine>,

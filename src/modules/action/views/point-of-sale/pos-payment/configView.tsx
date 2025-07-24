@@ -1,12 +1,9 @@
-import BaseAutocomplete from '@/shared/components/form/base/BaseAutocomplete'
 import BaseTextControlled from '@/shared/components/form/base/BaseTextControlled'
-import FormRow from '@/shared/components/form/base/FormRow'
 import { frmElementsProps } from '@/shared/shared.types'
 import useAppStore from '@/store/app/appStore'
 import { useEffect } from 'react'
 
-export function FrmMiddle({ control, errors, editConfig, setValue }: frmElementsProps) {
-
+export function FrmMiddle({ control, errors, editConfig }: frmElementsProps) {
   const { formItem, setFrmConfigControls } = useAppStore()
 
   useEffect(() => {

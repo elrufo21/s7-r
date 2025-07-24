@@ -7,11 +7,13 @@ import { FrmBaseDialog } from '@/shared/components/core'
 import PosDetailConfig from './components/modal/opening-control/config'
 import { useNavigate, useParams } from 'react-router-dom'
 import useUserStore from '@/store/persist/persistStore'
+import { usePWA } from '@/hooks/usePWA'
 
 const PointOfSale = () => {
   const { pointId } = useParams()
   const { userData } = useUserStore()
   const navigate = useNavigate()
+  const { isOnline } = usePWA()
   const { executeFnc, openDialog, closeDialogWithData, initializePointOfSale } = useAppStore()
 
   const sessions = JSON.parse(localStorage.getItem('sessions') || '[]')
@@ -20,7 +22,7 @@ const PointOfSale = () => {
   const loadInitialData = async () => {
     if (!pointId) return
     try {
-      await initializePointOfSale(pointId)
+      await initializePointOfSale(pointId, isOnline)
     } catch (error) {
       console.error('Fallo la inicialización de datos del POS:', error)
     }

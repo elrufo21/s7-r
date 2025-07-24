@@ -29,15 +29,13 @@ export interface Category {
   icon: string
 }
 
-export enum TypeStateOrder{
+export enum TypeStateOrder {
   CANCELED = 'C',
   IN_PROGRESS = 'I',
   PAY = 'Y',
   PAID = 'P',
   REGISTERED = 'R',
 }
-
-
 
 export enum Operation {
   QUANTITY = 'quantity',

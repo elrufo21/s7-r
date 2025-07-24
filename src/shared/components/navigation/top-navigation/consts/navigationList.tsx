@@ -831,6 +831,7 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
                 path: '/action/93',
               },
               { title: 'Atributos', key: 'atributos', path: '/action/897' },
+              { title: 'Contenedor', key: 'Contenedor', path: '/action/900' },
               /*  {
                 title: 'Etiquetas de producto',
                 key: 'etiquetas-producto',

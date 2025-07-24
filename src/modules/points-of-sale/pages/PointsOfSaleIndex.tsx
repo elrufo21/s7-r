@@ -5,9 +5,12 @@ import useUserStore from '@/store/persist/persistStore'
 import { useModuleFilterList } from '@/shared/hooks/useModule'
 import { ModulesEnum } from '@/shared/shared.types'
 import { useLocation } from 'react-router-dom'
+import { usePWA } from '@/hooks/usePWA'
+import { OfflineCache } from '@/lib/offlineCache'
 
 export const PointOfSaleIndex = () => {
   const location = useLocation()
+  const { isOnline } = usePWA()
   const {
     setInitialData,
     listCurrentPage,
@@ -46,15 +49,41 @@ export const PointOfSaleIndex = () => {
   useEffect(() => {
     setFrmLoading(isLoading)
   }, [isLoading, setFrmLoading])
+
   useEffect(() => {
-    if (data) {
-      setInitialData({
-        data: data.oj_data ?? [],
-        total: data.oj_info?.total_count ?? 0,
-      })
+    const loadData = async () => {
+      if (!isOnline) {
+        try {
+          // Crear instancia de OfflineCache
+          const cache = new OfflineCache()
+          await cache.init()
+
+          const offlineData = await cache.getOfflinePosPoints()
+
+          setInitialData({
+            data: offlineData,
+            total: offlineData.length,
+          })
+        } catch (error) {
+          console.error('Error cargando datos offline:', error)
+          setInitialData({
+            data: [],
+            total: 0,
+          })
+        }
+        return
+      }
+
+      if (data) {
+        setInitialData({
+          data: data.oj_data ?? [],
+          total: data.oj_info?.total_count ?? 0,
+        })
+      }
     }
-  }, [data, setInitialData, viewType, listCurrentPage])
-  console.log('data', data)
+
+    loadData()
+  }, [data, setInitialData, viewType, listCurrentPage, isOnline])
 
   return <ManagerContent />
 }

@@ -2,7 +2,7 @@ import { ViewTypeEnum, FormConfig, ModulesEnum, ItemStatusTypeEnum } from '@/sha
 import { FrmPhoto, FrmMiddle, FrmTitle } from './configView'
 
 const ProductPosCategoryConfig: FormConfig = {
-  fnc_name: 'fnc_product_pos_category',
+  fnc_name: 'fnc_product_template_pos_category',
   title: 'Categorías de productos de PdV',
   dsc: 'Categoría',
   dsc_view: 'full_name',
@@ -25,7 +25,7 @@ const ProductPosCategoryConfig: FormConfig = {
   },
 
   default_values: {
-    pos_category_id: null,
+    category_id: null,
     name: '',
     files: [],
     group_id: null,
@@ -35,7 +35,7 @@ const ProductPosCategoryConfig: FormConfig = {
   },
 
   grid: {
-    idRow: 'pos_category_id',
+    idRow: 'category_id',
     col_name: 'full_name',
 
     list: {

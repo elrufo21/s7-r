@@ -37,7 +37,7 @@ export interface PreviousDataBeforeMenu {
   formItem: any
   breadcrumb: any[] | null
   url: string | null
-  dataFormShow?: any[] 
+  dataFormShow?: any[]
 }
 
 export interface AppSliceState {
@@ -338,6 +338,8 @@ interface Product {
   uom_id?: string
 }
 export interface PointsOfSaleSliceState {
+  orderSelected: { order_id: string; state: string } | null
+  setOrderSelected: (orderSelected: { order_id: string; state: string } | null) => void
   total: number
   setTotal: (total: number) => void
   paidOrders: any[]
@@ -413,7 +415,21 @@ export interface PointsOfSaleSliceState {
   categories: any[]
   setCategories: (categories: any[]) => void
   addProductToOrder: (order_id: number | string, product: Product, new_quantity: number) => void
-  addNewOrder: ({date ,user_id, point_id, session_id,company_id,partner_id}: {date: Date, user_id: number, point_id: number, session_id: number,company_id: number,partner_id: number}) => void
+  addNewOrder: ({
+    date,
+    user_id,
+    point_id,
+    session_id,
+    company_id,
+    partner_id,
+  }: {
+    date: Date
+    user_id: number
+    point_id: number
+    session_id: number
+    company_id: number
+    partner_id: number
+  }) => void
   setProductQuantityInOrder: (
     order_id: number | string,
     product: string | number,
@@ -424,6 +440,8 @@ export interface PointsOfSaleSliceState {
     product: string | number,
     new_price: number
   ) => void
+  toggleProductQuantitySign: (order_id: number | string, product_id: string) => void
+  toggleProductPriceSign: (order_id: number | string, product_id: string) => void
   getProductQuantityInOrder: (order_id: number | string, product: string | number) => number
   deleteProductInOrder: (order_id: number | string, product_id: string) => void
   getTotalPriceByOrder: (order_id: number | string) => number
@@ -434,5 +452,12 @@ export interface PointsOfSaleSliceState {
   updateMoveId: (oldMoveId: string, newMoveId: string) => void
 
   // Nueva función para centralizar la carga
-  initializePointOfSale: (pointId: string) => Promise<void>
+  initializePointOfSale: (pointId: string, isOnline: boolean) => Promise<void>
+
+  // Funciones para cache en localStorage con namespace seguro
+  getOrSetLocalStorage: <T>(key: string, fetchFn: () => Promise<T>) => Promise<T>
+  clearPosCache: () => void
+  getPosCacheInfo: () => Promise<Record<string, string>>
+  forceReloadPosData: (pointId: string, isOnline: boolean) => Promise<void>
+  refreshAllCache: () => Promise<void>
 }

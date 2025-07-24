@@ -14,7 +14,8 @@ const PosPaymentConfig: FormConfig = {
   new_url: '/action/891/detail/new',
   // isFavoriteColumn: false,
   no_content_title: 'Agregar un nuevo método de pago',
-  no_content_dsc: 'Desde los ajustes generales de la aplicación Facturación, creará métodos de pago bancarios y en efectivo automáticamente.',
+  no_content_dsc:
+    'Desde los ajustes generales de la aplicación Facturación, creará métodos de pago bancarios y en efectivo automáticamente.',
   ribbonList: [
     {
       label: 'ARCHIVADO',

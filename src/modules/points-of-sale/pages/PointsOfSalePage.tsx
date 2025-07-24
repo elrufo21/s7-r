@@ -9,9 +9,14 @@ const PointOfSalePage = () => {
   const config = PointsOfSaleConfig
 
   useEffect(() => {
-    setConfig(config)
-  }, [config, setConfig])
-  if (!Object.keys(configApp).length) return <></>
+    if (!configApp || configApp.module !== config.module) {
+      setConfig(config)
+    }
+  }, [])
+
+  if (!configApp || !Object.keys(configApp).length) {
+    return <div className="flex items-center justify-center h-64">Cargando...</div>
+  }
 
   return (
     <Routes>

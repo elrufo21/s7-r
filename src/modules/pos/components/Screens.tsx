@@ -8,9 +8,59 @@ import { MdKeyboardArrowLeft } from 'react-icons/md'
 import Payment from './Payment'
 import Invoice from './Invoice'
 import useAppStore from '@/store/app/appStore'
+import orderConfig from '@/modules/action/views/point-of-sale/pos-order/config'
+import { FrmBaseDialog } from '@/shared/components/core'
+import TicketPDF from './Ticket'
 
 const Screens = ({ pointId }: { pointId: string }) => {
-  const { screen, cart, orderData, selectedOrder, setScreen, backToProducts, total } = useAppStore()
+  const {
+    screen,
+    cart,
+    orderData,
+    selectedOrder,
+    setScreen,
+    backToProducts,
+    total,
+    orderSelected,
+    setSelectedOrder,
+    setSelectedNavbarMenu,
+    openDialog,
+    closeDialogWithData,
+    executeFnc,
+    finalCustomer,
+  } = useAppStore()
+
+  const fnc_printTicket = async (order_id: string) => {
+    // Obtener los datos completos de la orden
+    const { oj_data } = await executeFnc('fnc_pos_order', 's1', [order_id])
+    const orderInfo = oj_data[0] || {}
+
+    // Preparar los datos para el ticket
+    const ticketInfo = {
+      name: orderInfo.name || '',
+      invoice_date: orderInfo.order_date || new Date(),
+      lines: orderInfo.lines || [],
+    }
+
+    const dialogId = openDialog({
+      title: 'Ticket de venta',
+      fullScreen: true,
+      dialogContent: () => (
+        <div className="w-full h-full">
+          <TicketPDF info={ticketInfo} finalCustomer={finalCustomer} />
+        </div>
+      ),
+      buttons: [
+        {
+          type: 'cancel',
+          text: 'Cerrar',
+          onClick: () => {
+            closeDialogWithData(dialogId, {})
+          },
+        },
+      ],
+    })
+  }
 
   useEffect(() => {
     if (
@@ -27,6 +77,23 @@ const Screens = ({ pointId }: { pointId: string }) => {
       setScreen('invoice')
     }
   }, [orderData, selectedOrder, screen])
+
+  const fnc_detailsModal = async (order_id: string) => {
+    const { oj_data } = await executeFnc('fnc_pos_order', 's1', [order_id])
+    const dialogId = openDialog({
+      title: 'Detalles de la orden',
+      dialogContent: () => <FrmBaseDialog config={orderConfig} initialValues={oj_data[0]} />,
+      buttons: [
+        {
+          type: 'cancel',
+          text: 'Cerrar',
+          onClick: () => {
+            closeDialogWithData(dialogId, {})
+          },
+        },
+      ],
+    })
+  }
 
   switch (screen) {
     case 'products':
@@ -74,15 +141,43 @@ const Screens = ({ pointId }: { pointId: string }) => {
                   </div>
                 </div>
               </div>
+              {orderSelected?.state === 'P' && (
+                <div className="control-buttons">
+                  <button
+                    className="btn2 btn2-white lh-lg text-truncate w-auto text-action"
+                    onClick={() => {
+                      fnc_detailsModal(orderSelected?.order_id || '')
+                    }}
+                  >
+                    Detalles
+                  </button>
 
-              <div className="d-flex gap-2 m-2 mt-0 h-[100px]">
-                <button className="back-button btn btn-secondary btn-lg lh-lg">
-                  <MdKeyboardArrowLeft style={{ fontSize: '36px' }} />
-                </button>
-                <button className="button validation load-order-button w-100 btn btn-lg btn-primary py-3">
-                  <span className="d-block">Cargar orden</span>
-                </button>
-              </div>
+                  <button
+                    className="btn2 btn2-white lh-lg w-auto"
+                    onClick={() => fnc_printTicket(orderSelected?.order_id || '')}
+                  >
+                    Imprimir recibo
+                  </button>
+                </div>
+              )}
+              {(orderSelected?.state === 'I' || orderSelected?.state === 'Y') && (
+                <div className="d-flex gap-2 m-2 mt-0 h-[100px]">
+                  <button className="back-button btn btn-secondary btn-lg lh-lg">
+                    <MdKeyboardArrowLeft style={{ fontSize: '36px' }} />
+                  </button>
+
+                  <button
+                    className="button validation load-order-button w-100 btn btn-lg btn-primary py-3"
+                    onClick={() => {
+                      setScreen('products')
+                      setSelectedNavbarMenu('R')
+                      setSelectedOrder(orderSelected?.order_id || '')
+                    }}
+                  >
+                    <span className="d-block">Cargar orden</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -535,8 +535,8 @@ h1,
 /* 1112 */
 /* .table_editable tr.group.options td a */
 a {
-  color: #017e84;
-  text-decoration: none;
+  color: #017e84 !important;
+  text-decoration: none !important;
 }
 /* 1117 */
 a:hover {
@@ -4940,8 +4940,12 @@ table.totales tbody tr td.o_imp .o_separator {
 }
 
 .o_priority {
-  width: 1em;
-  height: 1em;
+  width: 36px;
+  height: 36px;
+  font-size: 33px;
+}
+.o_priority svg {
+  color: rgba(55, 65, 81, 0.76);
 }
 .o_priority:hover {
   cursor: pointer;

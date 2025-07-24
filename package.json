@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
     "format": "prettier --write --ignore-unknown ./src",
     "lint": "eslint . --fix",
+    "preview": "vite preview",
     "prepare": "husky"
   },
   "dependencies": {
@@ -17,6 +17,7 @@
     "@dnd-kit/sortable": "^8.0.0",
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
+    "@js-temporal/polyfill": "^0.5.1",
     "@mui/base": "^5.0.0-beta.40",
     "@mui/material": "^6.1.0",
     "@react-pdf/renderer": "^4.3.0",
@@ -27,6 +28,7 @@
     "@types/node": "^22.5.4",
     "chart.js": "^4.4.9",
     "clsx": "^2.1.1",
+    "idb": "^8.0.3",
     "js-cookie": "^3.0.5",
     "lodash": "^4.17.21",
     "primereact": "^10.8.2",
@@ -41,6 +43,8 @@
     "react-router-dom": "^6.26.2",
     "sonner": "^1.5.0",
     "sortablejs": "^1.15.6",
+    "vite-plugin-pwa": "^1.0.1",
+    "workbox-window": "^7.3.0",
     "xlsx": "^0.18.5",
     "zustand": "^4.5.5"
   },

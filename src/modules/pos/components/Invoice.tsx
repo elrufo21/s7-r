@@ -219,7 +219,8 @@ const styles = StyleSheet.create({
 })*/
 
 const Invoice = () => {
-  const { orderData, selectedOrder, finalCustomer, addNewOrder, executeFnc } = useAppStore()
+  const { orderData, selectedOrder, finalCustomer, addNewOrder, executeFnc, setSelectedOrder } =
+    useAppStore()
   const [order, setOrder] = useState({})
   useEffect(() => {
     const fetchOrder = async () => {
@@ -227,6 +228,7 @@ const Invoice = () => {
       setOrder(oj_data[0] || {})
     }
     fetchOrder()
+    setSelectedOrder(orderData[0]?.order_id)
   }, [orderData])
   const info = { ...order, lines: order?.lines || [] }
   return (
@@ -311,178 +313,6 @@ const Invoice = () => {
               {' '}
               <div className="w-full h-full">
                 <TicketPDF info={info} finalCustomer={finalCustomer} />
-                {/*
-                <PDFViewer width="100%" height="100%">
-                  <Document>
-                    <Page size="A4" style={styles.page}>
-                      <View style={styles.company}>
-                        <Image
-                          style={styles.company_logo}
-                          src="https://upload.wikimedia.org/wikipedia/commons/6/60/UNITEC_logo.jpg"
-                        />
-                        <View style={styles.company_details}>
-                          <Text style={styles.textBold}>Importadora de Repuestos CHAVARRI</Text>
-                          <Text>Avenida real 754</Text>
-                          <Text>El tambo, Huancayo, Junin - Peru</Text>
-                          <Text>RUC: 20557365487</Text>
-                        </View>
-                      </View>
-
-                      <View style={styles.customer}>
-                        <Text style={styles.textBold}>Cliente</Text>
-                        <Text style={styles.textBold}>{finalCustomer.name}</Text>
-                        <Text>Avenida real 754</Text>
-                        <Text>El tambo, Huancayo, Junin - Peru</Text>
-                        <Text>RUC: 20557365487</Text>
-                      </View>
-
-                      <View style={styles.section_1_Col}>
-                        <Text style={[styles.title_style_1]}>Factura {info.name}</Text>
-                      </View>
-
-                      <View style={[styles.section_2_Col, styles.marginBottom10]}>
-                        <View style={styles.width_50}>
-                          <Text style={[styles.marginBottom5, styles.textBold]}>
-                            Fecha de factura
-                          </Text>
-                          <Text>
-                            {info.invoice_date ? formatDateToDDMMYYYY(info.invoice_date) : '-'}
-                          </Text>
-                        </View>
-                        <View style={styles.width_50}>
-                          <Text style={[styles.marginBottom5, styles.textBold]}>
-                            Fecha de vencimiento
-                          </Text>
-                          <Text>
-                            {info.invoice_date_due
-                              ? formatDateToDDMMYYYY(info.invoice_date_due)
-                              : '-'}
-                          </Text>
-                        </View>
-                      </View>
-
-                      <View style={styles.table}>
-                        <View style={[styles.tableRow, styles.tableHeader]}>
-                          <View style={[styles.tableCellDescription]}>
-                            <Text style={styles.headerText}>Descripción</Text>
-                          </View>
-                          <View style={styles.tableCellAmount}>
-                            <Text style={styles.headerText}>Cantidad</Text>
-                          </View>
-                          <View style={styles.tableCellAmount}>
-                            <Text style={styles.headerText}>Unitario</Text>
-                          </View>
-
-                          <View style={styles.tableCellAmount}>
-                            <Text style={styles.headerText}>Importe</Text>
-                          </View>
-                        </View>
-
-                        {info?.lines?.map((item: MoveLine, index: number) => (
-                          <View key={index} style={styles.tableRow}>
-                            {item.type === TypeInvoiceLineEnum.SECTION ? (
-                              <View style={styles.section_or_note}>
-                                <Text style={styles.textBold}>{item.label}</Text>
-                              </View>
-                            ) : item.type === TypeInvoiceLineEnum.NOTE || item.label ? (
-                              <View style={styles.section_or_note}>
-                                <Text
-                                  style={
-                                    item.type === TypeInvoiceLineEnum.NOTE ? styles.textItalic : {}
-                                  }
-                                >
-                                  {item.label}
-                                </Text>
-                              </View>
-                            ) : (
-                              <>
-                                <View style={[styles.tableCellDescription]}>
-                                  <Text>{item.name}</Text>
-                                </View>
-                                <View style={styles.tableCellAmount}>
-                                  <Text>{item.quantity + ' ' + item.uom_name}</Text>
-                                </View>
-                                <View style={styles.tableCellAmount}>
-                                  <Text>{item.price_unit}</Text>
-                                </View>
-
-                                <View style={styles.tableCellAmount}>
-                                  <Text>{(item.quantity * item.sale_price).toFixed(2)}</Text>
-                                </View>
-                              </>
-                            )}
-                          </View>
-                        ))}
-                      </View>
-
-
-                      <View style={styles.section_2_Col}>
-                        <View style={styles.width_50}></View>
-
-                        <View
-                          style={[
-                            styles.width_50,
-                            {
-                              borderTop: '1px solid #000',
-                            },
-                          ]}
-                        >
-                          <View style={[styles.section_2_Col, styles.marginTop5]}>
-                            <View style={styles.width_50}>
-                              <Text style={[]}>Subtotal</Text>
-                            </View>
-                            <View style={styles.width_50}>
-                              <Text style={styles.textAlignRight}>
-                                S/ {Number.parseFloat(getTotalPrice()).toFixed(2)}
-                              </Text>
-                            </View>
-                          </View>
-
-                          <View style={[styles.section_2_Col, styles.marginTop5]}>
-                            <View style={styles.width_50}>
-                              <Text style={[]}>IGV</Text>
-                            </View>
-                            <View style={styles.width_50}>
-                              <Text style={styles.textAlignRight}>S/ 0.00</Text>
-                            </View>
-                          </View>
-
-                          <View
-                            style={[
-                              styles.section_2_Col,
-                              styles.marginTop5,
-                              styles.textBold,
-                              {
-                                borderTop: '1px solid #000',
-                                paddingTop: '5',
-                              },
-                            ]}
-                          >
-                            <View style={styles.width_50}>
-                              <Text style={[]}>Total</Text>
-                            </View>
-                            <View style={styles.width_50}>
-                              <Text style={styles.textAlignRight}>
-                                S/ {Number.parseFloat(getTotalPrice()).toFixed(2)}
-                              </Text>
-                            </View>
-                          </View>
-                        </View>
-                      </View>
-
-                      <View style={{ marginTop: '20', fontSize: '10px' }}>
-                        <Text style={styles.textBold}>
-                          {numeroALetras(Number.parseFloat(getTotalPrice()))}
-                        </Text>
-                      </View>
-
-                      <View style={styles.pageNumber}>
-                        <Text style={styles.marginTop5}>Facturacion Electronica S7</Text>
-                      </View>
-                    </Page>
-                  </Document>
-                </PDFViewer>
-                 */}
               </div>
             </div>
           </div>

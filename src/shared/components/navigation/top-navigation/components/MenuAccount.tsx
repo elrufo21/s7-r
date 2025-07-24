@@ -10,6 +10,7 @@ import { signOut } from '@/data/auth'
 import useUserStore from '@/store/persist/persistStore'
 import { useNavigate } from 'react-router-dom'
 import useAppStore from '@/store/app/appStore'
+import { usePWA } from '@/hooks/usePWA'
 
 export const MenuAccount = () => {
   const navigate = useNavigate()
@@ -17,6 +18,7 @@ export const MenuAccount = () => {
   const setUserSession = useUserStore((state) => state.setUserSession)
   const changeEmpPred = useUserStore((state) => state.changeEmpPred)
   const setUsersEmpSelected = useAppStore((state) => state.setUsersEmpSelected)
+  const { installApp } = usePWA()
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null)
   const [wordName, setWordName] = useState<string>('')
   const open = Boolean(anchorEl)
@@ -35,6 +37,12 @@ export const MenuAccount = () => {
     navigate('/auth')
   }
 
+  const handleInstallApp = async () => {
+    console.log('Intentando instalar la PWA...')
+    await installApp()
+    handleClose()
+  }
+
   useEffect(() => {
     if (userData?.nombre) {
       setWordName(userData.nombre[0])
@@ -43,10 +51,7 @@ export const MenuAccount = () => {
 
   return (
     <>
-      <button
-        className="ls_user_avatar"
-        onClick={handleClick}
-      >
+      <button className="ls_user_avatar" onClick={handleClick}>
         {userData?.avatar ? (
           <Avatar
             src={userData?.avatar?.[0].publicUrl}
@@ -99,7 +104,14 @@ export const MenuAccount = () => {
         <MenuItem onClick={handleClose}>
           <ListItemText>Cambiar contraseña</ListItemText>
         </MenuItem>
+        {/* Solo mostrar si realmente se puede instalar */}
+
+        <MenuItem onClick={handleInstallApp}>
+          <ListItemText>Instalar aplicación</ListItemText>
+        </MenuItem>
+
         <Divider />
+
         <MenuItem onClick={handleLogout}>
           <ListItemIcon>{/* <Logout fontSize="small" /> */}</ListItemIcon>
           Cerrar sesión

@@ -1,10 +1,14 @@
-import { Operation, TypeStateOrder } from '@/modules/pos/types'
+import { Operation } from '@/modules/pos/types'
 import { AppStoreProps, PointsOfSaleSliceState, SetState } from '@/store/store.types'
+import { OfflineCache } from '@/lib/offlineCache'
 
 const createPos = (
   set: SetState<PointsOfSaleSliceState>,
   get: () => AppStoreProps
 ): PointsOfSaleSliceState => ({
+  orderSelected: null,
+  setOrderSelected: (orderSelected: { order_id: string; state: string } | null) =>
+    set({ orderSelected }),
   defaultPosSessionData: {
     partner_id: 66135,
     name: 'Consumidor final',
@@ -176,39 +180,24 @@ const createPos = (
     })
   },
 
-  addNewOrder: async ({date ,user_id, point_id, session_id,company_id,partner_id}: {date: Date, user_id: number, point_id: number, session_id: number,company_id: number,partner_id: number}) => {
-    const { executeFnc } = get()
+  addNewOrder: () =>
+    set((state) => {
+      state.setScreen('products')
+      state.setHandleChange(true)
+      const newId = crypto.randomUUID()
 
-    const { oj_data } = await executeFnc('fnc_pos_order', 'i', {
-      lines: [],
-      state: TypeStateOrder.IN_PROGRESS,
-      user_id: user_id,
-      point_id: point_id,
-      session_id: session_id,
-      company_id: company_id,
-      partner_id: partner_id,
-      currency_id: 1,
-      order_date: date,
-    })
+      const newOrder = {
+        order_id: newId,
+        name: newId,
+        lines: [],
+        state: 'I',
+      }
 
-   const {oj_data: orders} = await executeFnc('fnc_pos_order', 's_pos', [
-    [0, 'fequal', 'point_id', point_id],
-    [
-      0,
-      'multi_filter_in',
-      [
-        { key_db: 'state', value: 'I' },
-        { key_db: 'state', value: 'Y' },
-      ],
-    ],
-  ])
-
-    set((state) => ({
-      orderData: orders,
-      selectedOrder: oj_data.order_id,
-      screen: 'products',
-    }))
-  },
+      return {
+        orderData: [...state.orderData, newOrder],
+        selectedOrder: newId,
+      }
+    }),
 
   setProductPriceInOrder: (order_id, product_id, new_price) => {
     set((state) => {
@@ -218,6 +207,62 @@ const createPos = (
         const updatedLines = order.lines.map((p: any) =>
           p.product_id === product_id ? { ...p, price_unit: new_price } : p
         )
+
+        return {
+          ...order,
+          lines_change: true,
+          lines: updatedLines,
+        }
+      })
+
+      return { orderData: newOrderData }
+    })
+  },
+
+  toggleProductQuantitySign: (order_id, product_id) => {
+    set((state) => {
+      const newOrderData = state.orderData.map((order) => {
+        if (order.order_id !== order_id) return order
+
+        const updatedLines = order.lines.map((p: any) => {
+          if (p.product_id === product_id) {
+            const currentQuantity = p.quantity || 0
+            // No permitir cambiar el signo si la cantidad es 0
+            if (currentQuantity === 0) return p
+
+            const newQuantity = currentQuantity * -1
+            return { ...p, quantity: newQuantity }
+          }
+          return p
+        })
+
+        return {
+          ...order,
+          lines_change: true,
+          lines: updatedLines,
+        }
+      })
+
+      return { orderData: newOrderData }
+    })
+  },
+
+  toggleProductPriceSign: (order_id, product_id) => {
+    set((state) => {
+      const newOrderData = state.orderData.map((order) => {
+        if (order.order_id !== order_id) return order
+
+        const updatedLines = order.lines.map((p: any) => {
+          if (p.product_id === product_id) {
+            const currentPrice = p.price_unit || 0
+            // No permitir cambiar el signo si el precio es 0
+            if (currentPrice === 0) return p
+
+            const newPrice = currentPrice * -1
+            return { ...p, price_unit: newPrice }
+          }
+          return p
+        })
 
         return {
           ...order,
@@ -400,36 +445,197 @@ const createPos = (
     }
   },
 
-  initializePointOfSale: async (pointId: string) => {
-    const { executeFnc } = get()
+  getOrSetLocalStorage: async <T>(key: string, fetchFn: () => Promise<T>): Promise<T> => {
+    const offlineCache = new OfflineCache()
+    await offlineCache.init()
+
     try {
-      const [ordersRes, productsRes, categoriesRes, customersRes, paymentMethodsRes] =
-        await Promise.all([
-          executeFnc('fnc_pos_order', 's_pos', [
-            [0, 'fequal', 'point_id', pointId],
-            [
-              0,
-              'multi_filter_in',
-              [
-                { key_db: 'state', value: 'I' },
-                { key_db: 'state', value: 'Y' },
-              ],
-            ],
-          ]),
-          executeFnc('fnc_product_template', 's', [
-            [
-              1,
-              'fcon',
-              ['Disponible en PdV'],
-              '2',
-              [{ key: '2.1', key_db: 'available_in_pos', value: '1' }],
-            ],
-            [1, 'pag', 1],
-          ]),
-          executeFnc('fnc_product_category', 's', [[1, 'pag', 1]]),
-          executeFnc('fnc_partner', 's', [[1, 'pag', 1]]),
-          executeFnc('fnc_pos_payment_method', 's', []),
+      let cachedData: T | null = null
+
+      if (key === 'products') {
+        cachedData = (await offlineCache.getOfflineProducts()) as T
+      } else if (key === 'categories') {
+        cachedData = (await offlineCache.getOfflineCategories()) as T
+      } else if (key === 'payment_methods') {
+        cachedData = (await offlineCache.getOfflinePaymentMethods()) as T
+      }
+
+      if (cachedData && Array.isArray(cachedData) && cachedData.length > 0) {
+        console.log(`datos obtenidos del cache (${key}):`, cachedData.length)
+        return cachedData
+      }
+
+      const data = await fetchFn()
+
+      if (key === 'products') {
+        await offlineCache.cacheProducts(get().executeFnc)
+      } else if (key === 'categories') {
+        await offlineCache.cacheCategories(get().executeFnc)
+      } else if (key === 'payment_methods') {
+        await offlineCache.cachePaymentMethods(get().executeFnc)
+      }
+
+      return data
+    } catch (error) {
+      console.error(`Error en cache para ${key}:`, error)
+      return await fetchFn()
+    }
+  },
+
+  refreshAllCache: async () => {
+    const offlineCache = new OfflineCache()
+    await offlineCache.init()
+
+    try {
+      console.log('Iniciando actualización completa del cache...')
+      await offlineCache.refreshCache(get().executeFnc)
+      console.log('Cache actualizado completamente')
+    } catch (error) {
+      console.error('Error actualizando cache:', error)
+    }
+  },
+
+  clearPosCache: async () => {
+    const offlineCache = new OfflineCache()
+    await offlineCache.init()
+    await offlineCache.clearCache()
+    console.log('Cache de POS limpiado')
+  },
+
+  getPosCacheInfo: async () => {
+    const offlineCache = new OfflineCache()
+    await offlineCache.init()
+
+    try {
+      const products = await offlineCache.getOfflineProducts()
+      const categories = await offlineCache.getOfflineCategories()
+
+      const cacheInfo = {
+        products: products.length > 0 ? `${products.length} productos` : 'No cacheados',
+        categories: categories.length > 0 ? `${categories.length} categorías` : 'No cacheadas',
+        payment_methods: 'No implementado',
+        customers: 'No implementado',
+      }
+
+      console.log('Estado del cache POS:', cacheInfo)
+      return cacheInfo
+    } catch (error) {
+      console.error('Error obteniendo info del cache:', error)
+      return {
+        products: 'Error',
+        categories: 'Error',
+        payment_methods: 'Error',
+        customers: 'Error',
+      }
+    }
+  },
+
+  forceReloadPosData: async (pointId: string, isOnline: boolean = true) => {
+    const { refreshAllCache, initializePointOfSale } = get()
+
+    await refreshAllCache()
+    await initializePointOfSale(pointId, isOnline)
+  },
+
+  initializePointOfSale: async (pointId: string, isOnline: boolean = true) => {
+    const { executeFnc, getOrSetLocalStorage } = get()
+
+    try {
+      if (!isOnline) {
+        const cache = new OfflineCache()
+        await cache.init()
+
+        const [
+          offlineProducts,
+          offlineCategories,
+          offlinePaymentMethods,
+          offlineCustomers,
+          offlineOrders,
+        ] = await Promise.all([
+          cache.getOfflineProducts(),
+          cache.getOfflineCategories(),
+          cache.getOfflinePaymentMethods(),
+          cache.getOfflinePosPoints(),
+          cache.getOfflinePosOrders(parseInt(pointId)),
         ])
+
+        let initialOrders = offlineOrders || []
+        let firstOrderId
+
+        if (initialOrders.length === 0) {
+          const newId = crypto.randomUUID()
+          initialOrders = [
+            {
+              order_id: newId,
+              name: newId,
+              lines: [],
+              state: 'I',
+              payments: [],
+            },
+          ]
+          firstOrderId = newId
+        } else {
+          firstOrderId = initialOrders[0].order_id
+        }
+
+        set({
+          orderData: initialOrders,
+          products: offlineProducts,
+          filteredProducts: offlineProducts,
+          categories: offlineCategories,
+          customers: offlineCustomers,
+          selectedOrder: firstOrderId,
+          paymentMethods: offlinePaymentMethods,
+        })
+
+        return
+      }
+
+      // Si hay conexión, hacer las peticiones normales (código existente)
+      const fetchProducts = () =>
+        executeFnc('fnc_product_template', 's', [
+          [
+            1,
+            'fcon',
+            ['Disponible en PdV'],
+            '2',
+            [{ key: '2.1', key_db: 'available_in_pos', value: '1' }],
+          ],
+          [1, 'pag', 1],
+        ]).then((res) => res.oj_data || [])
+
+      const fetchCategories = () =>
+        executeFnc('fnc_product_template_pos_category', 's3', [[1, 'pag', 1]]).then(
+          (res) => res.oj_data || []
+        )
+
+      const fetchPaymentMethods = () =>
+        executeFnc('fnc_pos_payment_method', 's', []).then((res) => res.oj_data || [])
+
+      const fetchCustomers = () =>
+        executeFnc('fnc_partner', 's', [[1, 'pag', 1]]).then((res) => res.oj_data || [])
+
+      const ordersRes = await executeFnc('fnc_pos_order', 's_pos', [
+        [0, 'fequal', 'point_id', pointId],
+        [
+          0,
+          'multi_filter_in',
+          [
+            { key_db: 'state', value: 'I' },
+            { key_db: 'state', value: 'Y' },
+          ],
+        ],
+      ])
+
+      const ordersData = ordersRes.oj_data
+
+      const [products, categories, paymentMethods, customers] = await Promise.all([
+        getOrSetLocalStorage('products', fetchProducts),
+        getOrSetLocalStorage('categories', fetchCategories),
+        getOrSetLocalStorage('payment_methods', fetchPaymentMethods),
+        getOrSetLocalStorage('customers', fetchCustomers),
+        getOrSetLocalStorage('pos_orders', () => ordersData),
+      ])
 
       let initialOrders = ordersRes.oj_data || []
       let firstOrderId
@@ -456,13 +662,12 @@ const createPos = (
 
       set({
         orderData: initialOrders,
-        products: productsRes.oj_data || [],
-        filteredProducts: productsRes.oj_data || [],
-        categories: categoriesRes.oj_data || [],
-        customers: customersRes.oj_data || [],
+        products: products,
+        filteredProducts: products,
+        categories: categories,
+        customers: customers,
         selectedOrder: firstOrderId,
-        paymentMethods: paymentMethodsRes.oj_data || [],
-        // isLoading: false,
+        paymentMethods: paymentMethods,
       })
     } catch (error) {
       console.error('Error al inicializar el punto de venta:', error)
