@@ -1,6 +1,7 @@
 import { listTagColors } from '@/shared/constants'
 import useAppStore from '@/store/app/appStore'
 import { useState } from 'react'
+import { AiTwotoneHome } from 'react-icons/ai'
 
 export default function CategorySelector() {
   const { categories, selectedCategory, setSelectedCategory } = useAppStore()
@@ -55,7 +56,10 @@ export default function CategorySelector() {
                 className={`${baseClass} btn-outline-primary`}
                 onClick={() => handleCategoryClick(category)}
               >
-                Inicio
+                <AiTwotoneHome
+                  style={{ fontSize: '30px' }}
+                  className="text-gray-500 hover:text-gray-700"
+                />
               </button>
             )
           }

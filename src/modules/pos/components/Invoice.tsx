@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
+import { createRoot } from 'react-dom/client'
 import { BiCheckCircle, BiPaperPlane } from 'react-icons/bi'
 import { FaPrint } from 'react-icons/fa'
-import TicketPDF from './Ticket'
 import useAppStore from '@/store/app/appStore'
+import { usePWA } from '@/hooks/usePWA'
+import { offlineCache } from '@/lib/offlineCache'
+import Ticket2PDF from './Ticket2'
 /*
 function numeroALetras(num: any) {
   const unidades = [
@@ -222,15 +225,74 @@ const Invoice = () => {
   const { orderData, selectedOrder, finalCustomer, addNewOrder, executeFnc, setSelectedOrder } =
     useAppStore()
   const [order, setOrder] = useState({})
+  const { isOnline } = usePWA()
+
   useEffect(() => {
     const fetchOrder = async () => {
+      if (!isOnline) {
+        const orders = await offlineCache.getOfflinePosOrders()
+        setOrder(orders.find((order) => order.order_id === selectedOrder) || {})
+        setSelectedOrder('')
+        return
+      }
       const { oj_data } = await executeFnc('fnc_pos_order', 's1', [selectedOrder])
       setOrder(oj_data[0] || {})
     }
     fetchOrder()
-    setSelectedOrder(orderData[0]?.order_id)
+    if (isOnline) {
+      setSelectedOrder(orderData[0]?.order_id)
+    }
   }, [orderData])
-  const info = { ...order, lines: order?.lines || [] }
+  const info = { ...order, lines: (order as any)?.lines || [] }
+
+  const fnc_printTicket = () => {
+    // Crear un contenedor temporal para la impresión
+    const printContainer = document.createElement('div')
+    printContainer.id = 'print-container'
+    printContainer.style.position = 'fixed'
+    printContainer.style.top = '-9999px'
+    printContainer.style.left = '-9999px'
+    printContainer.style.width = '210mm' // Ancho A4
+    printContainer.style.background = 'white'
+
+    // Agregar estilos específicos para impresión
+    const printStyles = document.createElement('style')
+    printStyles.textContent = `
+      @media print {
+        body * {
+          visibility: hidden;
+        }
+        #print-container, #print-container * {
+          visibility: visible;
+        }
+        #print-container {
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+        }
+      }
+    `
+    document.head.appendChild(printStyles)
+    document.body.appendChild(printContainer)
+
+    // Renderizar el TicketPDF en el contenedor temporal
+    const root = createRoot(printContainer)
+    root.render(<Ticket2PDF info={info} finalCustomer={finalCustomer} />)
+
+    // Esperar un momento para que se renderice y luego imprimir
+    setTimeout(() => {
+      window.print()
+
+      // Limpiar después de la impresión
+      setTimeout(() => {
+        root.unmount()
+        document.body.removeChild(printContainer)
+        document.head.removeChild(printStyles)
+      }, 1000)
+    }, 500)
+  }
   return (
     <div className="receipt-screen screen h-100 bg-100">
       <div className="screen-content d-flex flex-column h-100">
@@ -243,7 +305,7 @@ const Invoice = () => {
                 </i>
                 <span className="fs-3 fw-bolder">Pago exitoso</span>
                 <div className="fs-4 fw-bold d-flex justify-content-center align-items-center gap-2">
-                  <span>S/&nbsp;{order?.amount_withtaxed?.toFixed(2)}</span>
+                  <span>S/&nbsp;{(order as any)?.amount_withtaxed?.toFixed(2)}</span>
                   <span className="bg-green-600 edit-order-payment badge bg-success text-white rounded cursor-pointer pt-1">
                     Editar pago
                   </span>
@@ -255,6 +317,7 @@ const Invoice = () => {
                   <button
                     className="button print btn btn-lg btn-secondary w-100 py-3"
                     type="button"
+                    onClick={fnc_printTicket}
                   >
                     <i className="fa fa-print me-1">
                       <FaPrint />
@@ -312,7 +375,8 @@ const Invoice = () => {
             <div className="d-inline-block m-2 m-lg-3 p-3 border rounded text-start overflow-y-auto w-full">
               {' '}
               <div className="w-full h-full">
-                <TicketPDF info={info} finalCustomer={finalCustomer} />
+                {/* <TicketPDF info={info} finalCustomer={finalCustomer} /> */}
+                <Ticket2PDF info={info} />
               </div>
             </div>
           </div>

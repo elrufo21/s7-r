@@ -4,15 +4,17 @@ import ProductGrid from './ProductGrid'
 import { OrderList } from './OrderList'
 import CartItem from './CartItem'
 import { useEffect } from 'react'
+import { createRoot } from 'react-dom/client'
 import { MdKeyboardArrowLeft } from 'react-icons/md'
 import Payment from './Payment'
 import Invoice from './Invoice'
 import useAppStore from '@/store/app/appStore'
 import orderConfig from '@/modules/action/views/point-of-sale/pos-order/config'
 import { FrmBaseDialog } from '@/shared/components/core'
-import TicketPDF from './Ticket'
+import TaraOptions from './TaraOptions'
+import Ticket2PDF from './Ticket2'
 
-const Screens = ({ pointId }: { pointId: string }) => {
+const Screens = () => {
   const {
     screen,
     cart,
@@ -42,24 +44,52 @@ const Screens = ({ pointId }: { pointId: string }) => {
       lines: orderInfo.lines || [],
     }
 
-    const dialogId = openDialog({
-      title: 'Ticket de venta',
-      fullScreen: true,
-      dialogContent: () => (
-        <div className="w-full h-full">
-          <TicketPDF info={ticketInfo} finalCustomer={finalCustomer} />
-        </div>
-      ),
-      buttons: [
-        {
-          type: 'cancel',
-          text: 'Cerrar',
-          onClick: () => {
-            closeDialogWithData(dialogId, {})
-          },
-        },
-      ],
-    })
+    // Crear un contenedor temporal para la impresión
+    const printContainer = document.createElement('div')
+    printContainer.id = 'print-container'
+    printContainer.style.position = 'fixed'
+    printContainer.style.top = '-9999px'
+    printContainer.style.left = '-9999px'
+    printContainer.style.width = '210mm' // Ancho A4
+    printContainer.style.background = 'white'
+
+    // Agregar estilos específicos para impresión
+    const printStyles = document.createElement('style')
+    printStyles.textContent = `
+      @media print {
+        body * {
+          visibility: hidden;
+        }
+        #print-container, #print-container * {
+          visibility: visible;
+        }
+        #print-container {
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+        }
+      }
+    `
+    document.head.appendChild(printStyles)
+    document.body.appendChild(printContainer)
+
+    // Renderizar el TicketPDF en el contenedor temporal
+    const root = createRoot(printContainer)
+    root.render(<Ticket2PDF info={ticketInfo} finalCustomer={finalCustomer} />)
+
+    // Esperar un momento para que se renderice y luego imprimir
+    setTimeout(() => {
+      window.print()
+
+      // Limpiar después de la impresión
+      setTimeout(() => {
+        root.unmount()
+        document.body.removeChild(printContainer)
+        document.head.removeChild(printStyles)
+      }, 1000)
+    }, 500)
   }
 
   useEffect(() => {
@@ -77,7 +107,13 @@ const Screens = ({ pointId }: { pointId: string }) => {
       setScreen('invoice')
     }
   }, [orderData, selectedOrder, screen])
-
+  useEffect(() => {
+    if (screen === 'products') {
+      if (!selectedOrder) {
+        setSelectedOrder(orderData[0]?.order_id)
+      }
+    }
+  }, [screen])
   const fnc_detailsModal = async (order_id: string) => {
     const { oj_data } = await executeFnc('fnc_pos_order', 's1', [order_id])
     const dialogId = openDialog({
@@ -105,6 +141,7 @@ const Screens = ({ pointId }: { pointId: string }) => {
 
           <div className="rightpanel">
             <div className="rightpanel-sub-1">
+              <TaraOptions />
               <CategorySelector />
               <ProductGrid />
             </div>
@@ -141,7 +178,7 @@ const Screens = ({ pointId }: { pointId: string }) => {
                   </div>
                 </div>
               </div>
-              {orderSelected?.state === 'P' && (
+              {(orderSelected?.state === 'P' || orderSelected?.state === 'E') && (
                 <div className="control-buttons">
                   <button
                     className="btn2 btn2-white lh-lg text-truncate w-auto text-action"
@@ -183,7 +220,7 @@ const Screens = ({ pointId }: { pointId: string }) => {
         </div>
       )
     case 'payment':
-      return <Payment session_id={pointId} />
+      return <Payment />
     case 'invoice':
       return <Invoice />
     default:

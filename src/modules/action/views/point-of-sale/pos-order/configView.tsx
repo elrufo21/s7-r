@@ -1,10 +1,5 @@
 import BaseTextControlled from '@/shared/components/form/base/BaseTextControlled'
-import {
-  frmElementsProps,
-  ActionTypeEnum,
-  TypeContactEnum,
-  FormActionEnum,
-} from '@/shared/shared.types'
+import { frmElementsProps, ActionTypeEnum, TypeContactEnum } from '@/shared/shared.types'
 import PosOrderLines from './components/PosOrderLines'
 import { useState, useMemo, useEffect } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
@@ -35,12 +30,12 @@ interface PosPayment {
   action?: ActionTypeEnum
   _resetKey?: number
 }
-const date = new Date()
+const currentDate = new Date()
 
 // Pago por defecto
 const defaultPosPayment: Partial<PosPayment> = {
   payment_id: 0,
-  date: new Date(date.getTime() - date.getTimezoneOffset() * 60000),
+  date: new Date(currentDate.getTime() - currentDate.getTimezoneOffset() * 60000).toISOString(),
   payment_method_id: 0,
   payment_method_name: '',
   amount: 0,
@@ -52,26 +47,35 @@ const defaultPosPayment: Partial<PosPayment> = {
 
 export function FrmMiddle({ control, errors, editConfig, setValue, watch }: frmElementsProps) {
   const { formItem, setFrmConfigControls } = useAppStore()
-  const isEdit = watch('state') === PosOrderStateEnum.PAID
+  const isEdit = watch('state') === PosOrderStateEnum.PAID || watch('state') === 'E'
+  const [isLoading, setIsLoading] = useState(false)
+  const state = watch('state')
   useEffect(() => {
-    setFrmConfigControls({
-      name: {
-        isEdit: isEdit,
-      },
-      order_date: {
-        isEdit: isEdit,
-      },
-      point_name: {
-        isEdit: isEdit,
-      },
-      session_name: {
-        isEdit: isEdit,
-      },
-      user_name: {
-        isEdit: isEdit,
-      },
-    })
-  }, [isEdit, watch('state')])
+    setIsLoading(true)
+  }, [watch()])
+  useEffect(() => {
+    if (isLoading) {
+      setFrmConfigControls({
+        name: {
+          isEdit: isEdit,
+        },
+        order_date: {
+          isEdit: isEdit,
+        },
+        point_name: {
+          isEdit: isEdit,
+        },
+        session_name: {
+          isEdit: isEdit,
+        },
+        user_name: {
+          isEdit: isEdit,
+        },
+      })
+      setIsLoading(false)
+    }
+  }, [isEdit, state, isLoading])
+
   return (
     <>
       <BaseTextControlled
@@ -147,7 +151,7 @@ export function FrmTab0({ watch, control, errors, setValue, editConfig }: frmEle
 }
 
 export function FrmTab1({ watch, setValue }: frmElementsProps) {
-  const { formItem, setFrmIsChangedItem, createOptions, frmAction } = useAppStore()
+  const { formItem, setFrmIsChangedItem, createOptions } = useAppStore()
   const [data, setData] = useState<PosPayment[]>([])
 
   // Estado para manejar modificaciones
@@ -173,10 +177,19 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
   }
 
   useEffect(() => {
-    if (formItem || frmAction === FormActionEnum.UNDO || watch('payments')) {
-      setData(formItem?.payments || watch('payments'))
+    const paymentsFromFormItem = formItem?.payments
+    const paymentsFromWatch = watch('payments')
+
+    let normalizedPayments: PosPayment[] = []
+    if (Array.isArray(paymentsFromFormItem)) {
+      normalizedPayments = paymentsFromFormItem
+    } else if (Array.isArray(paymentsFromWatch)) {
+      normalizedPayments = paymentsFromWatch
     }
-  }, [formItem, frmAction, watch('payments')])
+
+    setData(normalizedPayments)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formItem])
 
   // Manejadores de cambios directos sobre el estado
   const handleUpdatePayment = (paymentId: number, newValues: Partial<PosPayment>) => {
@@ -348,9 +361,9 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
   )
   // Función para agregar nueva fila
   const addRow = () => {
-    const newId = Math.min(...data.map((item) => item.payment_id), 0) - 1
+    const newId = Date.now()
     setData((prev) => [
-      ...prev,
+      ...(Array.isArray(prev) ? prev : []),
       {
         ...defaultPosPayment,
         payment_id: newId,
@@ -363,6 +376,7 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
   // Cargar opciones al montar el componente
   useEffect(() => {
     loadPaymentMethodOptions()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Manejar cambios en los datos
@@ -379,8 +393,8 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
   const totals = useMemo(() => {
     const orderTotal = watch('amount_withtaxed') || 0
     const totalPaid = data
-      .filter((payment) => payment.action !== ActionTypeEnum.DELETE)
-      .reduce((sum, payment) => sum + (payment.amount || 0), 0)
+      ?.filter((payment) => payment?.action !== ActionTypeEnum.DELETE)
+      ?.reduce((sum, payment) => sum + (payment?.amount || 0), 0)
     const difference = orderTotal - totalPaid
 
     return {

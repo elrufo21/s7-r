@@ -22,6 +22,28 @@ export async function readUserSession() {
 }
 
 export async function getDataEmpresa(idusu: string) {
+  if (!navigator.onLine) {
+    return JSON.stringify({
+      data: [
+        {
+          name: 'Usuario Fernando Villarruel Quispe',
+          email: 'desarrollo.linksoft@hotmail.com',
+          avatar: [
+            {
+              path: 'ec968584-faa3-488f-9df6-df2e851ad806',
+              publicUrl:
+                'https://wmhhzgqpnsneiggexoon.supabase.co/storage/v1/object/public/images/ec968584-faa3-488f-9df6-df2e851ad806',
+            },
+          ],
+          user_id: 1,
+          group_id: 1,
+          company_id: 1,
+        },
+      ],
+      error: null,
+    })
+  }
+
   const supabase = supabaseClient()
   const res = await supabase.rpc('fnc_get_user_session', { it_user_uid: idusu })
   return JSON.stringify(res)

@@ -10,11 +10,13 @@ import { FrmBaseDialog } from '@/shared/components/core'
 import { ActionTypeEnum } from '@/shared/shared.types'
 import noteConfig from '../views/notes/config'
 import { Product } from '../types'
-import { Operation } from '../types'
+import { Operation } from '../context/CalculatorContext'
 
 import ModalMoreOptions from './modal/components/ModalMoreOptions'
 import { useParams } from 'react-router-dom'
 import productInfoConfig from '../views/product-info/config'
+import { usePWA } from '@/hooks/usePWA'
+import { offlineCache } from '@/lib/offlineCache'
 
 export default function CartPanel() {
   const {
@@ -25,6 +27,8 @@ export default function CartPanel() {
     setModalData,
     setProductPriceInOrder,
     setProductQuantityInOrder,
+    setTaraQuantity,
+    setTaraValue,
     toggleProductQuantitySign,
     toggleProductPriceSign,
     orderData,
@@ -49,28 +53,33 @@ export default function CartPanel() {
     setOrderData,
     setSelectedOrder,
   } = useAppStore()
+  const { isOnline } = usePWA()
   const { pointId } = useParams()
   const [cart, setCart] = useState<Product[]>([])
   // const [finalCustomer, setFinalCustomer] = useState<any>({})
 
   const [localPrice, setLocalPrice] = useState<string>('')
+  const [localTara, setLocalTara] = useState<string>('')
+  const [localTaraValue, setLocalTaraValue] = useState<string>('')
 
   const [total, setTotal] = useState<number | string>()
   const [is_change, setIsChange] = useState(false)
 
   const finalCustomerRef = useRef(finalCustomer)
-
   useEffect(() => {
     setOperation(Operation.QUANTITY)
     setDecimalCount(0)
     setIsDecimalMode(false)
     setShouldReplaceValue(false)
     setLocalValue('')
+    setLocalTara('')
+    setLocalTaraValue('')
   }, [selectedItem])
 
   useEffect(() => {
     const pos_Status = orderData?.find((item) => item?.order_id === selectedOrder)?.pos_status
     if (pos_Status === 'P' && backToProducts === false) setScreen('payment')
+
     setCart(
       orderData
         ?.find((item) => item.order_id === selectedOrder)
@@ -115,6 +124,11 @@ export default function CartPanel() {
   }, [is_change, orderData, selectedOrder])
 
   const fetchClients = async () => {
+    if (!isOnline) {
+      const contacts = await offlineCache.getOfflineContacts()
+      setModalData(contacts)
+      return
+    }
     try {
       const { oj_data } = await executeFnc('fnc_partner', 's', [[1, 'pag', 1]])
       setModalData(oj_data)
@@ -155,6 +169,7 @@ export default function CartPanel() {
                   return item
                 })
                 setModalData(newData)
+                setHandleChange(true)
                 closeDialogWithData(dialogId, {})
                 return
               }
@@ -174,6 +189,7 @@ export default function CartPanel() {
                 return
               }*/
               setModalData(rs.oj_data)
+              setHandleChange(true)
               closeDialogWithData(dialogId, {})
             } catch (err) {
               console.error('Error al actualizar cliente:', err)
@@ -192,7 +208,6 @@ export default function CartPanel() {
   useEffect(() => {
     setTotal(getTotalPriceByOrder(selectedOrder).toFixed(MAX_DECIMALS))
   }, [cart])
-
   const [localValue, setLocalValue] = useState('')
   const [shouldReplaceValue, setShouldReplaceValue] = useState(false)
   const [isDecimalMode, setIsDecimalMode] = useState(false)
@@ -203,8 +218,24 @@ export default function CartPanel() {
     if (!selectedItem) return
 
     const isPrice = operation === Operation.PRICE
-    const setter = isPrice ? setLocalPrice : setLocalValue
-    const updateStore = isPrice ? setProductPriceInOrder : setProductQuantityInOrder
+    const isTara = operation === Operation.TARA_QUANTITY
+    const isTaraValue = operation === Operation.TARA_VALUE
+
+    let setter, updateStore
+    if (isPrice) {
+      setter = setLocalPrice
+      updateStore = setProductPriceInOrder
+    } else if (isTara) {
+      setter = setLocalTara
+      updateStore = setTaraQuantity
+    } else if (isTaraValue) {
+      setter = setLocalTaraValue
+      updateStore = setTaraValue
+    } else {
+      setter = setLocalValue
+      updateStore = setProductQuantityInOrder
+    }
+
     const parser = parseFloat
     setter(value)
 
@@ -220,7 +251,20 @@ export default function CartPanel() {
   const handleDecimalClick = () => {
     if (!selectedItem) return
     const isPrice = operation === Operation.PRICE
-    const currentValue = isPrice ? localPrice : localValue
+    const isTara = operation === Operation.TARA_QUANTITY
+    const isTaraValue = operation === Operation.TARA_VALUE
+
+    let currentValue
+    if (isPrice) {
+      currentValue = localPrice
+    } else if (isTara) {
+      currentValue = localTara
+    } else if (isTaraValue) {
+      currentValue = localTaraValue
+    } else {
+      currentValue = localValue
+    }
+
     if (currentValue.includes('.')) return
 
     const newValue = currentValue === '' ? '0.' : currentValue + '.'
@@ -244,6 +288,18 @@ export default function CartPanel() {
           type: 'confirm',
           onClick: async () => {
             const formData = getData()
+            if (!isOnline) {
+              offlineCache.saveContactOffline({
+                ...formData,
+                partner_id: crypto.randomUUID(),
+                action: ActionTypeEnum.INSERT,
+              })
+              setFinalCustomer(formData)
+              setIsChange(true)
+              setHandleChange(true)
+              closeDialogWithData(dialogId, {})
+              return
+            }
             const rs = await executeFnc('fnc_partner', 'i', formData)
             //oj_data.partner_id
             const newData = await executeFnc('fnc_partner', 's', [[1, 'pag', 1]])
@@ -258,6 +314,8 @@ export default function CartPanel() {
             })
             setModalData(dataUpdate)
             setFinalCustomer(dataUpdate.find((item: any) => item.selected === true))
+            setIsChange(true)
+            setHandleChange(true)
             closeDialogWithData(dialogId, {})
           },
         },
@@ -280,10 +338,14 @@ export default function CartPanel() {
           onRowClick={(row) => {
             if (row.partner_id === finalCustomer.partner_id) {
               setFinalCustomer({})
+              setIsChange(true)
+              setHandleChange(true)
               closeDialogWithData(dialogId, row)
               return
             }
+            setIsChange(true)
             setFinalCustomer(row)
+            setHandleChange(true)
             closeDialogWithData(dialogId, row)
           }}
           contactModal={true}
@@ -313,7 +375,19 @@ export default function CartPanel() {
     if (!selectedItem) return
 
     const isPrice = operation === Operation.PRICE
-    const currentValue = isPrice ? localPrice : localValue
+    const isTara = operation === Operation.TARA_QUANTITY
+    const isTaraValue = operation === Operation.TARA_VALUE
+
+    let currentValue
+    if (isPrice) {
+      currentValue = localPrice
+    } else if (isTara) {
+      currentValue = localTara
+    } else if (isTaraValue) {
+      currentValue = localTaraValue
+    } else {
+      currentValue = localValue
+    }
 
     if (shouldReplaceValue) {
       const newValue = number.toString()
@@ -338,11 +412,26 @@ export default function CartPanel() {
     if (!selectedItem) return
 
     const isPrice = operation === Operation.PRICE
-    const currentValue = isPrice ? localPrice : localValue
-    const setter = isPrice ? setLocalPrice : setLocalValue
+    const isTara = operation === Operation.TARA_QUANTITY
+    const isTaraValue = operation === Operation.TARA_VALUE
+
+    let currentValue, setter
+    if (isPrice) {
+      currentValue = localPrice
+      setter = setLocalPrice
+    } else if (isTara) {
+      currentValue = localTara
+      setter = setLocalTara
+    } else if (isTaraValue) {
+      currentValue = localTaraValue
+      setter = setLocalTaraValue
+    } else {
+      currentValue = localValue
+      setter = setLocalValue
+    }
 
     if (currentValue === '0') {
-      if (isPrice) {
+      if (isPrice || isTara || isTaraValue) {
         setOperation(Operation.QUANTITY)
       } else {
         // Al borrar la cantidad '0', se elimina el producto del carrito.
@@ -406,6 +495,8 @@ export default function CartPanel() {
     if (productId !== selectedItem) {
       setLocalValue('')
       setLocalPrice('')
+      setLocalTara('')
+      setLocalTaraValue('')
       setIsDecimalMode(false)
       setDecimalCount(0)
       setSelectedItem(productId)
@@ -413,13 +504,28 @@ export default function CartPanel() {
 
       const selectedProduct = cart.find((item) => item.product_id === productId)
       if (selectedProduct && selectedProduct.quantity !== undefined) {
-        const quantity = selectedProduct.quantity.toString()
+        // Usar base_quantity si existe, sino usar quantity como fallback
+        const baseQuantity = selectedProduct.base_quantity || selectedProduct.quantity
+        const quantity = baseQuantity.toString()
         const price = selectedProduct.sale_price.toString()
+        const tara = selectedProduct.taraQuantity?.toString() || '0'
+        const taraValue = selectedProduct.taraValue?.toString() || '0'
         setLocalValue(quantity)
         setLocalPrice(price)
+        setLocalTara(tara)
+        setLocalTaraValue(taraValue)
 
         clearDisplay()
-        const valueToDisplay = operation === Operation.PRICE ? price : quantity
+        let valueToDisplay
+        if (operation === Operation.PRICE) {
+          valueToDisplay = price
+        } else if (operation === Operation.TARA_QUANTITY) {
+          valueToDisplay = tara
+        } else if (operation === Operation.TARA_VALUE) {
+          valueToDisplay = taraValue
+        } else {
+          valueToDisplay = quantity
+        }
         for (const digit of valueToDisplay) {
           addDigit(digit)
         }
@@ -448,14 +554,29 @@ export default function CartPanel() {
     const updatedProduct = updatedCart.find((item) => item.product_id === selectedItem)
 
     if (updatedProduct) {
-      const newQuantity = updatedProduct.quantity?.toString() || '0'
+      // Usar base_quantity para mostrar en la calculadora, no la cantidad efectiva
+      const baseQuantity = updatedProduct.base_quantity || updatedProduct.quantity || 0
+      const newQuantity = baseQuantity.toString()
       const newPrice = updatedProduct.price_unit?.toString() || '0'
+      const newTara = updatedProduct.taraQuantity?.toString() || '0'
+      const newTaraValue = updatedProduct.taraValue?.toString() || '0'
 
       setLocalValue(newQuantity)
       setLocalPrice(newPrice)
+      setLocalTara(newTara)
+      setLocalTaraValue(newTaraValue)
 
       clearDisplay()
-      const valueToDisplay = isPrice ? newPrice : newQuantity
+      let valueToDisplay
+      if (isPrice) {
+        valueToDisplay = newPrice
+      } else if (operation === Operation.TARA_QUANTITY) {
+        valueToDisplay = newTara
+      } else if (operation === Operation.TARA_VALUE) {
+        valueToDisplay = newTaraValue
+      } else {
+        valueToDisplay = newQuantity
+      }
       for (const digit of valueToDisplay) {
         addDigit(digit)
       }
@@ -622,7 +743,11 @@ export default function CartPanel() {
             {cart?.map((item) => (
               <div key={item.product_id} ref={(el) => (itemRefs.current[item.product_id] = el)}>
                 <CartItem
-                  item={{ ...item, quantity: item.quantity ?? 0 }}
+                  item={{
+                    ...item,
+                    quantity: item.quantity ?? 0,
+                    price_unit: item.price_unit ?? 0,
+                  }}
                   isSelected={selectedItem === item.product_id}
                   onSelect={() => {
                     setOperation(Operation.QUANTITY)
@@ -747,6 +872,8 @@ export default function CartPanel() {
                       setOperation(Operation.DISCOUNT)
                       setLocalValue('')
                       setLocalPrice('')
+                      setLocalTara('')
+                      setLocalTaraValue('')
                     }}
                   >
                     %

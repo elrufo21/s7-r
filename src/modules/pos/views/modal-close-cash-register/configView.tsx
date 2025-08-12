@@ -1,19 +1,54 @@
 import { frmElementsProps } from '@/shared/shared.types'
 import { TextControlled } from '@/shared/ui'
+import useAppStore from '@/store/app/appStore'
+import { FaCopy, FaMoneyBill } from 'react-icons/fa'
+import PosModalCash from '../modal-cash/config'
+import { FrmBaseDialog } from '@/shared/components/core'
 
 export function FrmBottom({ control, errors, editConfig }: frmElementsProps) {
+  const { openDialog, closeDialogWithData } = useAppStore()
+  const fnc_modal_cash = () => {
+    const dialogId = openDialog({
+      title: 'Conteo de efectivo',
+      dialogContent: () => <FrmBaseDialog config={PosModalCash} />,
+      buttons: [
+        {
+          text: 'Cancelar',
+          onClick: () => closeDialogWithData(dialogId, {}),
+          type: 'cancel',
+        },
+      ],
+    })
+  }
   return (
     <div className="flex flex-col gap-4 w-full min-h-[100px]">
       <div className="flex items-center gap-4">
         <label className="font-medium text-gray-700 min-w-[140px]">Conteo de efectivo</label>
         <div className="flex-1"></div>
       </div>
-      <TextControlled
-        name="cash_count"
-        control={control}
-        errors={errors}
-        editConfig={{ config: editConfig }}
-      />
+      <div className="flex items-center gap-4">
+        <div className="flex-1">
+          <TextControlled
+            name="cash_count"
+            control={control}
+            errors={errors}
+            editConfig={{ config: editConfig }}
+          />
+        </div>
+        <button
+          className="btn btn-secondary oe_kanban_action "
+          onClick={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
+            fnc_modal_cash()
+          }}
+        >
+          <FaMoneyBill />
+        </button>
+        <button className="btn btn-secondary oe_kanban_action">
+          <FaCopy />
+        </button>
+      </div>
 
       <div className="flex items-center gap-4 h-full">
         <label className="font-medium text-gray-700 min-w-[140px]">Nota de cierre</label>

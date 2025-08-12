@@ -143,5 +143,9 @@ export const createAppSlice = (
   //
   columnsVisibility: {},
   setColumnsVisibility: (columnsVisibility) => set({ columnsVisibility }),
+
+  // sync loading state
+  syncLoading: false,
+  setSyncLoading: (syncLoading) => set({ syncLoading }),
 })
 export default createAppSlice

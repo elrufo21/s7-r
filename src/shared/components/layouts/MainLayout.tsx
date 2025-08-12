@@ -4,6 +4,7 @@ import { Outlet } from 'react-router-dom'
 import { MenuCompany } from '@/shared/components/navigation'
 import { MenuAccount } from '@/shared/components/navigation/top-navigation/components/MenuAccount'
 import { LoadingIndicator } from '@/shared/components/loaders/LoadingIndicator'
+import { SyncIndicator } from '@/shared/components/loaders/SyncIndicator'
 import { VerifySession } from '@/modules/auth/components/VerifySession'
 import { Suspense, lazy } from 'react'
 import { NewMultiDialog } from '../extras/NewMultiDialog'
@@ -12,6 +13,7 @@ import { ModulesEnum } from '@/shared/shared.types'
 
 const Dialog = lazy(() => import('@/shared/ui/Dialog/Dialog'))
 const NavBuilder = lazy(() => import('@/shared/components/navigation/top-navigation/NavBuilder'))
+const VirtualKeyboardDialog = lazy(() => import('@/shared/ui/Dialog/VirtualKeyboardDialog'))
 
 export const MainLayout = () => {
   const { config } = useAppStore()
@@ -61,7 +63,9 @@ export const MainLayout = () => {
       </div>
       <NewMultiDialog />
       <Dialog />
+      <VirtualKeyboardDialog />
       <LoadingIndicator />
+      <SyncIndicator />
     </ThemeProviderMui>
   )
 }

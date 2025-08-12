@@ -32,7 +32,6 @@ const BaseTextControlled = ({
   const { formItem, setBreadcrumb, breadcrumb } = useAppStore()
   const navigate = useNavigate()
   const { pathname } = useLocation()
-
   const handleNavigate = () => {
     if (navigationConfig?.modelId && navigationConfig?.recordId) {
       setBreadcrumb([

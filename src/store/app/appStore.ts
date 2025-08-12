@@ -5,6 +5,7 @@ import createGridSlice from './slices/grid_slice'
 import createDataSlice from './slices/data_slice'
 import createFrmSlice from './slices/frm_slice'
 import createFrmDialogSlice from './slices/dialog_slice'
+import createVKeyboardSlice from './slices/vkeyboard_slice'
 import CreatePosSlice from './slices/pos_slice'
 import { AppStoreProps } from '../store.types'
 
@@ -18,6 +19,7 @@ export const useAppStore = create<AppStoreProps>()(
         ...CreatePosSlice(set, get),
         ...createFrmSlice(set, get),
         ...createFrmDialogSlice(set),
+        ...createVKeyboardSlice(set),
       }
     },
     { name: 'app-store' }

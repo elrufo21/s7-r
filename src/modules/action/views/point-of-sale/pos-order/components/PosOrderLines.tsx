@@ -11,7 +11,7 @@ import {
 import { Row, ColumnDef, Column, Table } from '@tanstack/react-table'
 
 import useAppStore from '@/store/app/appStore'
-import { StatusInvoiceEnum, TotalsInvoiceType } from '@/modules/invoicing/invoice.types'
+import { TotalsInvoiceType } from '@/modules/invoicing/invoice.types'
 import { Chip, Tooltip } from '@mui/material'
 import { toast } from 'sonner'
 import {
@@ -141,6 +141,7 @@ const ProductField = ({
     // <div className="flex flex-col gap-2 justify-center items-center">
     <div className="flex flex-col justify-center items-center">
       <AutocompleteTable
+        key={`product-${row.original.line_id}-${row.original._resetKey}`}
         row={row}
         column={column!}
         onChange={onChange!}
@@ -249,16 +250,39 @@ const PosOrderLines = ({ watch, setValue, control, errors, editConfig }: frmElem
     return []
   })
 
+  // Generador incremental de IDs temporales para evitar colisiones en adiciones rápidas
+  const initialMaxId = (list: PosOrderLine[]) =>
+    list.length > 0 ? Math.max(...list.map((l) => l.line_id || 0)) : 999
+  const tempIdRef = useRef<number>(
+    initialMaxId(
+      ((formItem?.lines || watch('lines') || tableData || []) as any[]).map((item: any) => ({
+        line_id: item?.line_id ?? 0,
+      })) as unknown as PosOrderLine[]
+    ) + 1
+  )
+
+  // Detectar cambio de registro (order_id) y recargar líneas del nuevo registro
+  const lastOrderIdRef = useRef<number | null>(formItem?.order_id ?? null)
   useEffect(() => {
-    setData(
-      (formItem?.lines || watch('lines'))?.map((item: PosOrderLine) => ({
-        ...item,
-        type: item.type || TypeInvoiceLineEnum.LINE,
-        hasLabel: !!item.label,
-        _resetKey: Date.now(),
-      })) || []
-    )
-  }, [formItem, watch('lines')])
+    const newOrderId = formItem?.order_id ?? null
+    if (newOrderId !== lastOrderIdRef.current) {
+      lastOrderIdRef.current = newOrderId
+      const sourceLines: PosOrderLine[] = ((formItem?.lines || watch('lines') || []) as any[]).map(
+        (item: any) => ({
+          ...item,
+          type: item?.type || TypeInvoiceLineEnum.LINE,
+          hasLabel: !!item?.label,
+          _resetKey: Date.now(),
+        })
+      )
+      setData(sourceLines)
+      tempIdRef.current = initialMaxId(sourceLines) + 1
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formItem?.order_id])
+
+  // Evitar sobrescribir el estado local al editar/agregar.
+  // La inicialización ya se hace en el estado inicial y otros efectos manejan UNDO/tableData.
 
   const handleNumericFieldChange = async (
     row: Row<PosOrderLine>,
@@ -936,7 +960,7 @@ const PosOrderLines = ({ watch, setValue, control, errors, editConfig }: frmElem
           column: Column<PosOrderLine>
           table: Table<PosOrderLine>
         }) => {
-          if (watch('state') === StatusInvoiceEnum.PUBLICADO) {
+          if (isReadOnly) {
             return (
               <span
                 className="text-teal-600 hover:cursor-pointer"
@@ -948,6 +972,7 @@ const PosOrderLines = ({ watch, setValue, control, errors, editConfig }: frmElem
           }
           return (
             <AutocompleteTable
+              key={`uom-${row.original.line_id}-${row.original._resetKey}`}
               row={row}
               column={column}
               options={uomOptions}
@@ -983,7 +1008,7 @@ const PosOrderLines = ({ watch, setValue, control, errors, editConfig }: frmElem
           column: Column<PosOrderLine>
           table: Table<PosOrderLine>
         }) => {
-          if (watch('state') === StatusInvoiceEnum.PUBLICADO) {
+          if (isReadOnly) {
             return (
               <div className="flex flex-wrap">
                 {(row.original.lines_taxes ?? []).map((item) => (
@@ -1130,13 +1155,20 @@ const PosOrderLines = ({ watch, setValue, control, errors, editConfig }: frmElem
           <TableActions
             onAddRow={(type) => {
               // Usar el setData primero y luego modifyDataSetter en el siguiente ciclo
-              setData((prev) => [
-                ...prev,
-                { ...(defaultPosOrderLine as PosOrderLine), line_id: prev.length + 1000, type },
-              ])
-              setTimeout(() => {
-                modifyDataSetter(true)
-              }, 0)
+              setData((prev) => {
+                const nextId = tempIdRef.current++
+                return [
+                  ...prev,
+                  {
+                    ...(defaultPosOrderLine as PosOrderLine),
+                    line_id: nextId,
+                    type,
+                    _resetKey: Date.now(),
+                  },
+                ]
+              })
+              // Programar el modifyData para siguiente ciclo de render, asegurando foco en la fila
+              requestAnimationFrame(() => modifyDataSetter(true))
             }}
             disabled={frmLoading}
             watch={watch}
@@ -1190,7 +1222,7 @@ export const TableActions = ({
     },
     */
   ]
-  const isReadOnly = watch('state') === StatusInvoiceEnum.PUBLICADO
+  const isReadOnly = watch('state') === PosOrderStateEnum.PAID
   return (
     <>
       {isReadOnly ? (

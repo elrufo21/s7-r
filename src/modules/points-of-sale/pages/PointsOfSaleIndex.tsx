@@ -6,7 +6,7 @@ import { useModuleFilterList } from '@/shared/hooks/useModule'
 import { ModulesEnum } from '@/shared/shared.types'
 import { useLocation } from 'react-router-dom'
 import { usePWA } from '@/hooks/usePWA'
-import { OfflineCache } from '@/lib/offlineCache'
+import { offlineCache } from '@/lib/offlineCache'
 
 export const PointOfSaleIndex = () => {
   const location = useLocation()
@@ -54,11 +54,10 @@ export const PointOfSaleIndex = () => {
     const loadData = async () => {
       if (!isOnline) {
         try {
-          // Crear instancia de OfflineCache
-          const cache = new OfflineCache()
-          await cache.init()
+          // Usar la instancia singleton de OfflineCache
+          await offlineCache.init()
 
-          const offlineData = await cache.getOfflinePosPoints()
+          const offlineData = await offlineCache.getOfflinePosPoints()
 
           setInitialData({
             data: offlineData,
@@ -79,6 +78,7 @@ export const PointOfSaleIndex = () => {
           data: data.oj_data ?? [],
           total: data.oj_info?.total_count ?? 0,
         })
+        await offlineCache.refetchPosPointsCache(data)
       }
     }
 

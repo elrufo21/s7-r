@@ -1,20 +1,19 @@
-import { ViewTypeEnum, FormConfig, ModulesEnum } from '@/shared/shared.types'
-import { FrmMiddle } from './configView'
+import { ViewTypeEnum, FormConfig, ModulesEnum, ItemStatusTypeEnum } from '@/shared/shared.types'
+import { FrmMiddle, FrmMiddleRight } from './configView'
 
-const PosContainers: FormConfig = {
-  fnc_name: 'fnc_pos_container',
-  title: 'Contenedores',
-  dsc: 'Contenedores',
+const PosModalCash: FormConfig = {
+  fnc_name: 'fnc_modal_cash',
+  title: 'Conteo de efectivo',
+  dsc: 'Conteo de efectivo',
   dsc_view: 'name',
   module: ModulesEnum.POINTS_OF_SALE,
-  views: [ViewTypeEnum.LIST],
-  view_default: ViewTypeEnum.LIST,
-  module_url: '/action/900',
-  item_url: '/action/900/detail',
-  new_url: '/action/900/detail/new',
-  // isFavoriteColumn: false,
-  no_content_title: 'No se encontraron contenedores',
-  no_content_dsc: 'Registre un contenedor para pesar los productos.',
+  views: [ViewTypeEnum.LIBRE],
+  view_default: ViewTypeEnum.FORM,
+  module_url: '',
+  item_url: '',
+  new_url: '',
+  isFavoriteColumn: false,
+
   fnc_valid: (data) => {
     if (!data['name']) {
       return null
@@ -23,13 +22,15 @@ const PosContainers: FormConfig = {
   },
 
   default_values: {
+    payment_term_id: null,
+    group_id: null,
+    company_id: null,
+    state: ItemStatusTypeEnum.ACTIVE,
     name: '',
-    weight: '',
-    active: true,
   },
   grid: {
-    idRow: 'container_id',
-    col_name: 'name',
+    idRow: 'order_id',
+    col_name: 'order_id',
     /**
      * 
     kanban: {
@@ -47,13 +48,23 @@ const PosContainers: FormConfig = {
     list: {
       columns: [
         {
-          header: 'Nombre',
+          header: 'Método',
           accessorKey: 'name',
           className: '!w-auto text-left',
         },
         {
-          header: 'Valor',
-          accessorKey: 'weight',
+          header: 'Diario	',
+          accessorKey: 'journal_name',
+          className: '!w-auto text-left',
+        },
+        {
+          header: 'Empresa',
+          accessorKey: 'company_name',
+          className: '!w-auto text-left',
+        },
+        {
+          header: 'Punto de venta',
+          accessorKey: 'pos_name',
           className: '!w-auto text-left',
         },
       ],
@@ -100,17 +111,9 @@ const PosContainers: FormConfig = {
   form_inputs: {
     imagenFields: [],
     auditoria: false,
-
-    frm_middle: ({ control, errors, editConfig = {}, setValue, watch }) => (
-      <FrmMiddle
-        control={control}
-        errors={errors}
-        editConfig={editConfig}
-        setValue={setValue}
-        watch={watch}
-      />
-    ),
+    frm_middle: FrmMiddle,
+    frm_middle_right: FrmMiddleRight,
   },
 }
 
-export default PosContainers
+export default PosModalCash

@@ -8,7 +8,7 @@ const PosIndexConfig: FormConfig = {
   module: ModulesEnum.POINTS_OF_SALE,
   module_url: '/points-of-sale',
   dsc_view: 'full_name',
-  views: [ViewTypeEnum.KANBAN, ViewTypeEnum.LIST],
+  views: [ViewTypeEnum.KANBAN],
   view_default: ViewTypeEnum.KANBAN,
   item_url: '/points-of-sale',
   new_url: '',

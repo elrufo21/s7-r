@@ -15,6 +15,7 @@ import { IoMdArrowDropright } from 'react-icons/io'
 import HierarchicalDropdown from './hierarchical-dropdown'
 import useAppStore from '@/store/app/appStore'
 import { useParams } from 'react-router-dom'
+import { TypeStateOrder } from '../types'
 
 export type DataTableProps<TData extends object, TValue = any> = {
   columns: ColumnDef<TData, TValue>[]
@@ -55,7 +56,7 @@ export function DataTable<TData extends { isSelected?: boolean }, TValue = any>(
   const { pointId } = useParams()
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: pageSize,
+    pageSize: data.length > 0 ? data.length : pageSize, // Mostrar todos los elementos si hay datos
   })
 
   const [globalFilter, setGlobalFilter] = useState<string>('')
@@ -67,21 +68,40 @@ export function DataTable<TData extends { isSelected?: boolean }, TValue = any>(
 
   useEffect(() => {
     const fetchDataForStatus = async () => {
-      if (selectedStatus === 'P') {
+      if (selectedStatus === TypeStateOrder.PAID) {
         const rs = await executeFnc('fnc_pos_order', 's_pos', [
           [0, 'fequal', 'point_id', pointId],
-          [0, 'multi_filter_in', [{ key_db: 'state', value: 'P' }]],
+          [0, 'multi_filter_in', [{ key_db: 'state', value: TypeStateOrder.PAID }]],
+          [1, 'pag', 1],
         ])
         setPaidOrders(rs?.oj_data || [])
         setDisplayData(rs?.oj_data || [])
       } else if (selectedStatus === 'A') {
         setDisplayData(data)
+      } else if (selectedStatus === TypeStateOrder.PENDING_PAYMENT) {
+        const rs = await executeFnc('fnc_pos_order', 's_pos', [
+          [0, 'fequal', 'point_id', pointId],
+          [0, 'multi_filter_in', [{ key_db: 'state', value: TypeStateOrder.PENDING_PAYMENT }]],
+          [1, 'pag', 1],
+        ])
+        setPaidOrders(rs?.oj_data || [])
+        setDisplayData(rs?.oj_data || [])
       } else {
         setDisplayData(data.filter((item: any) => item?.state === selectedStatus))
       }
     }
     fetchDataForStatus()
   }, [data, selectedStatus, executeFnc, pointId])
+
+  // Actualizar el pageSize cuando cambian los datos para mostrar toda la lista
+  useEffect(() => {
+    if (displayData.length > 0) {
+      setPagination((prev) => ({
+        ...prev,
+        pageSize: displayData.length,
+      }))
+    }
+  }, [displayData])
 
   const table = useReactTable({
     data: displayData,
@@ -97,6 +117,12 @@ export function DataTable<TData extends { isSelected?: boolean }, TValue = any>(
     onGlobalFilterChange: setGlobalFilter,
     manualPagination: false,
     pageCount: Math.ceil(data.length / pagination.pageSize),
+    // Configurar para mostrar todos los datos
+    initialState: {
+      pagination: {
+        pageSize: data.length, // Mostrar todos los elementos
+      },
+    },
   })
 
   const handleStatusChange = (e: string) => {

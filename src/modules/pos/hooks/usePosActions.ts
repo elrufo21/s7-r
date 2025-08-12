@@ -4,6 +4,8 @@ import { TypeStateOrder } from '../types'
 import { ActionTypeEnum } from '@/shared/shared.types'
 import { toast } from 'sonner'
 import { useCallback } from 'react'
+import { usePWA } from '@/hooks/usePWA'
+import { offlineCache } from '@/lib/offlineCache'
 
 interface OrderData {
   order_id: string | number
@@ -33,6 +35,8 @@ export const usePosActions = () => {
     screen,
     finalCustomer,
   } = useAppStore()
+
+  const { isOnline } = usePWA()
 
   const { pointId } = useParams<{ pointId: string }>()
 
@@ -89,7 +93,7 @@ export const usePosActions = () => {
 
         if (rs.oj_data?.length > 0) {
           const remainingOrders = await reloadOrders()
-          setSelectedOrder(remainingOrders.length > 0 ? remainingOrders[0].order_id : null)
+          setSelectedOrder(remainingOrders.length > 0 ? remainingOrders[0].order_id : '')
           return true
         } else {
           toast.error('No se pudo cancelar la orden')
@@ -112,6 +116,16 @@ export const usePosActions = () => {
       if (!data) {
         return { success: false, error: 'Datos de orden requeridos' }
       }
+      if (!isOnline) {
+        try {
+          await offlineCache.saveOrderOffline({ ...data, action: action })
+          toast.info('Orden guardada localmente. Se enviará cuando vuelva la conexión.')
+          return { success: true, data }
+        } catch (e: any) {
+          toast.error('Error al guardar la orden localmente', e)
+          return { success: false, error: 'No se pudo guardar la orden localmente' }
+        }
+      }
 
       try {
         const rs = await executeFnc('fnc_pos_order', action, {
@@ -131,7 +145,7 @@ export const usePosActions = () => {
         return { success: false, error: 'Error interno del servidor' }
       }
     },
-    [executeFnc, reloadOrders]
+    [executeFnc, reloadOrders, isOnline]
   )
 
   // Función principal que maneja el guardado según la pantalla actual
@@ -139,14 +153,12 @@ export const usePosActions = () => {
     const date = new Date()
     const peruDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
     const session = getSessionData()
-
     switch (screen) {
       case 'products': {
         if (!handleChange) return false
 
         const data = orderData.find((item) => item.order_id === selectedOrder)
         if (!data) return false
-
         const updatedData = {
           ...data,
           name: '',
@@ -170,10 +182,14 @@ export const usePosActions = () => {
             notes: null,
             amount_untaxed: item?.price_unit,
             amount_tax: 0,
+            tara_value: item?.tara_value,
+            tara_quantity: item?.tara_quantity,
+            tara_total: item?.tara_total,
             amount_withtaxed: item?.price_unit,
             amount_untaxed_total: item?.price_unit * item?.quantity,
             amount_tax_total: item?.price_unit * item?.quantity,
             amount_withtaxed_total: item?.price_unit * item?.quantity,
+            base_quantity: item?.base_quantity,
           })),
           order_id: selectedOrder,
           amount_untaxed:
@@ -243,6 +259,10 @@ export const usePosActions = () => {
               price_unit: item?.price_unit,
               notes: null,
               amount_untaxed: item?.price_unit,
+              tara_value: item?.tara_value,
+              tara_quantity: item?.tara_quantity,
+              base_quantity: item?.base_quantity,
+              tara_total: item?.tara_total,
               amount_tax: 0,
               amount_withtaxed: item?.price_unit,
               amount_untaxed_total: item?.price_unit * item?.quantity,

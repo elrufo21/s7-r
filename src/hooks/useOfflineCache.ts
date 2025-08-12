@@ -15,8 +15,7 @@ export const useOfflineCache = () => {
         await cache.cacheProducts(executeFnc)
         await cache.cacheCategories(executeFnc)
         await cache.cachePaymentMethods(executeFnc)
-        await cache.cachePosSessions(executeFnc)
-        console.log('Cache offline inicializado correctamente')
+        await cache.cacheContacts(executeFnc)
       } catch (error) {
         console.error('Error inicializando cache:', error)
       }

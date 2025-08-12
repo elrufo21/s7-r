@@ -1,11 +1,13 @@
 import { Operation } from '@/modules/pos/types'
 import { AppStoreProps, PointsOfSaleSliceState, SetState } from '@/store/store.types'
-import { OfflineCache } from '@/lib/offlineCache'
+import { offlineCache, OfflineCache } from '@/lib/offlineCache'
 
 const createPos = (
   set: SetState<PointsOfSaleSliceState>,
   get: () => AppStoreProps
 ): PointsOfSaleSliceState => ({
+  containers: [],
+  setContainers: (containers) => set({ containers }),
   orderSelected: null,
   setOrderSelected: (orderSelected: { order_id: string; state: string } | null) =>
     set({ orderSelected }),
@@ -77,7 +79,7 @@ const createPos = (
         }
       })
 
-      return { orderData: newOrderData }
+      return { orderData: newOrderData.filter((order) => order.state !== 'P') }
     })
   },
 
@@ -96,7 +98,7 @@ const createPos = (
         }
       })
 
-      return { orderData: newOrderData }
+      return { orderData: newOrderData.filter((order) => order.state !== 'P') }
     })
   },
 
@@ -114,18 +116,43 @@ const createPos = (
         }
       })
 
-      return { orderData: newOrderData }
+      return { orderData: newOrderData.filter((order) => order.state !== 'P') }
     })
   },
 
-  setProductQuantityInOrder: (order_id, product_id, exact_quantity) => {
+  // Función helper para calcular cantidad efectiva y tara total
+  calculateEffectiveQuantity: (
+    base_quantity: number,
+    tara_value: number,
+    tara_quantity: number
+  ) => {
+    return base_quantity - (tara_value || 0) * (tara_quantity || 0)
+  },
+
+  calculateTaraTotal: (tara_value: number, tara_quantity: number) => {
+    return (tara_value || 0) * (tara_quantity || 0)
+  },
+
+  setProductQuantityInOrder: (order_id, product_id, base_quantity) => {
     set((state) => {
       const newOrderData = state.orderData.map((order) => {
         if (order.order_id !== order_id) return order
 
-        const updatedLines = order.lines.map((p: any) =>
-          p.product_id === product_id ? { ...p, quantity: exact_quantity } : p
-        )
+        const updatedLines = order.lines.map((p: any) => {
+          if (p.product_id === product_id) {
+            const effectiveQuantity = get().calculateEffectiveQuantity(
+              base_quantity,
+              p.tara_value || 0,
+              p.tara_quantity || 0
+            )
+            return {
+              ...p,
+              base_quantity: base_quantity,
+              quantity: effectiveQuantity,
+            }
+          }
+          return p
+        })
 
         return {
           ...order,
@@ -134,7 +161,7 @@ const createPos = (
         }
       })
 
-      return { orderData: newOrderData }
+      return { orderData: newOrderData.filter((order) => order.state !== 'P') }
     })
   },
 
@@ -149,21 +176,41 @@ const createPos = (
         let updatedLines
         if (!existingLine) {
           // Nuevo producto
+          const effectiveQuantity = get().calculateEffectiveQuantity(
+            added_quantity,
+            0, // tara_value inicial
+            0 // tara_quantity inicial
+          )
           updatedLines = [
             ...(order?.lines ?? []),
             {
               ...product,
-              quantity: added_quantity,
+              base_quantity: added_quantity,
+              quantity: effectiveQuantity,
               price_unit: product.sale_price,
+              tara_value: 0,
+              tara_quantity: 0,
+              tara_total: 0,
             },
           ]
         } else {
-          // Ya existe => actualizar cantidad
-          updatedLines = order.lines.map((p: any) =>
-            p.product_id === product.product_id
-              ? { ...p, quantity: (p.quantity || 0) + added_quantity }
-              : p
-          )
+          // Ya existe => actualizar cantidad base
+          updatedLines = order.lines.map((p: any) => {
+            if (p.product_id === product.product_id) {
+              const newBaseQuantity = (p.base_quantity || p.quantity || 0) + added_quantity
+              const effectiveQuantity = get().calculateEffectiveQuantity(
+                newBaseQuantity,
+                p.tara_value || 0,
+                p.tara_quantity || 0
+              )
+              return {
+                ...p,
+                base_quantity: newBaseQuantity,
+                quantity: effectiveQuantity,
+              }
+            }
+            return p
+          })
         }
 
         return {
@@ -174,7 +221,7 @@ const createPos = (
       })
 
       return {
-        orderData: newOrderData,
+        orderData: newOrderData.filter((order) => order.state !== 'P'),
         selectedItem: product.product_id,
       }
     })
@@ -182,7 +229,9 @@ const createPos = (
 
   addNewOrder: () =>
     set((state) => {
-      state.setScreen('products')
+      if (state.screen !== 'ticket') {
+        state.setScreen('products')
+      }
       state.setHandleChange(true)
       const newId = crypto.randomUUID()
 
@@ -194,7 +243,7 @@ const createPos = (
       }
 
       return {
-        orderData: [...state.orderData, newOrder],
+        orderData: [...state.orderData, newOrder].filter((order) => order.state !== 'P'),
         selectedOrder: newId,
       }
     }),
@@ -215,7 +264,7 @@ const createPos = (
         }
       })
 
-      return { orderData: newOrderData }
+      return { orderData: newOrderData.filter((order) => order.state !== 'P') }
     })
   },
 
@@ -243,7 +292,7 @@ const createPos = (
         }
       })
 
-      return { orderData: newOrderData }
+      return { orderData: newOrderData.filter((order) => order.state !== 'P') }
     })
   },
 
@@ -271,7 +320,7 @@ const createPos = (
         }
       })
 
-      return { orderData: newOrderData }
+      return { orderData: newOrderData.filter((order) => order.state !== 'P') }
     })
   },
 
@@ -281,6 +330,22 @@ const createPos = (
 
     const product = order?.lines?.find((p: any) => p.product_id === product_id)
     return product ? product.quantity : 0
+  },
+
+  getProductTaraValue: (order_id, product_id) => {
+    const order = get().orderData.find((o) => o.order_id === order_id)
+    if (!order) return 0
+
+    const product = order?.lines?.find((p: any) => p.product_id === product_id)
+    return product ? product.tara_value || 0 : 0
+  },
+
+  getProductTaraQuantity: (order_id, product_id) => {
+    const order = get().orderData.find((o) => o.order_id === order_id)
+    if (!order) return 0
+
+    const product = order?.lines?.find((p: any) => p.product_id === product_id)
+    return product ? product.tara_quantity || 0 : 0
   },
 
   deleteProductInOrder: (order_id, product_id) => {
@@ -303,7 +368,7 @@ const createPos = (
       const firstProductId = orderAfterDeletion?.lines?.[0]?.product_id || null
 
       return {
-        orderData: newOrderData,
+        orderData: newOrderData.filter((order) => order.state !== 'P'),
         selectedItem: firstProductId,
       }
     })
@@ -326,7 +391,7 @@ const createPos = (
       const remainingOrders = state.orderData.filter((order) => order.order_id !== order_id)
       const newSelectedOrder = remainingOrders.length > 0 ? remainingOrders[0].order_id : ''
       return {
-        orderData: remainingOrders,
+        orderData: remainingOrders.filter((order) => order.state !== 'P'),
         selectedOrder: newSelectedOrder,
         selectedItem: null,
       }
@@ -338,7 +403,9 @@ const createPos = (
       const exists = state.orderData.some((o) => o.order_id === updatedOrder.order_id)
       return {
         orderData: exists
-          ? state.orderData.map((o) => (o.order_id === updatedOrder.order_id ? updatedOrder : o))
+          ? state.orderData
+              .map((o) => (o.order_id === updatedOrder.order_id ? updatedOrder : o))
+              .filter((order) => order.state !== 'P')
           : [...state.orderData, updatedOrder],
       }
     }),
@@ -357,7 +424,9 @@ const createPos = (
     await executeFnc('fnc_pos_order', 'u', updatedOrder)
 
     set((state) => ({
-      orderData: state.orderData.map((o) => (o.order_id === order_id ? updatedOrder : o)),
+      orderData: state.orderData
+        .map((o) => (o.order_id === order_id ? updatedOrder : o))
+        .filter((order) => order.state !== 'P'),
     }))
   },
 
@@ -372,7 +441,9 @@ const createPos = (
       }
 
       return {
-        orderData: state.orderData.map((o) => (o.order_id === order_id ? updatedOrder : o)),
+        orderData: state.orderData
+          .map((o) => (o.order_id === order_id ? updatedOrder : o))
+          .filter((order) => order.state !== 'P'),
       }
     })
   },
@@ -383,7 +454,7 @@ const createPos = (
       )
 
       return {
-        orderData: updatedOrders,
+        orderData: updatedOrders.filter((order) => order.state !== 'P'),
         selectedOrder: newMoveId,
       }
     })
@@ -458,10 +529,11 @@ const createPos = (
         cachedData = (await offlineCache.getOfflineCategories()) as T
       } else if (key === 'payment_methods') {
         cachedData = (await offlineCache.getOfflinePaymentMethods()) as T
+      } else if (key === 'containers') {
+        cachedData = (await offlineCache.getOfflineContainers()) as T
       }
 
       if (cachedData && Array.isArray(cachedData) && cachedData.length > 0) {
-        console.log(`datos obtenidos del cache (${key}):`, cachedData.length)
         return cachedData
       }
 
@@ -473,6 +545,8 @@ const createPos = (
         await offlineCache.cacheCategories(get().executeFnc)
       } else if (key === 'payment_methods') {
         await offlineCache.cachePaymentMethods(get().executeFnc)
+      } else if (key === 'containers') {
+        await offlineCache.cacheContainers(get().executeFnc)
       }
 
       return data
@@ -487,9 +561,7 @@ const createPos = (
     await offlineCache.init()
 
     try {
-      console.log('Iniciando actualización completa del cache...')
       await offlineCache.refreshCache(get().executeFnc)
-      console.log('Cache actualizado completamente')
     } catch (error) {
       console.error('Error actualizando cache:', error)
     }
@@ -498,8 +570,7 @@ const createPos = (
   clearPosCache: async () => {
     const offlineCache = new OfflineCache()
     await offlineCache.init()
-    await offlineCache.clearCache()
-    console.log('Cache de POS limpiado')
+    await offlineCache.clearAll()
   },
 
   getPosCacheInfo: async () => {
@@ -517,7 +588,6 @@ const createPos = (
         customers: 'No implementado',
       }
 
-      console.log('Estado del cache POS:', cacheInfo)
       return cacheInfo
     } catch (error) {
       console.error('Error obteniendo info del cache:', error)
@@ -551,12 +621,14 @@ const createPos = (
           offlinePaymentMethods,
           offlineCustomers,
           offlineOrders,
+          offlineContainers,
         ] = await Promise.all([
           cache.getOfflineProducts(),
           cache.getOfflineCategories(),
           cache.getOfflinePaymentMethods(),
           cache.getOfflinePosPoints(),
-          cache.getOfflinePosOrders(parseInt(pointId)),
+          cache.getOfflinePosOrders(),
+          cache.getOfflineContainers(),
         ])
 
         let initialOrders = offlineOrders || []
@@ -579,19 +651,19 @@ const createPos = (
         }
 
         set({
-          orderData: initialOrders,
-          products: offlineProducts,
-          filteredProducts: offlineProducts,
+          orderData: initialOrders.filter((order: any) => order.state !== 'P') as any[],
+          products: offlineProducts as any[],
+          filteredProducts: offlineProducts as any[],
           categories: offlineCategories,
           customers: offlineCustomers,
-          selectedOrder: firstOrderId,
+          selectedOrder: String(firstOrderId),
           paymentMethods: offlinePaymentMethods,
+          containers: offlineContainers || [],
         })
 
         return
       }
 
-      // Si hay conexión, hacer las peticiones normales (código existente)
       const fetchProducts = () =>
         executeFnc('fnc_product_template', 's', [
           [
@@ -615,6 +687,9 @@ const createPos = (
       const fetchCustomers = () =>
         executeFnc('fnc_partner', 's', [[1, 'pag', 1]]).then((res) => res.oj_data || [])
 
+      const fetchContainers = () =>
+        executeFnc('fnc_pos_container', 's', [[1, 'pag', 1]]).then((res) => res.oj_data || [])
+
       const ordersRes = await executeFnc('fnc_pos_order', 's_pos', [
         [0, 'fequal', 'point_id', pointId],
         [
@@ -626,15 +701,18 @@ const createPos = (
           ],
         ],
       ])
+      if (ordersRes && ordersRes.oj_data && Array.isArray(ordersRes.oj_data)) {
+        for (const order of ordersRes.oj_data) {
+          await offlineCache.saveOrderOffline(order)
+        }
+      }
 
-      const ordersData = ordersRes.oj_data
-
-      const [products, categories, paymentMethods, customers] = await Promise.all([
+      const [products, categories, paymentMethods, customers, containers] = await Promise.all([
         getOrSetLocalStorage('products', fetchProducts),
         getOrSetLocalStorage('categories', fetchCategories),
         getOrSetLocalStorage('payment_methods', fetchPaymentMethods),
         getOrSetLocalStorage('customers', fetchCustomers),
-        getOrSetLocalStorage('pos_orders', () => ordersData),
+        getOrSetLocalStorage('containers', fetchContainers),
       ])
 
       let initialOrders = ordersRes.oj_data || []
@@ -661,13 +739,14 @@ const createPos = (
       }
 
       set({
-        orderData: initialOrders,
-        products: products,
-        filteredProducts: products,
+        orderData: initialOrders.filter((order: any) => order.state !== 'P'),
+        products: products as any[],
+        filteredProducts: products as any[],
         categories: categories,
         customers: customers,
         selectedOrder: firstOrderId,
         paymentMethods: paymentMethods,
+        containers: containers as any[],
       })
     } catch (error) {
       console.error('Error al inicializar el punto de venta:', error)
@@ -678,8 +757,73 @@ const createPos = (
         categories: [],
         customers: [],
         paymentMethods: [],
+        containers: [],
       })
     }
+  },
+
+  setTaraValue: (order_id, product_id, tara_value) => {
+    set((state) => {
+      const newOrderData = state.orderData.map((order) => {
+        if (order.order_id !== order_id) return order
+
+        const updatedLines = order.lines.map((p: any) => {
+          if (p.product_id === product_id) {
+            const baseQuantity = p.base_quantity || p.quantity || 0
+            const tara_quantity = p.tara_quantity || 0
+            const effectiveQuantity = get().calculateEffectiveQuantity(
+              baseQuantity,
+              tara_value,
+              tara_quantity
+            )
+            const tara_total = get().calculateTaraTotal(tara_value, tara_quantity)
+            return {
+              ...p,
+              tara_value: tara_value,
+              tara_total: tara_total,
+              base_quantity: baseQuantity,
+              quantity: effectiveQuantity,
+            }
+          }
+          return p
+        })
+
+        return { ...order, lines_change: true, lines: updatedLines }
+      })
+
+      return { orderData: newOrderData.filter((order) => order.state !== 'P') }
+    })
+  },
+  setTaraQuantity: (order_id, product_id, tara_quantity) => {
+    set((state) => {
+      const newOrderData = state.orderData.map((order) => {
+        if (order.order_id !== order_id) return order
+
+        const updatedLines = order.lines.map((p: any) => {
+          if (p.product_id === product_id) {
+            const baseQuantity = p.base_quantity || p.quantity || 0
+            const tara_value = p.tara_value || 0
+            const effectiveQuantity = get().calculateEffectiveQuantity(
+              baseQuantity,
+              tara_value,
+              tara_quantity
+            )
+            const tara_total = get().calculateTaraTotal(tara_value, tara_quantity)
+            return {
+              ...p,
+              tara_quantity: tara_quantity,
+              tara_total: tara_total,
+              base_quantity: baseQuantity,
+              quantity: effectiveQuantity,
+            }
+          }
+          return p
+        })
+
+        return { ...order, lines_change: true, lines: updatedLines }
+      })
+      return { orderData: newOrderData.filter((order) => order.state !== 'P') }
+    })
   },
 })
 

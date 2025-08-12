@@ -10174,3 +10174,21 @@ img, svg {
   right: 12px;
   left: auto !important;
 }
+
+.btn-style-1 > div
+{
+  display: grid;
+  justify-items: center;
+}
+
+.btn-style-1 > div .c-img
+{
+  height: 40px;
+  margin-bottom: 15px;
+}
+
+.btn-style-1 > div .c-text
+{
+  height: 40px;
+}
+

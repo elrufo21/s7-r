@@ -3,6 +3,7 @@ import { createColumnHelper } from '@tanstack/react-table'
 import useAppStore from '@/store/app/appStore'
 import { DataTable } from './ListView'
 import { GrTrash } from 'react-icons/gr'
+import { TypeStateOrder } from '../types'
 
 type Order = {
   order_id: string
@@ -28,16 +29,26 @@ type Order = {
 const statusOptions = [
   {
     label: 'Activo',
-    value: 'A',
+    value: TypeStateOrder.IN_PROGRESS,
     children: [
-      { label: 'En curso', value: 'I' },
-      { label: 'Pago', value: 'Y' },
+      { label: 'En curso', value: TypeStateOrder.IN_PROGRESS },
+      { label: 'Pago', value: TypeStateOrder.PAY },
       // { label: 'Recepción', value: 'R' },
     ],
   },
   {
-    label: 'Pagado',
-    value: 'P',
+    label: 'Cerrado',
+    value: 'C',
+    children: [
+      {
+        label: 'Por Pagar',
+        value: TypeStateOrder.PENDING_PAYMENT,
+      },
+      {
+        label: 'Pagado',
+        value: TypeStateOrder.PAID,
+      },
+    ],
   },
 ]
 
@@ -186,7 +197,7 @@ export const OrderList = () => {
   }
 
   const handleRowClick = async (row: Order) => {
-    const orderSource = row.state === 'P' ? paidOrders : orderData
+    const orderSource = row.state === 'P' || row.state === 'E' ? paidOrders : orderData
     const order = orderSource.find((item: any) => item.order_id === row.order_id)
 
     if (order && order.lines) {

@@ -14,7 +14,7 @@ export function FrmMiddle({ control, errors, editConfig }: frmElementsProps) {
       />
       <BaseTextControlled
         label="Valor"
-        name={'value'}
+        name={'weight'}
         control={control}
         errors={errors}
         placeholder={''}

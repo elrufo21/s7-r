@@ -3,7 +3,7 @@ import { OptionsType } from '@/shared/ui/inputs/input.types'
 import { GroupedItemsType } from '@/shared/components/view-types/viewTypes.types'
 import { FormActionEnum, ViewTypeEnum } from '@/shared/shared.types'
 import { ExpandedState, Row, Table } from '@tanstack/react-table'
-import { ReactNode } from 'react'
+import React, { ReactNode } from 'react'
 import { Operation } from '@/modules/pos/context/CalculatorContext'
 
 interface DialogProps {
@@ -82,6 +82,10 @@ export interface AppSliceState {
   setAppDialogsContent: (appDialogsContent: any[]) => void
   appShowPrevView: boolean
   setAppShowPrevView: (value: boolean) => void
+
+  // sync loading state
+  syncLoading: boolean
+  setSyncLoading: (syncLoading: boolean) => void
 
   // nav
   viewType: ViewTypeEnum
@@ -287,7 +291,8 @@ export interface AppStoreProps
     DataSliceState,
     FrmSliceState,
     DialogSliceState,
-    PointsOfSaleSliceState {}
+    PointsOfSaleSliceState,
+    VKeyboardSliceState {}
 export interface UserStoreProps extends UserSliceState, FiltersSliceState {}
 
 export interface CreateOptionsParams {
@@ -338,6 +343,8 @@ interface Product {
   uom_id?: string
 }
 export interface PointsOfSaleSliceState {
+  containers: any[]
+  setContainers: (containers: any[]) => void
   orderSelected: { order_id: string; state: string } | null
   setOrderSelected: (orderSelected: { order_id: string; state: string } | null) => void
   total: number
@@ -443,6 +450,8 @@ export interface PointsOfSaleSliceState {
   toggleProductQuantitySign: (order_id: number | string, product_id: string) => void
   toggleProductPriceSign: (order_id: number | string, product_id: string) => void
   getProductQuantityInOrder: (order_id: number | string, product: string | number) => number
+  getProductTaraValue: (order_id: number | string, product_id: string | number) => number
+  getProductTaraQuantity: (order_id: number | string, product_id: string | number) => number
   deleteProductInOrder: (order_id: number | string, product_id: string) => void
   getTotalPriceByOrder: (order_id: number | string) => number
   deleteOrder: (order_id: number | string) => void
@@ -460,4 +469,25 @@ export interface PointsOfSaleSliceState {
   getPosCacheInfo: () => Promise<Record<string, string>>
   forceReloadPosData: (pointId: string, isOnline: boolean) => Promise<void>
   refreshAllCache: () => Promise<void>
+  setTaraValue: (order_id: string, product_id: string | number, taraValue: number) => void
+  setTaraQuantity: (order_id: string, product_id: string | number, taraQuantity: number) => void
+  calculateEffectiveQuantity: (
+    base_quantity: number,
+    taraValue: number,
+    taraQuantity: number
+  ) => number
+  calculateTaraTotal: (taraValue: number, taraQuantity: number) => number
+}
+
+export interface VKeyboardSliceState {
+  vKeyboardOpen: boolean
+  setVKeyboardOpen: (vKeyboardOpen: boolean) => void
+  vKeyboardValue: string
+  setVKeyboardValue: (vKeyboardValue: string) => void
+  focusedInputRef: React.RefObject<HTMLInputElement | HTMLTextAreaElement> | null
+  setFocusedInputRef: (
+    focusedInputRef: React.RefObject<HTMLInputElement | HTMLTextAreaElement> | null
+  ) => void
+  focusedFieldOnChange: ((value: any) => void) | null
+  setFocusedFieldOnChange: (fn: ((value: any) => void) | null) => void
 }

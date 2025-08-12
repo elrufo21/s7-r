@@ -1,344 +1,668 @@
-import { openDB } from 'idb'
+import { openDB, IDBPDatabase } from 'idb'
 
+// Tipos para las entidades principales
+export type Product = { product_id: number; [key: string]: any }
+export type Category = { category_id: number; [key: string]: any }
+export type PaymentMethod = { payment_method_id: number; [key: string]: any }
+export type PosOrder = { order_id: number | string; [key: string]: any }
+export type PosPoint = { point_id: number; [key: string]: any }
+export type PosSession = { session_id: number; [key: string]: any }
+export type Contact = { partner_id: number; [key: string]: any }
+export type Container = { container_id: number; [key: string]: any }
+export type PosOrderQueue = { order_id: number; [key: string]: any }
+export type PosPointCache = { point_id: number; oj_data: PosPoint[] }
+
+export type EntityName =
+  | 'products'
+  | 'categories'
+  | 'payment_method'
+  | 'pos_order'
+  | 'pos_point'
+  | 'pos_session'
+  | 'contact'
+  | 'container'
+  | 'product_images'
+  | 'sync_orders_queue'
+
+interface OfflineCacheOptions {
+  dbName?: string
+  version?: number
+}
+
+/**
+ * Servicio para manejo de cache offline usando IndexedDB.
+ * Permite cachear, obtener, limpiar y sincronizar entidades clave para el POS.
+ */
 export class OfflineCache {
-  private db: any | null = null
+  private db: IDBPDatabase | null = null
+  private dbName: string
+  private version: number
 
+  constructor(options?: OfflineCacheOptions) {
+    this.dbName = options?.dbName || 's7-offline-cache'
+    this.version = options?.version || 3 // Subimos la versión a 3
+  }
+
+  /** Inicializa la base de datos y los object stores necesarios. */
   async init() {
     if (!('indexedDB' in window)) return
-
-    this.db = await openDB('s7-offline-cache', 2, {
-      upgrade(db: any, oldVersion: number) {
+    this.db = await openDB(this.dbName, this.version, {
+      upgrade(db, oldVersion) {
         if (oldVersion < 1) {
           db.createObjectStore('products', { keyPath: 'product_id' })
           db.createObjectStore('categories', { keyPath: 'category_id' })
+          db.createObjectStore('sync_orders_queue', { keyPath: 'order_id' })
         }
         if (oldVersion < 2) {
-          db.createObjectStore('payment_methods', { keyPath: 'payment_method_id' })
-          db.createObjectStore('pos_orders', { keyPath: 'order_id' })
-          db.createObjectStore('pos_points', { keyPath: 'point_id' })
-          db.createObjectStore('pos_sessions', { keyPath: 'session_id' })
+          db.createObjectStore('payment_method', { keyPath: 'payment_method_id' })
+          db.createObjectStore('pos_order', { keyPath: 'order_id' })
+          db.createObjectStore('pos_point', { keyPath: 'point_id' })
+          db.createObjectStore('pos_session', { keyPath: 'session_id' })
+          db.createObjectStore('requestsQueue', { keyPath: 'request_id', autoIncrement: true })
+          db.createObjectStore('contact', { keyPath: 'partner_id' })
+          db.createObjectStore('container', { keyPath: 'container_id' })
+        }
+        if (oldVersion < 3) {
+          db.createObjectStore('product_images', { keyPath: 'product_id' })
+        }
+        // Soporte para imágenes de métodos de pago
+        if (!db.objectStoreNames.contains('payment_method_images')) {
+          db.createObjectStore('payment_method_images', { keyPath: 'payment_method_id' })
         }
       },
     })
   }
 
-  async cachePosOrders(executeFnc: any, pos_id: number) {
-    if (!this.db || !pos_id) return
+  /** Devuelve la instancia de la base de datos, inicializándola si es necesario. */
+  private async getDB(): Promise<IDBPDatabase> {
+    if (!this.db) {
+      await this.init()
+    }
+    if (!this.db) throw new Error('IndexedDB no disponible')
+    return this.db
+  }
 
-    try {
-      const result = await executeFnc('fnc_pos_order', 's_pos', [
-        [0, 'fequal', 'point_id', pos_id],
-        [
-          0,
-          'multi_filter_in',
-          [
-            { key_db: 'state', value: 'I' },
-            { key_db: 'state', value: 'Y' },
-          ],
-        ],
-      ])
+  /** Guarda una lista de entidades en el store correspondiente. */
+  private async putEntities<T>(storeName: EntityName, entities: T[]) {
+    const db = await this.getDB()
+    const tx = db.transaction(storeName, 'readwrite')
+    const store = tx.objectStore(storeName)
+    for (const entity of entities) {
+      await store.put(entity)
+    }
+    await tx.done
+  }
 
-      if (result && result.oj_data) {
-        const tx = this.db.transaction('pos_orders', 'readwrite')
-        const store = tx.objectStore('pos_orders')
+  /** Obtiene todas las entidades de un store. */
+  async getAll<T>(storeName: EntityName): Promise<T[]> {
+    const db = await this.getDB()
+    const tx = db.transaction(storeName, 'readonly')
+    const store = tx.objectStore(storeName)
+    return await store.getAll()
+  }
 
-        await store.clear()
-
-        for (const posOrder of result.oj_data) {
-          await store.put(posOrder)
-        }
-      }
-    } catch (error) {
-      console.error('Error cacheando órdenes:', error)
+  /** Limpia todos los stores principales. */
+  async clearAll() {
+    const db = await this.getDB()
+    const stores: EntityName[] = [
+      'products',
+      'categories',
+      'payment_method',
+      'pos_order',
+      'pos_point',
+      'pos_session',
+      'contact',
+      'container',
+      'sync_orders_queue',
+    ]
+    for (const storeName of stores) {
+      const tx = db.transaction(storeName, 'readwrite')
+      await tx.objectStore(storeName).clear()
+      await tx.done
     }
   }
 
-  async getOfflinePosOrders(pos_id: number) {
-    if (!this.db || !pos_id) return []
-
-    try {
-      const tx = this.db.transaction('pos_orders', 'readonly')
-      const store = tx.objectStore('pos_orders')
-
-      const posOrders = await store.getAll()
-      return posOrders
-    } catch (error) {
-      console.error('Error obteniendo órdenes offline:', error)
-      return []
-    }
-  }
-
-  async cachePosSessions(executeFnc: any) {
-    if (!this.db) return
-
-    try {
-      const tx = this.db.transaction('pos_sessions', 'readonly')
-      const store = tx.objectStore('pos_sessions')
-      const existingPosSessions = await store.getAll()
-
-      if (existingPosSessions.length > 0) {
-        console.log('Sesiones ya están cacheadas, no se volverá a cargar.')
-        return
-      }
-
-      console.log('Cache de sesiones vacío, cargando datos...')
-      const result = await executeFnc('fnc_pos_session', 's', [[1, 'pag', 1]])
-
-      if (result && result.oj_data) {
-        const tx = this.db.transaction('pos_sessions', 'readwrite')
-        const store = tx.objectStore('pos_sessions')
-
-        for (const posSession of result.oj_data) {
-          await store.put(posSession)
-        }
-      }
-    } catch (error) {
-      console.error('Error cacheando sesiones:', error)
-    }
-  }
-
-  async getOfflinePosSessions() {
-    if (!this.db) return []
-
-    try {
-      const tx = this.db.transaction('pos_sessions', 'readonly')
-      const store = tx.objectStore('pos_sessions')
-      const posSessions = await store.getAll()
-      console.log('Sesiones obtenidas del cache:', posSessions.length)
-      return posSessions
-    } catch (error) {
-      console.error('Error obteniendo sesiones offline:', error)
-      return []
-    }
-  }
-
-  async cachePosPoints(executeFnc: any) {
-    if (!this.db) return
-
-    try {
-      const tx = this.db.transaction('pos_points', 'readonly')
-      const store = tx.objectStore('pos_points')
-      const existingPosPoints = await store.getAll()
-
-      if (existingPosPoints.length > 0) {
-        console.log('Puntos de venta ya están cacheados, no se volverá a cargar.')
-        return
-      }
-
-      console.log('Cache de puntos de venta vacío, cargando datos...')
-      const result = await executeFnc('fnc_pos_point', 's', [[1, 'pag', 1]])
-
-      if (result && result.oj_data) {
-        const tx = this.db.transaction('pos_points', 'readwrite')
-        const store = tx.objectStore('pos_points')
-
-        for (const posPoint of result.oj_data) {
-          await store.put(posPoint)
-        }
-      }
-    } catch (error) {
-      console.error('Error cacheando puntos de venta:', error)
-    }
-  }
-
-  async getOfflinePosPoints() {
-    if (!this.db) return []
-
-    try {
-      const tx = this.db.transaction('pos_points', 'readonly')
-      const store = tx.objectStore('pos_points')
-      const posPoints = await store.getAll()
-      console.log('Puntos de venta obtenidos del cache:', posPoints.length)
-      return posPoints
-    } catch (error) {
-      console.error('Error obteniendo puntos de venta offline:', error)
-      return []
-    }
-  }
-
-  async cacheProducts(executeFnc: any) {
-    if (!this.db) return
-
-    try {
-      const tx = this.db.transaction('products', 'readonly')
-      const store = tx.objectStore('products')
-      const existingProducts = await store.getAll()
-
-      if (existingProducts.length > 0) {
-        console.log('Productos ya están cacheados, no se volverá a cargar.')
-        return
-      }
-
-      console.log('Cache de productos vacío, cargando datos...')
-      const result = await executeFnc('fnc_product_template', 's', [
-        [
-          1,
-          'fcon',
-          ['Disponible en PdV'],
-          '2',
-          [{ key: '2.1', key_db: 'available_in_pos', value: '1' }],
-        ],
-        [1, 'pag', 1],
-      ])
-
-      if (result && result.oj_data) {
-        const tx = this.db.transaction('products', 'readwrite')
-        const store = tx.objectStore('products')
-
-        for (const product of result.oj_data) {
-          await store.put(product)
-        }
-
-        console.log('Productos cacheados para uso offline:', result.oj_data.length)
-      } else {
-        console.log('No se obtuvieron productos para cachear')
-      }
-    } catch (error) {
-      console.error('Error cacheando productos:', error)
-    }
-  }
-
-  async getOfflineProducts() {
-    if (!this.db) return []
-
-    try {
-      const tx = this.db.transaction('products', 'readonly')
-      const store = tx.objectStore('products')
-      const products = await store.getAll()
-      console.log('Productos obtenidos del cache:', products.length)
-      return products
-    } catch (error) {
-      console.error('Error obteniendo productos offline:', error)
-      return []
-    }
-  }
-
-  async cacheCategories(executeFnc: any) {
-    if (!this.db) return
-
-    try {
-      const tx = this.db.transaction('categories', 'readonly')
-      const store = tx.objectStore('categories')
-      const existingCategories = await store.getAll()
-
-      if (existingCategories.length > 0) {
-        console.log('Categorías ya están cacheadas, no se volverá a cargar.')
-        return
-      }
-
-      console.log('Cache de categorías vacío, cargando datos...')
-      const result = await executeFnc('fnc_product_template_pos_category', 's', [[1, 'pag', 1]])
-
-      if (result && result.oj_data) {
-        const tx = this.db.transaction('categories', 'readwrite')
-        const store = tx.objectStore('categories')
-
-        for (const category of result.oj_data) {
-          await store.put(category)
-        }
-
-        console.log('Categorías cacheadas para uso offline:', result.oj_data.length)
-      }
-    } catch (error) {
-      console.error('Error cacheando categorías:', error)
-    }
-  }
-
-  async getOfflineCategories() {
-    if (!this.db) return []
-
-    try {
-      const tx = this.db.transaction('categories', 'readonly')
-      const store = tx.objectStore('categories')
-      const categories = await store.getAll()
-      console.log('Categorías obtenidas del cache:', categories.length)
-      return categories
-    } catch (error) {
-      console.error('Error obteniendo categorías offline:', error)
-      return []
-    }
-  }
-
-  async cachePaymentMethods(executeFnc: any) {
-    if (!this.db) return
-
-    try {
-      const tx = this.db.transaction('payment_methods', 'readonly')
-      const store = tx.objectStore('payment_methods')
-      const existingPaymentMethods = await store.getAll()
-
-      if (existingPaymentMethods.length > 0) {
-        console.log('Métodos de pago ya están cacheados, no se volverá a cargar.')
-        return
-      }
-
-      console.log('Cache de métodos de pago vacío, cargando datos...')
-      const result = await executeFnc('fnc_pos_payment_method', 's', [])
-
-      if (result && result.oj_data) {
-        const tx = this.db.transaction('payment_methods', 'readwrite')
-        const store = tx.objectStore('payment_methods')
-
-        for (const paymentMethod of result.oj_data) {
-          await store.put(paymentMethod)
-        }
-
-        console.log('Métodos de pago cacheados para uso offline:', result.oj_data.length)
-      } else {
-        console.log('No se obtuvieron métodos de pago para cachear')
-      }
-    } catch (error) {
-      console.error('Error cacheando métodos de pago:', error)
-    }
-  }
-
-  async getOfflinePaymentMethods() {
-    if (!this.db) return []
-
-    try {
-      const tx = this.db.transaction('payment_methods', 'readonly')
-      const store = tx.objectStore('payment_methods')
-      const paymentMethods = await store.getAll()
-      console.log('Métodos de pago obtenidos del cache:', paymentMethods.length)
-      return paymentMethods
-    } catch (error) {
-      console.error('Error obteniendo métodos de pago offline:', error)
-      return []
-    }
-  }
-  async clearCache() {
-    if (!this.db) return
-
-    try {
-      const stores = ['products', 'categories', 'payment_methods']
-
-      for (const storeName of stores) {
-        const tx = this.db.transaction(storeName, 'readwrite')
-        const store = tx.objectStore(storeName)
-        await store.clear()
-      }
-
-      console.log('Cache limpiado completamente')
-    } catch (error) {
-      console.error('Error limpiando cache:', error)
-    }
-  }
-
+  /** Refresca el cache de productos, categorías y métodos de pago. */
   async refreshCache(executeFnc: any) {
-    if (!this.db) return
-
     try {
-      console.log('Iniciando actualización completa del cache...')
-
-      await this.clearCache()
-
+      await this.clearAll()
       await this.cacheProducts(executeFnc)
       await this.cacheCategories(executeFnc)
       await this.cachePaymentMethods(executeFnc)
-
-      console.log('Cache actualizado completamente')
+      await this.cachePosPoints(executeFnc)
+      await this.cacheContacts(executeFnc)
+      await this.cacheContainers(executeFnc)
     } catch (error) {
       console.error('Error actualizando cache:', error)
     }
   }
+
+  // Métodos para cachear y obtener cada entidad
+
+  async cacheProducts(executeFnc: any) {
+    const existing = await this.getAll<Product>('products')
+    if (existing.length > 0) {
+      return
+    }
+    const result = await executeFnc('fnc_product_template', 's', [
+      [
+        1,
+        'fcon',
+        ['Disponible en PdV'],
+        '2',
+        [{ key: '2.1', key_db: 'available_in_pos', value: '1' }],
+      ],
+      [1, 'pag', 1],
+    ])
+    if (result?.oj_data) {
+      await this.putEntities('products', result.oj_data)
+
+      // Descargar y guardar imágenes
+      for (const product of result.oj_data) {
+        const publicUrl = product?.files?.[0]?.publicUrl
+        if (publicUrl) {
+          const imageBlob = await this.fetchImageAsBlob(publicUrl)
+          if (imageBlob) {
+            await this.saveProductImage(product.product_id, imageBlob)
+          }
+        }
+      }
+    }
+  }
+
+  async getOfflineProducts(): Promise<Product[]> {
+    return this.getAll<Product>('products')
+  }
+
+  async cacheCategories(executeFnc: any) {
+    const existing = await this.getAll<Category>('categories')
+    if (existing.length > 0) {
+      return
+    }
+    const result = await executeFnc('fnc_product_template_pos_category', 's3', [[1, 'pag', 1]])
+    if (result?.oj_data) {
+      await this.putEntities('categories', result.oj_data)
+    }
+  }
+
+  async getOfflineCategories(): Promise<Category[]> {
+    return this.getAll<Category>('categories')
+  }
+
+  async cachePaymentMethods(executeFnc: any) {
+    const existing = await this.getAll<PaymentMethod>('payment_method')
+    if (existing.length > 0) {
+      return
+    }
+    const result = await executeFnc('fnc_pos_payment_method', 's', [])
+    if (result?.oj_data) {
+      await this.putEntities('payment_method', result.oj_data)
+      for (const paymentMethod of result.oj_data) {
+        const publicUrl = paymentMethod?.files?.[0]?.publicUrl
+        if (publicUrl) {
+          const imageBlob = await this.fetchImageAsBlob(publicUrl)
+          if (imageBlob) {
+            await this.savePaymentMethodImage(paymentMethod.payment_method_id, imageBlob)
+          }
+        }
+      }
+    } else {
+      console.log('No se obtuvieron métodos de pago para cachear')
+    }
+  }
+
+  async getOfflinePaymentMethods(): Promise<PaymentMethod[]> {
+    return this.getAll<PaymentMethod>('payment_method')
+  }
+
+  async cachePosOrders(executeFnc: any, pos_id: number) {
+    if (!pos_id) return
+    const result = await executeFnc('fnc_pos_order', 's_pos', [
+      [0, 'fequal', 'point_id', pos_id],
+      [
+        0,
+        'multi_filter_in',
+        [
+          { key_db: 'state', value: 'I' },
+          { key_db: 'state', value: 'Y' },
+        ],
+      ],
+    ])
+    if (result?.oj_data) {
+      await this.putEntities('pos_order', result.oj_data)
+    }
+  }
+
+  async getOfflinePosOrders(): Promise<PosOrder[]> {
+    return this.getAll<PosOrder>('pos_order')
+  }
+
+  async cachePosSessions(executeFnc: any, action: string, data: any) {
+    const existing = await this.getAll<PosSession>('pos_session')
+    if (existing.length > 0) {
+      return
+    }
+    const result = await executeFnc('fnc_pos_session', action, data)
+    if (result?.oj_data) {
+      await this.putEntities('pos_session', result.oj_data)
+    }
+  }
+
+  async addPosOrderToQueue() {
+    const result = await this.getOfflinePosOrders()
+    const orders = result.filter((order: any) => order.action)
+    const db = await this.getDB()
+    const tx = db.transaction('sync_orders_queue', 'readwrite')
+    for (const order of orders) {
+      await tx.objectStore('sync_orders_queue').add(order)
+    }
+    await tx.done
+  }
+
+  async getSyncOrdersQueue() {
+    return this.getAll<PosOrderQueue>('sync_orders_queue')
+  }
+
+  async clearSyncOrdersQueue() {
+    const db = await this.getDB()
+    const tx = db.transaction('sync_orders_queue', 'readwrite')
+    await tx.objectStore('sync_orders_queue').clear()
+    await tx.done
+  }
+
+  // Actualizar una sesión específica offline
+  async updatePosSessionOffline(posSession: PosSession) {
+    const db = await this.getDB()
+    const tx = db.transaction('pos_session', 'readwrite')
+    await tx.objectStore('pos_session').put(posSession)
+    await tx.done
+  }
+
+  // Agregar una nueva sesión offline
+  async addPosSessionOffline(posSession: PosSession) {
+    const db = await this.getDB()
+    const tx = db.transaction('pos_session', 'readwrite')
+    await tx.objectStore('pos_session').add(posSession)
+    await tx.done
+  }
+
+  async getOfflinePosSessions(): Promise<PosSession[]> {
+    return this.getAll<PosSession>('pos_session')
+  }
+
+  async cachePosPoints(executeFnc: any) {
+    const existing = await this.getAll<PosPoint>('pos_point')
+    if (existing.length > 0) {
+      return
+    }
+    const result = await executeFnc('fnc_pos_point', 's', [[1, 'pag', 1]])
+    if (result?.oj_data) {
+      await this.putEntities('pos_point', result.oj_data)
+    }
+  }
+
+  async updatePosPoints(executeFnc: any) {
+    const result = await executeFnc('fnc_pos_point', 's', [[1, 'pag', 1]])
+    if (result?.oj_data) {
+      await this.putEntities('pos_point', result.oj_data)
+    } else {
+      console.log('No se obtuvieron puntos de venta para actualizar')
+    }
+  }
+
+  // Actualizar puntos de venta offline (sin petición al servidor)
+  async updatePosPointsOffline(posPoints: PosPoint[]) {
+    await this.putEntities('pos_point', posPoints)
+  }
+
+  async updatePosPointOffline(posPoint: PosPoint) {
+    const db = await this.getDB()
+    const tx = db.transaction('pos_point', 'readwrite')
+    await tx.objectStore('pos_point').put(posPoint)
+    await tx.done
+  }
+
+  async getOfflinePosPoints(): Promise<PosPoint[]> {
+    return this.getAll<PosPoint>('pos_point')
+  }
+
+  async refetchPosPointsCache(data: { oj_data: PosPoint[] }) {
+    if (data?.oj_data) {
+      await this.putEntities('pos_point', data.oj_data)
+    }
+  }
+
+  async cacheContacts(executeFnc: any) {
+    const existing = await this.getAll<Contact>('contact')
+    if (existing.length > 0) {
+      return
+    }
+    const result = await executeFnc('fnc_partner', 's', [])
+    if (result?.oj_data) {
+      await this.putEntities('contact', result.oj_data)
+    }
+  }
+
+  async getOfflineContacts(): Promise<Contact[]> {
+    return this.getAll<Contact>('contact')
+  }
+
+  async cacheContainers(executeFnc: any) {
+    const existing = await this.getAll<Container>('container')
+    if (existing.length > 0) {
+      return
+    }
+    const result = await executeFnc('fnc_pos_container', 's', [[1, 'pag', 1]])
+    if (result?.oj_data) {
+      await this.putEntities('container', result.oj_data)
+    }
+  }
+
+  async getOfflineContainers(): Promise<Container[]> {
+    return this.getAll<Container>('container')
+  }
+
+  async clearOfflinePosSessions() {
+    const db = await this.getDB()
+    const tx = db.transaction('pos_session', 'readwrite')
+    await tx.objectStore('pos_session').clear()
+    await tx.done
+  }
+
+  async saveContactOffline(contact: Contact) {
+    const db = await this.getDB()
+    const tx = db.transaction('contact', 'readwrite')
+    await tx.objectStore('contact').put(contact)
+    await tx.done
+  }
+
+  async saveOrderOffline(order: PosOrder) {
+    const db = await this.getDB()
+    const tx = db.transaction('pos_order', 'readwrite')
+    await tx.objectStore('pos_order').put(order)
+    await tx.done
+  }
+
+  /**
+   * Genera y guarda 100 órdenes de prueba usando la estructura exacta proporcionada
+   */
+  async generateTestOrders(count: number = 100, point_id: number, session_id: number) {
+    const orders: PosOrder[] = []
+
+    for (let i = 1; i <= count; i++) {
+      const orderId = crypto.randomUUID()
+      const paymentId = crypto.randomUUID()
+
+      const order: PosOrder = {
+        order_id: orderId,
+        name: '',
+        lines: [
+          {
+            order_id: orderId,
+            position: 1,
+            product_id: 3915,
+            quantity: 8,
+            uom_id: 414,
+            price_unit: 5,
+            notes: null,
+            amount_untaxed: 5,
+            amount_tax: 0,
+            amount_withtaxed: 5,
+            amount_untaxed_total: 40,
+            amount_tax_total: 40,
+            amount_withtaxed_total: 40,
+          },
+        ],
+        state: 'P',
+        order_date: new Date().toISOString(),
+        user_id: 1,
+        point_id: point_id,
+        session_id: session_id,
+        currency_id: 1,
+        company_id: 1,
+        invoice_state: 'P',
+        partner_id: 66135,
+        amount_untaxed: 5,
+        amount_withtaxed: 40,
+        amount_total: 40,
+        action: 'i',
+        lines_change: true,
+        payments_change: true,
+        payments: [
+          {
+            payment_id: paymentId,
+            company_id: 1,
+            state: 'A',
+            session_id: session_id,
+            order_id: orderId,
+            date: new Date().toISOString(),
+            currency_id: 1,
+            amount: 40,
+            payment_method_id: 8,
+            payment_method_name: 'Plin',
+          },
+        ],
+      }
+
+      orders.push(order)
+    }
+
+    const db = await this.getDB()
+    const tx = db.transaction('pos_order', 'readwrite')
+    const store = tx.objectStore('pos_order')
+
+    for (const order of orders) {
+      await store.put(order)
+    }
+
+    await tx.done
+
+    return orders
+  }
+
+  async clearOfflinePosOrders() {
+    const db = await this.getDB()
+    const tx = db.transaction('pos_order', 'readwrite')
+    await tx.objectStore('pos_order').clear()
+    await tx.done
+  }
+  async syncOfflineData(
+    executeFnc: any,
+    point_id: number,
+    setOrderData: any,
+    setSyncLoading?: (loading: boolean) => void
+  ) {
+    // Activar el indicador de sincronización
+    if (setSyncLoading) {
+      setSyncLoading(true)
+    }
+
+    try {
+      const ordersQueue = await this.getSyncOrdersQueue()
+      const orders = await this.getOfflinePosOrders()
+      const sessions = await this.getOfflinePosSessions()
+
+      const syncOrders = [...orders.filter((order) => order.action), ...ordersQueue]
+      const syncSessions = sessions.filter((session: any) => session.action)
+
+      await this.clearOfflinePosOrders()
+
+      // Mapa para trackear sesiones creadas: offline_session_id -> server_session_id
+      const sessionIdMapping = new Map<number, number>()
+
+      // Función utilitaria para procesar en lotes
+      const processBatch = async <T>(
+        items: T[],
+        batchSize: number,
+        processor: (item: T) => Promise<any>,
+        errorHandler: (item: T, error: any) => void
+      ) => {
+        const results = []
+        for (let i = 0; i < items.length; i += batchSize) {
+          const batch = items.slice(i, i + batchSize)
+          const batchPromises = batch.map(async (item) => {
+            try {
+              return await processor(item)
+            } catch (error) {
+              errorHandler(item, error)
+              return null
+            }
+          })
+          const batchResults = await Promise.all(batchPromises)
+          results.push(...batchResults.filter((result) => result !== null))
+        }
+        return results
+      }
+
+      // 3. Crear primero todas las sesiones nuevas en lotes
+      const newSessions = syncSessions.filter((session) => session.action === 'i')
+      if (newSessions.length > 0) {
+        await processBatch(
+          newSessions,
+          5, // Procesar 5 sesiones simultáneamente
+          async (session) => {
+            const { oj_data } = await executeFnc('fnc_pos_session', 'i', { ...session })
+            // Guardar el mapeo del ID offline al ID del servidor
+            if (oj_data && (oj_data.session_id || oj_data.id)) {
+              const serverSessionId = oj_data.session_id || oj_data.id
+              sessionIdMapping.set(session.session_id, serverSessionId)
+            }
+            return oj_data
+          },
+          (session, error) => {
+            console.error('Error creando sesión:', session.session_id, error)
+          }
+        )
+      }
+
+      // 4. Actualizar sesiones existentes en lotes
+      const updateSessions = syncSessions.filter((session) => session.action === 'u')
+      if (updateSessions.length > 0) {
+        await processBatch(
+          updateSessions,
+          5, // Procesar 5 sesiones simultáneamente
+          async (session) => {
+            return await executeFnc('fnc_pos_session', 'u', { ...session })
+          },
+          (session, error) => {
+            console.error('Error actualizando sesión:', session.session_id, error)
+          }
+        )
+      }
+
+      // 5. Procesar las órdenes en lotes
+      if (syncOrders.length > 0) {
+        await processBatch(
+          syncOrders,
+          10, // Procesar 10 órdenes simultáneamente (más órdenes por lote)
+          async (order) => {
+            // Verificar si la orden pertenece a una sesión que acabamos de crear
+            let finalSessionId = order.session_id
+
+            if (sessionIdMapping.has(order.session_id)) {
+              // Usar el ID real de la sesión creada en el servidor
+              finalSessionId = sessionIdMapping.get(order.session_id)!
+            }
+
+            // Crear la orden con el session_id correcto
+            const orderToSync = {
+              ...order,
+              session_id: finalSessionId,
+            }
+
+            return await executeFnc('fnc_pos_order', order.action, orderToSync)
+          },
+          (order, error) => {
+            console.error('Error sincronizando orden:', order.order_id, error)
+          }
+        )
+      }
+
+      // 6. Limpiar la cola de sincronización después del éxito
+      await this.clearOfflinePosOrders()
+      await this.clearOfflinePosSessions()
+      await this.clearSyncOrdersQueue()
+
+      // 7. Recargar órdenes desde backend
+      try {
+        const newOrders = await executeFnc('fnc_pos_order', 's_pos', [
+          ['0', 'fequal', 'point_id', point_id],
+          [
+            '0',
+            'multi_filter_in',
+            [
+              { key_db: 'state', value: 'I' },
+              { key_db: 'state', value: 'Y' },
+            ],
+          ],
+        ])
+        const ordersData = newOrders.oj_data || []
+        setOrderData(ordersData)
+      } catch (error) {
+        console.error('Error recargando órdenes desde el servidor:', error)
+      }
+    } catch (error) {
+      console.error('Error general durante la sincronización:', error)
+    } finally {
+      // Desactivar el indicador de sincronización
+      if (setSyncLoading) {
+        setSyncLoading(false)
+      }
+    }
+  }
+  /**
+   * Devuelve las órdenes y contactos offline que tengan la propiedad 'action' para sincronizar.
+   */
+  async getOfflineDataToSync() {
+    const orders = await this.getOfflinePosOrders()
+    const contacts = await this.getOfflineContacts()
+    const contactsToSync = contacts.filter((contact: any) => contact.action)
+    const ordersToSync = orders.filter((order: any) => order.action)
+    return { orders: ordersToSync, contacts: contactsToSync }
+  }
+
+  // Función utilitaria para descargar una imagen como Blob
+  private async fetchImageAsBlob(url: string): Promise<Blob | null> {
+    try {
+      const response = await fetch(url)
+      if (!response.ok) return null
+      return await response.blob()
+    } catch {
+      return null
+    }
+  }
+
+  private async saveProductImage(product_id: number, imageBlob: Blob) {
+    const db = await this.getDB()
+    const tx = db.transaction('product_images', 'readwrite')
+    await tx.objectStore('product_images').put({ product_id, image: imageBlob })
+    await tx.done
+  }
+
+  // Obtener la imagen de un producto offline
+  async getProductImage(product_id: number): Promise<Blob | undefined> {
+    const db = await this.getDB()
+    const tx = db.transaction('product_images', 'readonly')
+    const record = await tx.objectStore('product_images').get(product_id)
+    return record?.image
+  }
+
+  // Guardar imagen de método de pago
+  private async savePaymentMethodImage(payment_method_id: number, imageBlob: Blob) {
+    const db = await this.getDB()
+    const tx = db.transaction('payment_method_images', 'readwrite')
+    await tx.objectStore('payment_method_images').put({ payment_method_id, image: imageBlob })
+    await tx.done
+  }
+
+  // Obtener imagen de método de pago offline
+  async getPaymentMethodImage(payment_method_id: number): Promise<Blob | undefined> {
+    const db = await this.getDB()
+    const tx = db.transaction('payment_method_images', 'readonly')
+    const record = await tx.objectStore('payment_method_images').get(payment_method_id)
+    return record?.image
+  }
 }
+
+// Instancia singleton para uso global
+export const offlineCache = new OfflineCache()

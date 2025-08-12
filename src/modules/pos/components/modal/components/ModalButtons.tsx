@@ -1,4 +1,8 @@
 import useAppStore from '@/store/app/appStore'
+import { FaArrowRightArrowLeft } from 'react-icons/fa6'
+import { LiaCashRegisterSolid } from 'react-icons/lia'
+import { LuRefreshCw } from 'react-icons/lu'
+import { AiOutlineHome } from 'react-icons/ai'
 
 const ModalButtons = ({
   handleCashInAndOut,
@@ -21,9 +25,17 @@ const ModalButtons = ({
           handleCashInAndOut()
           closeDialog()
         }}
-        className="flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 p-6 rounded-lg text-gray-700 font-medium text-center"
+        className="btn-style-1 flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 p-6 rounded-lg text-gray-700 font-medium text-center"
       >
-        Entrada/salida de efectivo
+        <div>
+          <div className="c-img">
+            <FaArrowRightArrowLeft
+              style={{ fontSize: '40px' }}
+              className="text-gray-500 hover:text-gray-700"
+            />
+          </div>
+          <div className="c-text">Entrada/salida de efectivo</div>
+        </div>
       </button>
 
       <button
@@ -31,9 +43,17 @@ const ModalButtons = ({
           handleCloseCashRegister()
           closeDialog()
         }}
-        className="flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 p-6 rounded-lg text-gray-700 font-medium text-center"
+        className="btn-style-1 flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 p-6 rounded-lg text-gray-700 font-medium text-center"
       >
-        Cerrar caja registradora
+        <div>
+          <div className="c-img">
+            <LiaCashRegisterSolid
+              style={{ fontSize: '50px' }}
+              className="text-gray-500 hover:text-gray-700"
+            />
+          </div>
+          <div className="c-text">Cerrar caja registradora</div>
+        </div>
       </button>
 
       <button
@@ -41,15 +61,31 @@ const ModalButtons = ({
           await forceReloadPosData(pointId || '')
           closeDialog()
         }}
-        className="flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 p-6 rounded-lg text-gray-700 font-medium text-center"
+        className="btn-style-1 flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 p-6 rounded-lg text-gray-700 font-medium text-center"
       >
-        Volver a cargar datos
+        <div>
+          <div className="c-img">
+            <LuRefreshCw
+              style={{ fontSize: '40px' }}
+              className="text-gray-500 hover:text-gray-700"
+            />
+          </div>
+          <div className="c-text">Volver a cargar datos</div>
+        </div>
       </button>
       <button
         onClick={returnToMain}
-        className="flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 p-6 rounded-lg text-gray-700 font-medium text-center"
+        className="btn-style-1 flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 p-6 rounded-lg text-gray-700 font-medium text-center"
       >
-        Regresar a la ventana principal
+        <div>
+          <div className="c-img">
+            <AiOutlineHome
+              style={{ fontSize: '40px' }}
+              className="text-gray-500 hover:text-gray-700"
+            />
+          </div>
+          <div className="c-text">Regresar a la ventana principal</div>
+        </div>
       </button>
     </div>
   )

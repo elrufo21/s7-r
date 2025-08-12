@@ -14,6 +14,7 @@ interface PosOrderData {
   copied_id: number
   parent_id: number
   state: string
+  state_description: string
   creation_user: string
   creation_date: Date
   modification_user: string
@@ -39,6 +40,7 @@ interface PosOrderData {
   user_name?: string
   amount_withtaxed_currency?: string
   invoice_state?: string
+  invoice_state_description?: string
 }
 
 const PosOrderConfig: FormConfig = {
@@ -154,15 +156,51 @@ const PosOrderConfig: FormConfig = {
             </div>
           ),
         },
+
+        // {
+        //   header: 'Estado',
+        //   size: 100,
+        //   cell: ({ row }: { row: Row<PosOrderData> }) => <div>{row.original.state}</div>,
+        // },
+
         {
           header: 'Estado',
-          size: 100,
-          cell: ({ row }: { row: Row<PosOrderData> }) => <div>{row.original.state}</div>,
+          size: 90,
+          cell: ({ row }: { row: Row<PosOrderData> }) => {
+            const state = row.original.state
+            const defineClass = (state: string) => {
+              if (state === 'I') return 'text-bg-danger'
+              if (state === 'Y') return 'text-bg-warning'
+              if (state === 'P') return 'text-bg-success'
+              if (state === 'R') return 'text-bg-success'
+              if (state === 'C') return 'text-bg-success'
+              if (state === 'E') return 'text-bg-success'
+              return ''
+            }
+            return (
+              <div className={`chip_demo ${defineClass(state)}`}>
+                {row.original.state_description}
+              </div>
+            )
+          },
         },
+
         {
           header: 'Estado de la factura',
-          size: 100,
-          cell: ({ row }: { row: Row<PosOrderData> }) => <div>{row.original.invoice_state}</div>,
+          size: 90,
+          cell: ({ row }: { row: Row<PosOrderData> }) => {
+            const invoice_state = row.original.invoice_state
+            const defineClass = (state: string) => {
+              if (state === 'P') return 'text-bg-info'
+              if (state === 'B') return 'text-bg-success'
+              return ''
+            }
+            return (
+              <div className={`chip_demo ${defineClass(invoice_state)}`}>
+                {row.original.invoice_state_description}
+              </div>
+            )
+          },
         },
       ],
     },

@@ -1,7 +1,7 @@
 // import { HiOutlineBackspace } from 'react-icons/hi'
 import { HiOutlineBackspace } from 'react-icons/hi2'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import React from 'react'
 import useAppStore from '@/store/app/appStore'
 import useUserStore from '@/store/persist/persistStore'
@@ -11,6 +11,9 @@ import { FrmBaseDialog } from '@/shared/components/core'
 import clientConfig from '@/modules/contacts/views/contact-index/config'
 import contactsConfig from '../views/contact-index/config'
 import { CustomHeader } from './CustomHeader'
+import { offlineCache } from '@/lib/offlineCache'
+import { usePWA } from '@/hooks/usePWA'
+import { TypeStateOrder } from '../types'
 
 // Definición de la interfaz para los pagos
 interface PaymentItem {
@@ -26,9 +29,55 @@ interface PaymentItem {
   currency_id: number
 }
 
+const PaymentMethodCard = ({
+  method,
+  onClick,
+}: {
+  method: { payment_method_id: number; name: string; files?: { publicUrl: string }[] }
+  onClick: (method: string, payment_method_id: number) => void
+}) => {
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    let url: string | null = null
+    let isMounted = true
+
+    async function loadImage() {
+      const blob = await offlineCache.getPaymentMethodImage(method.payment_method_id)
+      if (blob && isMounted) {
+        url = URL.createObjectURL(blob)
+        setImageUrl(url)
+      } else if (isMounted) {
+        setImageUrl(method?.files?.[0]?.publicUrl || null)
+      }
+    }
+
+    loadImage()
+
+    return () => {
+      isMounted = false
+      if (url) URL.revokeObjectURL(url)
+    }
+  }, [method.payment_method_id, method?.files])
+
+  return (
+    <div key={method.payment_method_id} className="btn2 btn2-white fs-3 lh-lg">
+      <div
+        className="flex items-center gap-2 text-left cursor-pointer"
+        onClick={() => onClick(method.name, method.payment_method_id)}
+      >
+        <div className="c_imageEx_50 self-center">
+          {imageUrl && <img src={imageUrl} alt={method.name} width={200} height={200} />}
+        </div>
+        <span className="payment-name">{method.name}</span>
+      </div>
+    </div>
+  )
+}
+
 const Payment = () => {
   const { pointId } = useParams()
-
+  const { isOnline } = usePWA()
   const sessions = JSON.parse(localStorage.getItem('sessions') ?? '[]')
   const { session_id } = sessions.find((s: any) => s.point_id === Number(pointId))
   const {
@@ -66,14 +115,12 @@ const Payment = () => {
     return payments.reduce((sum, payment) => sum + payment.amount, 0)
   }
 
-  // Calcula el cambio (si se pagó en exceso)
   const getChange = () => {
     const total = getTotalPriceByOrder(selectedOrder)
     const paid = getTotalPaid()
     return Math.max(0, paid - total)
   }
 
-  // Calcula el monto restante por pagar
   const getRemainingAmount = () => {
     const total = getTotalPriceByOrder(selectedOrder)
     const paid = getTotalPaid()
@@ -83,7 +130,10 @@ const Payment = () => {
   const handlePaymentMethodClick = (method: string, payment_method_id: number) => {
     setFrmIsChanged(true)
     const id = crypto.randomUUID()
-    const remaining = getRemainingAmount()
+
+    const orderTotal = getTotalPriceByOrder(selectedOrder)
+    const totalPaid = getTotalPaid()
+    const remaining = orderTotal < 0 ? orderTotal - totalPaid : getRemainingAmount()
 
     const newPayment: PaymentItem = {
       payment_id: id,
@@ -100,7 +150,7 @@ const Payment = () => {
 
     addPaymentToOrder(selectedOrder, newPayment)
     setSelectedPaymentId(id)
-    setInputAmount(remaining.toFixed(2))
+    setInputAmount(Math.abs(remaining).toFixed(2))
     setIsFirstDigit(true)
     setHandleChange(true)
   }
@@ -186,7 +236,7 @@ const Payment = () => {
     const updatedData = {
       ...data,
       name: data.name,
-      state: 'P',
+      state: getRemainingAmount() > 0 ? TypeStateOrder.PENDING_PAYMENT : TypeStateOrder.PAID,
       order_date: data.order_date || new Date(),
       user_id: userData?.user_id,
       session_id: typeof data.order_id === 'string' ? session_id : undefined,
@@ -209,6 +259,10 @@ const Payment = () => {
         amount_untaxed_total: item?.price_unit * item?.quantity,
         amount_tax_total: item?.price_unit * item?.quantity,
         amount_withtaxed_total: item?.price_unit * item?.quantity,
+        tara_value: item?.tara_value,
+        tara_quantity: item?.tara_quantity,
+        base_quantity: item?.base_quantity,
+        tara_total: item?.tara_total,
       })),
       order_id: selectedOrder,
       payments: newPayments,
@@ -220,6 +274,18 @@ const Payment = () => {
           0
         ) || 0,
       amount_total: getTotalPriceByOrder(selectedOrder),
+    }
+    if (!isOnline) {
+      await offlineCache.saveOrderOffline({
+        ...updatedData,
+        action: 'i',
+      })
+      const orders = await offlineCache.getOfflinePosOrders()
+      setOrderData(orders)
+      setFrmIsChanged(true)
+
+      setScreen('invoice')
+      return
     }
     const { oj_data } = await executeFnc(
       'fnc_pos_order',
@@ -386,6 +452,28 @@ const Payment = () => {
     })
   }
 
+  const handleSymbolsClick = () => {
+    if (!selectedOrder || !selectedPaymentId) return
+
+    // Encontrar el pago seleccionado en la orden actual
+    const currentPayment = payments.find((p) => p.payment_id === selectedPaymentId)
+    if (!currentPayment) return
+
+    // Cambiar el signo del monto
+    const newAmount = currentPayment.amount * -1
+
+    // Actualizar el pago con el nuevo monto
+    const updatedPayment = {
+      ...currentPayment,
+      amount: newAmount,
+    }
+
+    updatePaymentInOrder(selectedOrder, updatedPayment)
+
+    // Actualizar el input para mostrar el nuevo valor
+    setInputAmount(Math.abs(newAmount).toString())
+  }
+
   return (
     <>
       <div className="product-screen">
@@ -394,29 +482,11 @@ const Payment = () => {
             {/* <div className="paymentmethods-container mb-3 flex-grow-1"> */}
             <div className="payment-methods flex flex-col gap-2">
               {paymentMethods.map((method) => (
-                <div
+                <PaymentMethodCard
                   key={method.payment_method_id}
-                  // className="button paymentmethod btn btn-secondary btn-lg flex-fill"
-                  className="btn2 btn2-white fs-3 lh-lg"
-                >
-                  <div
-                    // className="payment-method-display flex items-center gap-2 text-left cursor-pointer"
-                    className="flex items-center gap-2 text-left cursor-pointer"
-                    onClick={() => handlePaymentMethodClick(method.name, method.payment_method_id)}
-                  >
-                    <div className="c_imageEx_50 self-center">
-                      {method?.files?.[0]?.publicUrl && (
-                        <img
-                          src={method?.files?.[0]?.publicUrl}
-                          alt={method.name}
-                          width={200}
-                          height={200}
-                        />
-                      )}
-                    </div>
-                    <span className="payment-name">{method.name}</span>
-                  </div>
-                </div>
+                  method={method}
+                  onClick={handlePaymentMethodClick}
+                />
               ))}
             </div>
             {/* </div> */}
@@ -563,7 +633,9 @@ const Payment = () => {
 
                   <button
                     className="numpad-button btn2 btn2-white fs-3 lh-lg o_colorlist_item_numpad_color_3"
-                    onClick={() => handleNumpadClick('+/-')}
+                    onClick={() => {
+                      handleSymbolsClick()
+                    }}
                   >
                     +/-
                   </button>
@@ -606,7 +678,6 @@ const Payment = () => {
                     // className="btn btn-primary btn-lg flex-grow py-4 bg-purple-700"
                     className="btn btn-primary btn-lg flex-auto min-h-[70px] bg-purple-700"
                     onClick={() => handleValidatePayment()}
-                    disabled={getRemainingAmount() > 0}
                   >
                     Validar
                   </button>

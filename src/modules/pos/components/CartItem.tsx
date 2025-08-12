@@ -31,8 +31,9 @@ export default function CartItem({
           {/* <div className="font-medium text-gray-900">{item.name}</div> */}
           <div className="text-gray-900">{item.name}</div>
           {/* <div className="text-gray-500 text-sm">- Verde, L</div> */}
+          <div>{`S/ ${item.price_unit}`}</div>
           <div>
-            {`S/ ${item.price_unit ? Number.parseFloat(item.price_unit).toFixed(maxDecimals) : '0.00'} x ${item.uom_name}`}
+            {`TARA: ${item.tara_value ? item.tara_value : '0.00'} x ${item.tara_quantity || 0}`}
           </div>
         </div>
       </div>

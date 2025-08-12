@@ -78,6 +78,7 @@ export const KanbanView = ({ config }: KanbanViewProps) => {
                           const targetSession = {
                             session_id: item.session_id ?? null,
                             point_id: item.point_id,
+                            session_name: item.name,
                           }
                           const idx = sessions.findIndex((s: any) => s.point_id === item.point_id)
                           const nextSessions =
@@ -102,6 +103,7 @@ export const KanbanView = ({ config }: KanbanViewProps) => {
                           const targetSession = {
                             session_id: null,
                             point_id: item.point_id,
+                            session_name: item.name,
                           }
 
                           const idx = sessions.findIndex((s: any) => s.point_id === item.point_id)

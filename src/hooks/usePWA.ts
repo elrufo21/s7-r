@@ -1,4 +1,3 @@
-// src/hooks/usePWA.ts
 import { useState, useEffect } from 'react'
 
 export const usePWA = () => {
@@ -7,7 +6,6 @@ export const usePWA = () => {
   const [showInstallPrompt, setShowInstallPrompt] = useState(false)
 
   useEffect(() => {
-    // Detectar cambios de conexión
     const handleOnline = () => setIsOnline(true)
     const handleOffline = () => setIsOnline(false)
 

@@ -1,8 +1,8 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useMemo } from 'react'
 import { MdAddCircleOutline } from 'react-icons/md'
 // import { WiCloudUp } from 'react-icons/wi'
 // import { IoMdArrowDropdown } from 'react-icons/io'
-import { FaBarcode } from 'react-icons/fa'
+// import { FaBarcode } from 'react-icons/fa'
 import useAppStore from '@/store/app/appStore'
 import { useNavigate } from 'react-router-dom'
 import PosCloseCashConfig from '../views/modal-close-cash-register/config'
@@ -12,6 +12,8 @@ import { CustomHeaderCashInAndOut } from '../views/modal-cash-in-and-out/compone
 import { ViewTypeEnum } from '@/shared/shared.types'
 import ModalButtons from './modal/components/ModalButtons'
 import { usePosActions } from '../hooks/usePosActions'
+import { offlineCache } from '@/lib/offlineCache'
+import { usePWA } from '@/hooks/usePWA'
 
 export default function Header({ pointId }: { pointId: string }) {
   const {
@@ -33,6 +35,7 @@ export default function Header({ pointId }: { pointId: string }) {
   } = useAppStore()
 
   const { saveCurrentOrder } = usePosActions()
+  const { isOnline } = usePWA()
 
   const { state } = JSON.parse(localStorage.getItem('session-store') ?? '{}')
   const { userData } = state
@@ -113,19 +116,35 @@ export default function Header({ pointId }: { pointId: string }) {
           text: 'Cerrar caja registradora',
           type: 'confirm',
           onClick: async () => {
-            const rs = await executeFnc('fnc_pos_session', 'u', {
+            const data = {
               session_id: session_id,
               state: 'R',
               stop_at: new Date(),
               final_cash: 0,
               closing_note: '',
-            })
+            }
+            if (!isOnline) {
+              const sessions = await offlineCache.getOfflinePosSessions()
+              const session = sessions.find((s: any) => s.point_id === pointId)
+              await offlineCache.updatePosSessionOffline({
+                ...data,
+                action: session?.action === 'i' ? 'i' : 'u',
+              })
+            } else {
+              await executeFnc('fnc_pos_session', 'u', data)
+            }
+            const posPoints = await offlineCache.getOfflinePosPoints()
+            const posPoint = posPoints.find((p: any) => p.point_id === Number(pointId))
+            if (posPoint) {
+              posPoint.session_id = null
+              await offlineCache.updatePosPointOffline(posPoint)
+            }
             const currentData = JSON.parse(localStorage.getItem('sessions') ?? '[]')
             const newSessions = currentData.map((s: any) =>
               s.point_id === Number(pointId) ? { ...s, session_id: null } : s
             )
             localStorage.setItem('sessions', JSON.stringify(newSessions))
-            closeDialogWithData(dialogId, rs)
+            closeDialogWithData(dialogId, {})
             navigate('/points-of-sale')
           },
         },
@@ -149,15 +168,15 @@ export default function Header({ pointId }: { pointId: string }) {
     },
     [setScreen, saveCurrentOrder, setSelectedNavbarMenu, setSelectedOrder]
   )
-
+  const orderFiltered = useMemo(() => {
+    return orderData.filter((order) => order.state !== 'P')
+  }, [orderData])
   return (
     <header className="pos-header">
       <div className="pos-header-left">
         <div className="navbar-menu">
           <button
             // className="btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] active"
-            // onClick={() => setScreen('products')}
-
             className={`btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] ${
               selectedNavbarMenu === 'R' ? 'active' : ''
             }`}
@@ -199,6 +218,8 @@ export default function Header({ pointId }: { pointId: string }) {
                 company_id: userData?.company_id,
                 partner_id: finalCustomer?.partner_id,
               })
+              setSelectedNavbarMenu('R')
+              setScreen('products')
             }}
           >
             <MdAddCircleOutline style={{ fontSize: '24px' }} />
@@ -225,12 +246,12 @@ export default function Header({ pointId }: { pointId: string }) {
           */}
 
           <div className="pos-orders">
-            {orderData?.map((order, index) => (
+            {orderFiltered?.map((order, index) => (
               <button
                 key={order?.order_id}
                 className={`btn2 btn2-secondary btn2-lg lh-lg w-auto min-h-[48px] ${selectedOrder === order.order_id ? 'btn2-light active' : ''} `}
                 onClick={() => {
-                  if (selectedOrder !== order.order_id) {
+                  if (selectedOrder !== order.order_id || screen === 'ticket') {
                     setSelectedItem(null)
                     fnc_change_order(order.order_id)
                   }
@@ -299,12 +320,15 @@ export default function Header({ pointId }: { pointId: string }) {
             </button>
           )}
         </div>
+
+        {/* 
         <button
           className="btn2 btn2-light lh-lg w-auto min-h-[48px]"
           // style={{ paddingLeft: '2px', paddingRight: '2px' }}
         >
           <FaBarcode style={{ fontSize: '24px' }} />
         </button>
+        */}
 
         {/* 
         <div className="ml-4 bg-teal-500 text-white rounded-full h-8 w-8 flex items-center justify-center">

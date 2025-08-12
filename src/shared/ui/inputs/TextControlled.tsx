@@ -1,6 +1,7 @@
 import { TextField } from '@mui/material'
 import { Controller } from 'react-hook-form'
-import { FocusEvent } from 'react'
+import { FocusEvent, useRef, useState, useEffect } from 'react'
+//import useAppStore from '@/store/app/appStore'
 
 interface TextControlledProps {
   name: string
@@ -38,11 +39,37 @@ export const TextControlled = ({
   navigateLink,
   handleChange,
 }: TextControlledProps) => {
+  /*const { setVKeyboardOpen, setFocusedInputRef, setFocusedFieldOnChange } = useAppStore(
+    (state) => state
+  )*/
   const { config } = editConfig
+  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
+  const [showKeyboard, setShowKeyboard] = useState(false)
+  const [keyboardHover /*, setKeyboardHover*/] = useState(false)
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
   const handleBlur = (e: FocusEvent<HTMLTextAreaElement | HTMLInputElement, Element>) => {
     if (handleOnChanged) handleOnChanged(e.target.value)
+    setTimeout(() => {
+      if (!keyboardHover) setShowKeyboard(false)
+    }, 100)
   }
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setShowKeyboard(false)
+      }
+    }
+    if (showKeyboard) {
+      document.addEventListener('mousedown', handleClickOutside)
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showKeyboard])
 
   return (
     <Controller
@@ -52,7 +79,7 @@ export const TextControlled = ({
       render={({ field }) => {
         if (config?.[name]?.isEdit) {
           return (
-            <div className={`DivEx  ${className}`}>
+            <div className={`DivEx ${className}`}>
               {field.value ? (
                 <span
                   onClick={() => {
@@ -60,7 +87,9 @@ export const TextControlled = ({
                       navigateLink()
                     }
                   }}
-                  className={`${typeof navigateLink === 'function' ? 'cursor-pointer text-teal-600' : ''}`}
+                  className={`${
+                    typeof navigateLink === 'function' ? 'cursor-pointer text-teal-600' : ''
+                  }`}
                 >
                   {field.value}
                 </span>
@@ -72,35 +101,47 @@ export const TextControlled = ({
         }
 
         return (
-          <TextField
-            {...field}
-            placeholder={placeholder}
-            type={type ?? 'text'}
-            variant="standard"
-            inputRef={field.ref}
-            multiline={multiline}
-            //rows={multilineRows ? multilineRows : 1}
-            disabled={disabled ?? false}
-            value={field.value ? field.value : ''}
-            inputProps={{ style }}
-            //readOnly={readOnly}
-            InputLabelProps={{ shrink }}
-            // className={`${className ? className : "InputEx w-full"}`}
-            //className={`InputEx w-full  + className`}
-            className={`InputEx w-full ${multiline ? 'h-auto' : ''} ${className}`}
-            error={errors[name] ? true : false}
-            helperText={errors[name] && errors[name]?.message}
-            onChange={(e) => {
-              field.onChange(e)
-              handleChange?.(e.target.value)
-            }}
-            onBlur={handleBlur}
-            onClick={() => {
-              navigateLink?.()
-            }}
-          />
+          <div ref={containerRef} style={{ position: 'relative' }}>
+            <TextField
+              {...field}
+              placeholder={placeholder}
+              type={type ?? 'text'}
+              variant="standard"
+              inputRef={(el) => {
+                field.ref(el)
+                inputRef.current = el
+              }}
+              multiline={multiline}
+              disabled={disabled ?? false}
+              value={field.value ?? ''}
+              inputProps={{ style }}
+              InputLabelProps={{ shrink }}
+              className={`InputEx w-full ${multiline ? 'h-auto' : ''} ${className}`}
+              error={!!errors[name]}
+              helperText={errors[name]?.message}
+              onChange={(e) => {
+                field.onChange(e)
+                handleChange?.(e.target.value)
+              }}
+              onBlur={handleBlur}
+              onClick={() => {
+                // Guardar ref en store y abrir teclado
+                // setFocusedInputRef(inputRef)
+                //setFocusedFieldOnChange(field.onChange)
+                //setShowKeyboard(true)
+                //setVKeyboardOpen(true)
+              }}
+              onFocus={() => {
+                // Guardar ref en store y abrir teclado
+                //   setFocusedInputRef(inputRef)
+                // setFocusedFieldOnChange(field.onChange)
+                // setShowKeyboard(true)
+                //setVKeyboardOpen(true)
+              }}
+            />
+          </div>
         )
       }}
-    ></Controller>
+    />
   )
 }
