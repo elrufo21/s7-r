@@ -6,7 +6,21 @@ const createPos = (
   set: SetState<PointsOfSaleSliceState>,
   get: () => AppStoreProps
 ): PointsOfSaleSliceState => ({
+  isWeightMode: true,
+  setIsWeightMode: (isWeightMode) => set({ isWeightMode }),
   containers: [],
+  bluetooth_config: {
+    service_Uuid: '6e400001-b5a3-f393-e0a9-e50e24dcca9e',
+    character_Uuid: '6e400003-b5a3-f393-e0a9-e50e24dcca9e',
+    device_name: 'BalanzaESP32',
+  },
+  device: null,
+  setDevice: (device) => set({ device }),
+  connected: false,
+  setConnected: (connected) => set({ connected }),
+  weightValue: 0,
+  setWeightValue: (weightValue) => set({ weightValue }),
+  setBluetoothConfig: (bluetooth_config) => set({ bluetooth_config }),
   setContainers: (containers) => set({ containers }),
   orderSelected: null,
   setOrderSelected: (orderSelected: { order_id: string; state: string } | null) =>
@@ -63,6 +77,17 @@ const createPos = (
   setDisplayValue: (displayValue) => set({ displayValue }),
   clearOnNextDigit: false,
   setClearOnNextDigit: (clearOnNextDigit) => set({ clearOnNextDigit }),
+
+  getProductPrice: (product_id, selectedOrder) => {
+    const order = get().orderData.find((o) => o.order_id === selectedOrder)
+    if (!order) return 0
+
+    const product = order.lines.find((p) => p.product_id === product_id)
+    if (product) {
+      return Number((product.price_unit * product.quantity).toFixed(2)) || 0
+    }
+    return 0
+  },
 
   addPaymentToOrder: (order_id, payment) => {
     set((state) => {
@@ -194,23 +219,29 @@ const createPos = (
             },
           ]
         } else {
-          // Ya existe => actualizar cantidad base
-          updatedLines = order.lines.map((p: any) => {
-            if (p.product_id === product.product_id) {
-              const newBaseQuantity = (p.base_quantity || p.quantity || 0) + added_quantity
-              const effectiveQuantity = get().calculateEffectiveQuantity(
-                newBaseQuantity,
-                p.tara_value || 0,
-                p.tara_quantity || 0
-              )
-              return {
-                ...p,
-                base_quantity: newBaseQuantity,
-                quantity: effectiveQuantity,
+          // Producto ya existe
+          if (get().isWeightMode) {
+            // En modo peso: solo seleccionar, no agregar cantidad
+            updatedLines = order.lines
+          } else {
+            // En modo normal: agregar cantidad
+            updatedLines = order.lines.map((p: any) => {
+              if (p.product_id === product.product_id) {
+                const newBaseQuantity = (p.base_quantity || p.quantity || 0) + added_quantity
+                const effectiveQuantity = get().calculateEffectiveQuantity(
+                  newBaseQuantity,
+                  p.tara_value || 0,
+                  p.tara_quantity || 0
+                )
+                return {
+                  ...p,
+                  base_quantity: newBaseQuantity,
+                  quantity: effectiveQuantity,
+                }
               }
-            }
-            return p
-          })
+              return p
+            })
+          }
         }
 
         return {

@@ -4,7 +4,7 @@ interface file {
 }
 export interface Product {
   product_template_id: string
-  product_id: string
+  product_id: string | null
   name: string
   size: string
   price: number

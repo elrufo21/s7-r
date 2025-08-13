@@ -342,7 +342,22 @@ interface Product {
   uom_name?: string
   uom_id?: string
 }
+export interface BluetoothConfig {
+  service_Uuid: string
+  character_Uuid: string
+  device_name: string
+}
 export interface PointsOfSaleSliceState {
+  isWeightMode: boolean
+  setIsWeightMode: (isWeightMode: boolean) => void
+  bluetooth_config: BluetoothConfig
+  setBluetoothConfig: (bluetooth_config: BluetoothConfig) => void
+  device: any
+  setDevice: (device: any) => void
+  connected: boolean
+  setConnected: (connected: boolean) => void
+  weightValue: number
+  setWeightValue: (weightValue: number) => void
   containers: any[]
   setContainers: (containers: any[]) => void
   orderSelected: { order_id: string; state: string } | null
@@ -477,6 +492,7 @@ export interface PointsOfSaleSliceState {
     taraQuantity: number
   ) => number
   calculateTaraTotal: (taraValue: number, taraQuantity: number) => number
+  getProductPrice: (product_id: string, selectedOrder: string) => number
 }
 
 export interface VKeyboardSliceState {

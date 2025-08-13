@@ -1,6 +1,7 @@
 import useAppStore from '@/store/app/appStore'
 import { Divider } from '@mui/material'
 import { useEffect, useState } from 'react'
+import { useBluetoothWeight } from '@/shared/hooks/useBluetooth'
 import { Operation } from '../context/CalculatorContext'
 
 const TaraOptions = () => {
@@ -16,11 +17,14 @@ const TaraOptions = () => {
     setOperation,
     operation,
     containers,
+    getProductPrice,
+    weightValue,
   } = useAppStore()
-  const [balance, setBalance] = useState(0.0)
+  // const [balance, setBalance] = useState(0.0)
   const [isManualMode, setIsManualMode] = useState(false)
   const [isQuantityMode, setIsQuantityMode] = useState(false)
-  const [capture, setCapture] = useState(false)
+  //const [capture, setCapture] = useState(false)
+  const { connectToDevice, connected } = useBluetoothWeight()
 
   useEffect(() => {
     if (operation === Operation.QUANTITY || operation === Operation.PRICE) {
@@ -31,7 +35,7 @@ const TaraOptions = () => {
   useEffect(() => {
     setIsManualMode(false)
     setOperation(Operation.QUANTITY)
-    setCapture(false)
+    //  setCapture(false)
 
     // Verificar si el producto seleccionado tiene tara peso pero no tara cantidad
     if (selectedItem && selectedOrder) {
@@ -44,7 +48,7 @@ const TaraOptions = () => {
       }
     }
   }, [selectedItem])
-  useEffect(() => {
+  /* useEffect(() => {
     if (!capture) {
       const interval = setInterval(() => {
         const nuevoPeso = Math.random() * 10
@@ -53,7 +57,7 @@ const TaraOptions = () => {
       return () => clearInterval(interval)
     }
   }, [capture]) // <--- importante
-
+*/
   const handleTaraSelect = (weight: number) => {
     setIsManualMode(false)
     // Establecer el valor de tara peso
@@ -165,7 +169,7 @@ const TaraOptions = () => {
                 lineHeight: '1.1',
               }}
             >
-              {balance.toFixed(2)}
+              {weightValue.toFixed(2)}
             </div>
             <Divider component="div" style={{ height: '2px', backgroundColor: '#60a5fa' }} />
             <div
@@ -176,13 +180,27 @@ const TaraOptions = () => {
                 fontWeight: '600',
               }}
             >
-              S/ 0.00
+              S/ {getProductPrice(selectedItem || '', selectedOrder || '').toFixed(2)}
             </div>
           </div>
         </div>
       </div>
 
       <div className="d-flex flex-column gap-2" style={{ minWidth: '120px' }}>
+        <button
+          className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white"
+          style={{
+            backgroundColor: connected ? '#059669' : '#10b981',
+            borderColor: connected ? '#059669' : '#10b981',
+            flex: '1',
+            height: '48px',
+            fontSize: '13px',
+          }}
+          onClick={() => connectToDevice()}
+          disabled={connected}
+        >
+          <span>{connected ? 'CONECTADO' : 'CONECTAR BALANZA'}</span>
+        </button>
         <button
           className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white"
           style={{
@@ -193,8 +211,8 @@ const TaraOptions = () => {
             fontSize: '13px',
           }}
           onClick={() => {
-            setCapture(true)
-            setProductQuantityInOrder(selectedOrder, selectedItem || 0, balance)
+            //   setCapture(true)
+            setProductQuantityInOrder(selectedOrder, selectedItem || 0, weightValue || 0)
 
             // Verificar si no hay tara cantidad y establecer 1 por defecto
             const currentTaraQuantity = getProductTaraQuantity(selectedOrder, selectedItem || 0)

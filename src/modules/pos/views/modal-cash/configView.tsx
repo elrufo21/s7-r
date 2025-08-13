@@ -1,4 +1,5 @@
 import FormRow from '@/shared/components/form/base/FormRow'
+import { frmElementsProps } from '@/shared/shared.types'
 import React, { useState } from 'react'
 
 // Componente contador con denominación
@@ -46,54 +47,25 @@ function CashCounter({ denomination = 200 }: { denomination?: number }) {
   )
 }
 
-export function FrmMiddle() {
+export function FrmMiddle({ watch }: frmElementsProps) {
   return (
     <div className="w-[300px]">
-      <FormRow label="">
-        <CashCounter denomination={200} />
-      </FormRow>
-      <FormRow label="">
-        <CashCounter denomination={100} />
-      </FormRow>
-      <FormRow label="">
-        <CashCounter denomination={50} />
-      </FormRow>
-      <FormRow label="">
-        <CashCounter denomination={20} />
-      </FormRow>
-      <FormRow label="">
-        <CashCounter denomination={10} />
-      </FormRow>
-      <FormRow label="">
-        <CashCounter denomination={5} />
-      </FormRow>
-      <FormRow label="">
-        <CashCounter denomination={2} />
-      </FormRow>
+      {watch('row1').map((item: any) => (
+        <FormRow label="">
+          <CashCounter denomination={item.value} />
+        </FormRow>
+      ))}
     </div>
   )
 }
-export function FrmMiddleRight() {
+export function FrmMiddleRight({ watch }: frmElementsProps) {
   return (
     <div className="w-[500px]">
-      <FormRow label="">
-        <CashCounter denomination={1} />
-      </FormRow>
-      <FormRow label="">
-        <CashCounter denomination={0.5} />
-      </FormRow>
-      <FormRow label="">
-        <CashCounter denomination={0.25} />
-      </FormRow>
-      <FormRow label="">
-        <CashCounter denomination={0.2} />
-      </FormRow>
-      <FormRow label="">
-        <CashCounter denomination={0.1} />
-      </FormRow>
-      <FormRow label="">
-        <CashCounter denomination={0.05} />
-      </FormRow>
+      {watch('row2').map((item: any) => (
+        <FormRow label="">
+          <CashCounter denomination={item.value} />
+        </FormRow>
+      ))}
     </div>
   )
 }
