@@ -1,0 +1,13 @@
+#root {
+  direction: ltr;
+  position: relative;
+  background-color: #f9fafb;
+  color-scheme: bright;
+  height: 100%;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: column nowrap;
+  flex-flow: column nowrap;
+  overflow: hidden;
+}

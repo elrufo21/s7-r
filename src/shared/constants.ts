@@ -1,0 +1,30 @@
+export const modalAction = {
+  CREATE_COMPANY: 'create_company',
+}
+
+export const listTagColors = [
+  'RGBA(255, 155.5, 155.5, 1 )',
+  'RGBA(247.0375, 198.06116071, 152.4625, 1 )',
+  'RGBA(252.88960843, 226.89175248, 135.61039157, 1 )',
+  'RGBA(187.45210396, 215.03675558, 248.04789604, 1 )',
+  'RGBA(216.79194664, 167.70805336, 203.91748283, 1 )',
+  'RGBA(247.84539474, 213.9484835, 199.65460526, 1 )',
+  'RGBA(136.6125, 224.8875, 218.94591346, 1 )',
+  'RGBA(136.6125, 224.8875, 218.94591346, 1 )',
+  'RGBA(150.60535714, 165.68382711, 248.89464286, 1 )',
+  'RGBA(254.94583333, 157.55416667, 203.95543194, 1 )',
+  'RGBA(182.62075688, 236.87924312, 189.81831118, 1 )',
+  'RGBA(230.11575613, 219.41069277, 252.08930723, 1 )',
+]
+export const ModalType = {
+  CONTACT: 'contact',
+}
+
+export const buttonText = {
+  SAVE_AND_CLOSE: 'Guardar y cerrar',
+  SAVE_AND_CREATE: 'Guardar y crear uno',
+  SAVE: 'Guardar',
+  CLOSE: 'Cerrar',
+  DISCARD: 'Descartar',
+  DELETE: 'Eliminar',
+}
