@@ -1,5 +1,6 @@
 import { ViewTypeEnum, FormConfig, ModulesEnum } from '@/shared/shared.types'
 import { FrmMiddle } from './configView'
+import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 
 const PosPaymentConfig: FormConfig = {
   fnc_name: 'fnc_pos_ticket',
@@ -15,6 +16,17 @@ const PosPaymentConfig: FormConfig = {
   // isFavoriteColumn: false,
   no_content_title: 'No se encontraron monedas/billetes',
   no_content_dsc: 'Registre una moneda/billete para agilizar el proceso de cierre de sesión.',
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
   fnc_valid: (data) => {
     if (!data['name']) {
       return null

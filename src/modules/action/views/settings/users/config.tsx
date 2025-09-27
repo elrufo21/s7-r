@@ -8,9 +8,10 @@ import {
 import { FrmPhoto, FrmTab0, FrmTitle, Subtitle } from './configView'
 import { Chip } from '@mui/material'
 import { Row } from '@tanstack/react-table'
-import React from 'react'
+
 import emailjs from 'emailjs-com'
 import { toast } from 'sonner'
+import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 
 const UsersConfig: FormConfig = {
   fnc_name: 'fnc_user',
@@ -24,7 +25,17 @@ const UsersConfig: FormConfig = {
   visibility_columns: {},
   module: ModulesEnum.SETTINGS,
   new_url: '/action/2/detail/new',
-
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
   fnc_valid: (data) => {
     const sendEmail = () => {
       const email = data.email

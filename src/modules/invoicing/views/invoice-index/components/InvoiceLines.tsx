@@ -29,7 +29,7 @@ import {
 import { AutocompleteTable, MultiSelecTable, TextControlled } from '@/shared/ui'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { GiHamburgerMenu } from 'react-icons/gi'
-import { TypeInvoiceLineEnum } from '@/shared/components/view-types/viewTypes.types'
+import { InvoiceData, TypeInvoiceLineEnum } from '@/shared/components/view-types/viewTypes.types'
 import { GrTrash } from 'react-icons/gr'
 import { useInvoiceCalculations } from '@/modules/invoicing/hooks/useInvoiceLines'
 import { formatCurrency } from '@/shared/helpers/currency'
@@ -39,10 +39,287 @@ import ProductConfig from '@/modules/action/views/inventory/products_variant/con
 import { FrmBaseDialog } from '@/shared/components/core'
 import UomConfig from '@/modules/action/views/inventory/unit-measurement/config'
 import { useAutocompleteField } from '@/shared/components/form/hooks/useAutocompleteField'
-import { SwitchableTextField } from '@/shared/components/table/drag-editable-table/base-components/inputs'
 import { DragEditableTable } from '@/shared/components/table/drag-editable-table/base-components/EditableTable'
 
-// Para componentes más complejos como el AutocompleteTable
+// Componente optimizado para Cantidad que mantiene el foco
+const normalizeTaxes = (taxes: MoveLinesTax[], taxOptions: any[]) => {
+  if (!taxes || !taxOptions) return []
+
+  return taxes.map((tax) => {
+    // Si ya tiene value, lo retorna tal como está
+    if (tax.value !== undefined) {
+      return tax
+    }
+
+    // Buscar el value en las opciones
+    const taxOption = taxOptions.find((option) => option.value === tax.tax_id)
+    return {
+      ...tax,
+      value: taxOption?.amount || taxOption?.value || 0,
+    }
+  })
+}
+const QuantityField = memo(
+  ({
+    row,
+    table,
+    isReadOnly,
+    calculateAmounts,
+    taxOptions,
+  }: {
+    row: Row<MoveLine>
+    table: Table<MoveLine>
+    isReadOnly: boolean
+    calculateAmounts: (params: any) => Promise<any>
+    taxOptions: any[]
+  }) => {
+    const [localValue, setLocalValue] = useState(row.original.quantity?.toString() || '0')
+    const debounceRef = useRef<NodeJS.Timeout | null>(null)
+    const { setFrmIsChangedItem } = useAppStore()
+
+    // Sincronizar con cambios externos
+    useEffect(() => {
+      setLocalValue(row.original.quantity?.toString() || '0')
+    }, [row.original.quantity])
+
+    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+      const newValue = e.target.value
+      setLocalValue(newValue) // Actualización visual inmediata
+
+      // Limpiar timeout anterior
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current)
+      }
+
+      // Debounce para actualización real usando debouncedUpdateRow
+      debounceRef.current = setTimeout(async () => {
+        const numericValue = Number(newValue)
+        if (!isNaN(numericValue)) {
+          const debouncedUpdateRow = (table.options.meta as any).debouncedUpdateRow
+
+          // Calcular amounts antes de actualizar
+          try {
+            const normalizedTaxes = normalizeTaxes(row.original.move_lines_taxes || [], taxOptions)
+
+            const productParams = {
+              product_id: row.original.product_id,
+              quantity: numericValue,
+              price: row.original.price_unit,
+              taxes: normalizedTaxes,
+            }
+
+            const amount_untaxed = await calculateAmounts({
+              products: table
+                .getRowModel()
+                .rows.map((r) => r.original)
+                .map((elem) =>
+                  elem.line_id === row.original.line_id ? { ...elem, quantity: numericValue } : elem
+                ),
+              product: productParams,
+            })
+            debouncedUpdateRow(row.original.line_id, {
+              quantity: numericValue,
+              amount_withtaxed: amount_untaxed.product.amount_withtaxed,
+              amount_untaxed: amount_untaxed.product.amount_untaxed,
+              amount_tax: amount_untaxed.product.amount_tax,
+            })
+          } catch (error) {
+            console.error('Error calculando montos:', error)
+            debouncedUpdateRow(row.original.line_id, { quantity: numericValue })
+          }
+        }
+      }, 300)
+
+      setFrmIsChangedItem(true)
+    }
+
+    /* const handleBlur = async (e: FocusEvent<HTMLInputElement>) => {
+      const numericValue = Number(e.target.value)
+      if (!isNaN(numericValue)) {
+        const updateRow = (table.options.meta as any).updateRow
+
+        try {
+          const normalizedTaxes = normalizeTaxes(row.original.move_lines_taxes || [], taxOptions)
+
+          const productParams = {
+            product_id: row.original.product_id,
+            quantity: numericValue,
+            price: row.original.price_unit,
+            taxes: normalizedTaxes,
+          }
+
+          const amount_untaxed = await calculateAmounts({
+            products: table
+              .getRowModel()
+              .rows.map((r) => r.original)
+              .map((elem) =>
+                elem.line_id === row.original.line_id ? { ...elem, quantity: numericValue } : elem
+              ),
+            product: productParams,
+          })
+
+          updateRow(row.original.line_id, {
+            quantity: numericValue,
+            amount_untaxed,
+          })
+        } catch (error) {
+          console.error('Error calculando montos:', error)
+          updateRow(row.original.line_id, { quantity: numericValue })
+        }
+      }
+    }*/
+
+    if (isReadOnly) {
+      return <div className="text-right px-2 py-1">{row.original.quantity}</div>
+    }
+
+    return (
+      <input
+        type="number"
+        value={localValue}
+        onChange={handleChange}
+        onBlur={() => {}}
+        className="w-full no-spin text-right border-none outline-none bg-transparent p-1"
+        min="0"
+        step="1"
+      />
+    )
+  }
+)
+// Componente optimizado para Precio que mantiene el foco
+const PriceField = memo(
+  ({
+    row,
+    table,
+    isReadOnly,
+    calculateAmounts,
+    taxOptions,
+  }: {
+    row: Row<MoveLine>
+    table: Table<MoveLine>
+    isReadOnly: boolean
+    calculateAmounts: (params: any) => Promise<any>
+    taxOptions: any[]
+  }) => {
+    const [localValue, setLocalValue] = useState(row.original.price_unit?.toString() || '0')
+    const debounceRef = useRef<NodeJS.Timeout | null>(null)
+    const { setFrmIsChangedItem } = useAppStore()
+
+    // Sincronizar con cambios externos
+    useEffect(() => {
+      setLocalValue(row.original.price_unit?.toString() || '0')
+    }, [row.original.price_unit])
+
+    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+      const newValue = e.target.value
+      setLocalValue(newValue) // Actualización visual inmediata
+
+      // Limpiar timeout anterior
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current)
+      }
+
+      // Debounce para actualización real usando debouncedUpdateRow
+      debounceRef.current = setTimeout(async () => {
+        const numericValue = Number(newValue)
+        if (!isNaN(numericValue)) {
+          const debouncedUpdateRow = (table.options.meta as any).debouncedUpdateRow
+
+          // Calcular amounts antes de actualizar
+          try {
+            const normalizedTaxes = normalizeTaxes(row.original.move_lines_taxes || [], taxOptions)
+
+            const productParams = {
+              product_id: row.original.product_id,
+              quantity: row.original.quantity,
+              price: numericValue,
+              taxes: normalizedTaxes,
+            }
+
+            const amount_untaxed = await calculateAmounts({
+              products: table
+                .getRowModel()
+                .rows.map((r) => r.original)
+                .map((elem) =>
+                  elem.line_id === row.original.line_id
+                    ? { ...elem, price_unit: numericValue }
+                    : elem
+                ),
+              product: productParams,
+            })
+
+            debouncedUpdateRow(row.original.line_id, {
+              price_unit: numericValue,
+              amount_withtaxed: amount_untaxed.product.amount_withtaxed,
+              amount_untaxed: amount_untaxed.product.amount_untaxed,
+              amount_tax: amount_untaxed.product.amount_tax,
+            })
+          } catch (error) {
+            console.error('Error calculando montos:', error)
+            debouncedUpdateRow(row.original.line_id, { price_unit: numericValue })
+          }
+        }
+      }, 300)
+
+      setFrmIsChangedItem(true)
+    }
+
+    /*const handleBlur = async (e: FocusEvent<HTMLInputElement>) => {
+      // Actualizar inmediatamente al perder foco
+      const numericValue = Number(e.target.value)
+      if (!isNaN(numericValue)) {
+        const updateRow = (table.options.meta as any).updateRow
+
+        try {
+          const normalizedTaxes = normalizeTaxes(row.original.move_lines_taxes || [], taxOptions)
+
+          const productParams = {
+            product_id: row.original.product_id,
+            quantity: row.original.quantity,
+            price: numericValue,
+            taxes: normalizedTaxes,
+          }
+
+          const amount_untaxed = await calculateAmounts({
+            products: table
+              .getRowModel()
+              .rows.map((r) => r.original)
+              .map((elem) =>
+                elem.line_id === row.original.line_id ? { ...elem, price_unit: numericValue } : elem
+              ),
+            product: productParams,
+          })
+
+          updateRow(row.original.line_id, {
+            price_unit: numericValue,
+            amount_untaxed,
+          })
+        } catch (error) {
+          console.error('Error calculando montos:', error)
+          updateRow(row.original.line_id, { price_unit: numericValue })
+        }
+      }
+    }*/
+
+    if (isReadOnly) {
+      return <div className="text-right px-2 py-1">{formatCurrency(row.original.price_unit)}</div>
+    }
+
+    return (
+      <input
+        type="number"
+        value={localValue}
+        onChange={handleChange}
+        onBlur={() => {}}
+        className="w-full no-spin text-right border-none outline-none bg-transparent p-1"
+        min="0"
+        step="0.01"
+      />
+    )
+  }
+)
+
+// Componente ProductField optimizado
 const ProductField = ({
   row,
   column,
@@ -74,7 +351,8 @@ const ProductField = ({
 
   const handleLabelTextChange = useCallback(
     (e: ChangeEvent<HTMLTextAreaElement>, row: Row<MoveLine>) => {
-      // const newValue = e.target.value
+      const newValue = e.target.value
+      setLocalLabel(newValue)
 
       if (debounceLabelRef.current) {
         clearTimeout(debounceLabelRef.current)
@@ -86,11 +364,21 @@ const ProductField = ({
 
       setFrmIsChangedItem(true)
     },
-    [setFrmIsChangedItem]
+    [handleChangeLabel, setFrmIsChangedItem]
   )
+
   useEffect(() => {
     setLocalLabel(row.original.label ?? '')
-  }, [row.original.label])
+  }, [row.original.label, row.original._resetKey])
+
+  useEffect(() => {
+    return () => {
+      if (debounceLabelRef.current) {
+        clearTimeout(debounceLabelRef.current)
+      }
+    }
+  }, [row.original.line_id])
+
   if (isReadOnly) {
     return (
       <div className="flex flex-col justify-start items-start">
@@ -104,6 +392,7 @@ const ProductField = ({
       </div>
     )
   }
+
   return (
     <div className="flex flex-col justify-center items-center">
       <AutocompleteTable
@@ -130,19 +419,62 @@ const ProductField = ({
       />
       {row.original.hasLabel && (
         <textarea
+          key={`label-${row.original.line_id}-${row.original._resetKey}`}
           placeholder="Descripción del producto"
           value={localLabel}
-          className="w-full text-sm resize-none outline-none mb-2 italic"
+          className="w-full min-h-6 text-sm resize-none !outline-none mb-2 italic"
           onChange={(e) => {
-            setLocalLabel(e.target.value)
             handleLabelTextChange(e, row)
           }}
-          onBlur={(e) => handleChangeLabel(e, row)}
+          onBlur={() => {}}
         />
       )}
     </div>
   )
 }
+
+// Componente para notas que mantiene el foco
+const NotesField = memo(
+  ({
+    row,
+    table,
+    disabled,
+    className = '',
+    placeholder = '',
+  }: {
+    row: Row<MoveLine>
+    table: Table<MoveLine>
+    disabled: boolean
+    className?: string
+    placeholder?: string
+  }) => {
+    const [localValue, setLocalValue] = useState(row.original.notes || '')
+    const debouncedUpdateRow = (table.options.meta as any).debouncedUpdateRow
+
+    // Actualizar cuando cambie el valor de la fila
+    useEffect(() => {
+      setLocalValue(row.original.notes || '')
+    }, [row.original.notes])
+
+    const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+      const newValue = e.target.value
+      setLocalValue(newValue) // Actualización visual inmediata
+
+      // Usar el debouncedUpdateRow - NO causa re-render inmediato
+      debouncedUpdateRow(row.original.line_id, { notes: newValue })
+    }
+
+    return (
+      <textarea
+        value={localValue}
+        onChange={handleChange}
+        disabled={disabled}
+        className={`resize-none w-full bg-transparent ${className}`}
+        placeholder={placeholder}
+      />
+    )
+  }
+)
 
 const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmElementsProps) => {
   const isSavingRef = useRef<boolean>(false)
@@ -166,8 +498,8 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
     setTableData,
     tableData,
     setFrmDialogAction,
-    setFrmIsChanged,
   } = useAppStore()
+
   const {
     options: productOptions,
     loadOptions: loadProductOptions,
@@ -177,7 +509,9 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
     idField: 'product_id',
     nameField: 'product_name',
     formItem,
+    filters: [{ column: 'state', value: 'A' }],
   })
+
   const {
     options: uomOptions,
     loadOptions: loadUomOptions,
@@ -188,14 +522,17 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
     nameField: 'uom_name',
     formItem,
   })
+
   const { options: taxOptions, loadOptions: loadTaxOptions } = useAutocompleteField({
     fncName: 'fnc_tax',
     idField: 'tax_id',
     nameField: 'tax_name',
     formItem,
   })
+
   const isReadOnly =
-    watch('state') === StatusInvoiceEnum.PUBLICADO || watch('state') === StatusInvoiceEnum.CANCELADO
+    watch('state') === StatusInvoiceEnum.REGISTERED ||
+    watch('state') === StatusInvoiceEnum.CANCELADO
 
   // Inicializar el estado con los datos del tableData si existen
   const [data, setData] = useState<MoveLine[]>(() => {
@@ -225,77 +562,38 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
     try {
       const updateRow = (table.options.meta as any).updateRow
       const { fieldName } = options
-      const value = Number(event.target.value)
+      const value = event.target.value
 
-      const fieldUpdate = { [fieldName]: value }
+      // Creamos un objeto con la actualización específica para el campo
+      const fieldUpdate = { [fieldName]: Number(value) }
 
-      const normalizedTaxes = (row.original.move_lines_taxes ?? []).map((tax) => ({
-        ...tax,
-        value: tax.value ?? Number(tax.tax_id) ?? 0,
-      }))
-
+      // Construimos el objeto para el cálculo con los parámetros adecuados
       const productParams = {
         product_id: row.original.product_id,
-        quantity: fieldName === 'quantity' ? value : row.original.quantity,
-        price: fieldName === 'price_unit' ? value : row.original.price_unit,
-        taxes: normalizedTaxes,
+        quantity: fieldName === 'quantity' ? Number(value) : row.original.quantity,
+        price: fieldName === 'price_unit' ? Number(value) : row.original.price_unit,
+        taxes: row.original.move_lines_taxes,
       }
 
-      const productInfo = await calculateAmounts({
+      const amount_untaxed = await calculateAmounts({
         products: table
           .getRowModel()
           .rows.map((r) => r.original)
-          .map((elem) => {
-            const updatedElem =
-              elem.line_id === row.original.line_id ? { ...elem, ...fieldUpdate } : { ...elem }
-
-            updatedElem.move_lines_taxes = (updatedElem.move_lines_taxes ?? []).map((tax) => ({
-              ...tax,
-              value: tax.value ?? Number(tax.tax_id) ?? 0,
-            }))
-
-            return updatedElem
-          }),
+          .map((elem) =>
+            elem.line_id === row.original.line_id ? { ...elem, ...fieldUpdate } : elem
+          ),
         product: productParams,
       })
 
+      // Actualizamos la línea con el campo específico y el monto calculado
       updateRow(row.original.line_id, {
         ...fieldUpdate,
-        amount_withtaxed_total_in_currency: productInfo.product.amount_withtaxed_total_in_currency,
-        amount_tax: productInfo.product.amount_tax,
-        amount_untaxed: productInfo.product.amount_untaxed,
-        amount_discount: productInfo.product.amount_discount,
-        amount_residual: productInfo.product.amount_residual,
-        amount_tax_total: productInfo.product.amount_tax_total,
-        amount_withtaxed: productInfo.product.amount_withtaxed,
-        amount_untaxed_total: productInfo.product.amount_untaxed_total,
-        amount_withtaxed_total: productInfo.product.amount_withtaxed_total,
+        amount_untaxed,
       })
     } catch (error) {
       toast.error(options.errorMessage)
       console.error(error)
     }
-  }
-  const handleQuantityChange = (
-    row: Row<MoveLine>,
-    event: FocusEvent<HTMLInputElement | HTMLTextAreaElement, Element>,
-    table: Table<MoveLine>
-  ) => {
-    handleNumericFieldChange(row, event, table, {
-      fieldName: 'quantity',
-      errorMessage: 'Error al actualizar cantidad',
-    })
-  }
-
-  const handlePriceChange = (
-    row: Row<MoveLine>,
-    event: FocusEvent<HTMLInputElement>,
-    table: Table<MoveLine>
-  ) => {
-    handleNumericFieldChange(row, event, table, {
-      fieldName: 'price_unit',
-      errorMessage: 'Error al actualizar precio',
-    })
   }
 
   const handleChangeUdM = async (
@@ -318,6 +616,7 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
       ...fieldUpdate,
     })
   }
+
   const handleChangeTax = async (
     row: Row<MoveLine>,
     dataTax: {
@@ -331,47 +630,43 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
     try {
       const updateRow = (table.options.meta as any).updateRow
       const { option } = dataTax
-
-      const normalizedTaxes = option.map((tax) => ({
-        ...tax,
-        tax_id: tax.tax_id ?? tax.value,
-      }))
-
       const fieldUpdate = {
-        move_lines_taxes: normalizedTaxes,
+        move_lines_taxes: option.map((opt) => ({
+          ...opt,
+          tax_id: opt.value,
+        })),
         move_lines_taxes_change: true,
       }
-
       const productParams = {
         product_id: row.original.product_id,
         quantity: row.original.quantity,
         price: row.original.price_unit,
-        taxes: normalizedTaxes,
+        taxes: option,
       }
 
-      const productInfo = await calculateAmounts({
+      const amount_untaxed = await calculateAmounts({
         products: table.getRowModel().rows.map((elem: Row<MoveLine>) => elem.original),
         product: productParams,
       })
-
       updateRow(row.original.line_id, {
         ...fieldUpdate,
-        amount_withtaxed_total_in_currency: productInfo.product.amount_withtaxed_total_in_currency,
-        amount_tax: productInfo.product.amount_tax,
-        amount_untaxed: productInfo.product.amount_untaxed,
-        amount_discount: productInfo.product.amount_discount,
-        amount_residual: productInfo.product.amount_residual,
-        amount_tax_total: productInfo.product.amount_tax_total,
-        amount_withtaxed: productInfo.product.amount_withtaxed,
-        amount_untaxed_total: productInfo.product.amount_untaxed_total,
-        amount_withtaxed_total: productInfo.product.amount_withtaxed_total,
+        amount_withtaxed: amount_untaxed.product.amount_withtaxed,
+        amount_untaxed: amount_untaxed.product.amount_untaxed,
+        amount_tax: amount_untaxed.product.amount_tax,
       })
     } catch (error) {
       console.error('Error en handleChangeTax:', error)
     }
   }
-
-  const handleChangeProduct = async (row, dataProduct, table) => {
+  const handleChangeProduct = async (
+    row: Row<InvoiceData>,
+    dataProduct: {
+      rowId: number
+      columnId: string
+      option: Record<string, any>
+    },
+    table: Table<InvoiceData>
+  ) => {
     try {
       const updateRow = (table.options.meta as any).updateRow
       const {
@@ -379,69 +674,48 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
       } = dataProduct
 
       const productData = await executeFnc('fnc_product', 's1', [String(value)])
-      if (!productData?.oj_data) throw new Error('Error: productData es null o undefined')
+
+      if (!productData?.oj_data) {
+        throw new Error('Error: productData es null o undefined')
+      }
 
       const sale_price = productData.oj_data[0]?.sale_price
       const taxes_sale = productData.oj_data[0]?.taxes_sale
       const uom_id = productData.oj_data[0]?.uom_id
       const uom_name = productData.oj_data[0]?.uom_name
       const name = productData.oj_data[0]?.name
-      const label = productData.oj_data[0]?.description_sale
+
+      // Normalizar impuestos para incluir el value
+      const normalizedTaxes = normalizeTaxes(taxes_sale || [], taxOptions)
+
       const productParams = {
         product_id: value,
         quantity: 1,
         price: sale_price || 0,
-        taxes: (taxes_sale || []).map((tax: any) => ({
-          value: tax.tax_id,
-
-          tax_id: tax.tax_id,
-          label: tax.label,
-          amount: tax.amount || 0,
-        })),
+        taxes: normalizedTaxes,
       }
 
-      const updatedProducts = table.getRowModel().rows.map((elem) => {
-        if (elem.original.line_id === row.original.line_id) {
-          return {
-            ...elem.original,
-            product_id: value,
-            price_unit: sale_price || 0,
-            quantity: 1,
-            move_lines_taxes: taxes_sale,
-            name,
-            label,
-          }
-        }
-        return elem.original
-      })
-
-      const productInfo = await calculateAmounts({
-        products: updatedProducts,
+      const amount_untaxed = await calculateAmounts({
+        products: table.getRowModel().rows.map((elem: Row<InvoiceData>) => elem.original) as any,
         product: productParams,
       })
-
       const fieldUpdate = {
         quantity: 1,
         product_id: value,
         name,
         price_unit: sale_price || 0,
-        amount_withtaxed_total_in_currency: productInfo.product.amount_withtaxed_total_in_currency,
-        move_lines_taxes: taxes_sale,
+        amount_withtaxed: amount_untaxed.product.amount_withtaxed,
+        amount_untaxed: amount_untaxed.product.amount_untaxed,
+        amount_tax: amount_untaxed.product.amount_tax,
+        move_lines_taxes: normalizedTaxes, // Usar los impuestos normalizados
         uom_id,
         uom_name,
-        label,
-        hasLabel: label ? true : false,
-        amount_tax: productInfo.product.amount_tax,
-        amount_untaxed: productInfo.product.amount_untaxed,
-        amount_discount: productInfo.product.amount_discount,
-        amount_residual: productInfo.product.amount_residual,
-        amount_tax_total: productInfo.product.amount_tax_total,
-        amount_withtaxed: productInfo.product.amount_withtaxed,
-        amount_untaxed_total: productInfo.product.amount_untaxed_total,
-        amount_withtaxed_total: productInfo.product.amount_withtaxed_total,
+        move_lines_taxes_change: true,
       }
-      setFrmIsChanged(true)
-      updateRow(row.original.line_id, fieldUpdate)
+
+      updateRow(row.original.line_id, {
+        ...fieldUpdate,
+      })
     } catch (error) {
       console.error('Error en handleChangeProduct:', error)
     }
@@ -461,6 +735,7 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
 
     navigate(`/action/303/detail/${value}`)
   }
+
   const navToUom = (value: number) => {
     setBreadcrumb([
       ...breadcrumb,
@@ -472,6 +747,7 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
     ])
     navigate(`/action/91/detail/${value}`)
   }
+
   const handleClickLabel = (row: Row<MoveLine>) => {
     setData((prev) =>
       prev.map((item) =>
@@ -499,10 +775,7 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
     debouncedUpdateRow(row.original.line_id, { label: newValue })
   }
 
-  const handleNotesChange = (value: string, row: Row<MoveLine>, table: Table<MoveLine>) => {
-    const updateRow = (table.options.meta as any).updateRow
-    updateRow(row.original.line_id, { notes: value })
-  }
+  // ... (resto de las funciones openProductDialog, handleCreateProduct, etc. permanecen igual)
   const openProductDialog = async (
     title: string,
     row: Row<MoveLine>,
@@ -510,10 +783,8 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
     name: string,
     parentDialogId?: string
   ) => {
-    // Necesitamos inicializar valores limpios para cada nueva apertura del modal
     const initialValues = {
       name,
-      // Establecemos valores predeterminados limpios para evitar mensajes de error al abrir
       state: 'A',
       type: 'D',
     }
@@ -522,11 +793,7 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
       title,
       parentId: parentDialogId,
       dialogContent: () => (
-        <FrmBaseDialog
-          config={ProductConfig}
-          initialValues={initialValues}
-          idDialog={dialogId} // Pasamos el ID para que FrmBaseDialog pueda identificarse
-        />
+        <FrmBaseDialog config={ProductConfig} initialValues={initialValues} idDialog={dialogId} />
       ),
       buttons: [
         {
@@ -534,21 +801,14 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
           type: 'confirm',
           onClick: async () => {
             try {
-              // 1. setFrmDialogAction activa executeAction() dentro de FrmBaseDialog
-              // 2. executeAction ejecuta trigger() que valida todos los campos
-              // 3. Si hay errores, se muestran automáticamente en el formulario
-              // 4. Si no hay errores, se ejecuta la función afterSave con los datos válidos
               setFrmDialogAction({
-                action: 'save', // Acción 'save' que activa la validación
+                action: 'save',
                 dialog: {
-                  idDialog: dialogId, // ID del diálogo para identificarlo
+                  idDialog: dialogId,
                   afterSave: async (data: any) => {
-                    // Esta función solo se ejecuta si la validación fue exitosa
                     const product_id = data?.product_id
                     if (product_id) {
-                      // Actualizamos las opciones disponibles
                       reloadProductOptions()
-                      // Actualizamos el producto seleccionado en la línea
                       await handleChangeProduct(
                         row,
                         {
@@ -559,7 +819,6 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
                         table
                       )
                     }
-                    // Cerramos todos los diálogos
                     setNewAppDialogs([])
                   },
                 },
@@ -573,7 +832,6 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
           text: 'Descartar',
           type: 'cancel',
           onClick: () => {
-            // Simplemente cerramos el diálogo sin hacer nada
             closeDialogWithData(dialogId, {})
           },
         },
@@ -581,7 +839,6 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
     })
   }
 
-  // 📌 Crear un producto sin abrir diálogo
   const handleCreateProduct = async (input: string, row: Row<MoveLine>, table: Table<MoveLine>) => {
     try {
       const response = await executeFnc('fnc_product', 'i', {
@@ -616,12 +873,10 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
     }
   }
 
-  // 📌 Editar un producto (reutiliza `openProductDialog`)
   const handleEditProduct = async (row: Row<MoveLine>, table: Table<MoveLine>, name: string) => {
     openProductDialog('Crear producto', row, table, name)
   }
 
-  // 📌 Abrir buscador de productos
   const handleSearchOpt = (row: Row<MoveLine>, table: Table<MoveLine>) => {
     const dialogId = openDialog({
       title: 'Productos',
@@ -661,9 +916,7 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
   }
 
   const fnc_create_uom = async (row: Row<MoveLine>, table: Table<MoveLine>) => {
-    // Valores iniciales limpios para el modal
     const initialValues = {
-      // Establecemos valores predeterminados para evitar errores al abrir
       state: 'A',
       name: '',
     }
@@ -679,20 +932,14 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
           type: 'confirm',
           onClick: async () => {
             try {
-              // Mismo mecanismo que en openProductDialog
-              // 1. Activamos la validación interna del formulario
-              // 2. Solo continúa si todos los campos son válidos
               setFrmDialogAction({
                 action: 'save',
                 dialog: {
                   idDialog: dialogId,
                   afterSave: async (data: any) => {
-                    // Esta función solo se ejecuta si la validación fue exitosa
                     const uom_id = data?.uom_id
                     if (uom_id) {
-                      // Actualizamos la lista de unidades de medida
                       reloadUomOptions()
-                      // Seleccionamos la nueva unidad en la línea
                       await handleChangeUdM(
                         row,
                         {
@@ -703,7 +950,6 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
                         table
                       )
                     }
-                    // Cerramos el diálogo
                     setNewAppDialogs([])
                   },
                 },
@@ -717,13 +963,13 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
           text: 'Descartar',
           type: 'cancel',
           onClick: () => {
-            // Cerramos el diálogo sin hacer nada
             closeDialogWithData(dialogId, {})
           },
         },
       ],
     })
   }
+
   const fnc_search_uom = (row: Row<MoveLine>, table: Table<MoveLine>) => {
     const dialogId = openDialog({
       title: 'Unidad de medida',
@@ -767,18 +1013,17 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
       setData(tableData)
     }
   }, [data, tableData])
+
   useEffect(() => {
     if (frmAction === FormActionEnum.PRE_SAVE || isSavingRef.current) {
       return
     }
 
-    // Añadir una verificación adicional para saber si estamos en un estado de validación fallida
-    // Si hay errores en el formulario, no deberíamos restablecer las líneas
     if (errors && Object.keys(errors).length > 0) {
       return
     }
 
-    if (frmAction === FormActionEnum.UNDO || formItem) {
+    if ((frmAction === FormActionEnum.UNDO || formItem) && !frmLoading) {
       if (tableData?.length > 0) {
         setData(tableData)
         return
@@ -805,106 +1050,15 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
     }
   }, [formItem, frmAction, tableData, errors])
 
-  const debounceQuantityRef = useRef<any>(null)
-  const debounceePriceRef = useRef<any>(null)
-  // Handlers para cambios inmediatos (onChange)
-  const handleQuantityTextChange = useCallback(
-    (e: any, row: Row<MoveLine>, table: Table<MoveLine>) => {
-      if (debounceQuantityRef.current) {
-        clearTimeout(debounceQuantityRef.current)
-      }
-
-      debounceQuantityRef.current = setTimeout(() => {
-        handleQuantityChange(row, e, table)
-      }, 500)
-
-      // Marcar como cambiado inmediatamente
-      setFrmIsChangedItem(true)
-    },
-    [setFrmIsChangedItem]
-  )
-  const handlePriceTextChange = useCallback(
-    (e: any, row: Row<MoveLine>, table: Table<MoveLine>) => {
-      if (debounceePriceRef.current) {
-        clearTimeout(debounceePriceRef.current)
-      }
-
-      debounceePriceRef.current = setTimeout(() => {
-        handlePriceChange(row, e, table)
-      }, 500)
-
-      setFrmIsChangedItem(true)
-    },
-    [setFrmIsChangedItem]
-  )
-
-  const PriceCell = memo(({ row, table }: { row: Row<MoveLine>; table: Table<MoveLine> }) => (
-    <SwitchableTextField
-      isReadOnly={isReadOnly}
-      value={row.original.price_unit}
-      onBlur={() => {}}
-      onChange={(e) => handlePriceTextChange(e, row, table)}
-      type="number"
-    />
-  ))
-  const QuantityCell = memo(({ row, table }: { row: Row<MoveLine>; table: Table<MoveLine> }) => (
-    <SwitchableTextField
-      isReadOnly={isReadOnly}
-      value={row.original.quantity}
-      onBlur={() => {}}
-      type="number"
-      onChange={(e) => handleQuantityTextChange(e, row, table)}
-    />
-  ))
-  interface DebouncedTextAreaProps {
-    value: string
-    onChange: (value: string) => void
-    delay?: number
-    disabled?: boolean
-    className?: string
-  }
-  function DebouncedTextArea({
-    value,
-    onChange,
-    delay = 400,
-    disabled = false,
-    className = '',
-  }: DebouncedTextAreaProps) {
-    const [internalValue, setInternalValue] = useState(value)
-
-    // Cuando cambia el valor externo (por ejemplo, por actualización de tabla)
-    useEffect(() => {
-      setInternalValue(value)
-    }, [value])
-
-    // Aplica el debounce al cambiar el valor interno
-    useEffect(() => {
-      const handler = setTimeout(() => {
-        if (internalValue !== value) {
-          onChange(internalValue)
-        }
-      }, delay)
-
-      return () => clearTimeout(handler)
-    }, [internalValue, delay])
-
-    return (
-      <textarea
-        value={internalValue}
-        onChange={(e) => setInternalValue(e.target.value)}
-        className="resize-none w-full bg-transparent"
-        disabled={disabled}
-      />
-    )
-  }
   useEffect(() => {
     Promise.all([loadUomOptions(), loadProductOptions(), loadTaxOptions()])
   }, [loadUomOptions, loadProductOptions, loadTaxOptions])
+
   const columns = useMemo<ColumnDef<MoveLine>[]>(
     () => [
       {
         id: 'drag',
-        size: 30,
+        size: 60,
         header: '',
         enableResizing: false,
         enableSorting: false,
@@ -923,7 +1077,7 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
       {
         header: 'Producto',
         accessorKey: 'product_id',
-        size: 300,
+        size: 400,
         minSize: 200,
         enableSorting: true,
         cell: ({ row, column, table }) => (
@@ -945,18 +1099,26 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
       {
         header: 'Cantidad',
         accessorKey: 'quantity',
-        size: 80,
-        minSize: 80,
+        size: 100,
+        minSize: 100,
         enableSorting: true,
         meta: {
           align: 'right',
         },
-        cell: ({ row, table }) => <QuantityCell row={row} table={table} />,
+        cell: ({ row, table }) => (
+          <QuantityField
+            row={row}
+            table={table}
+            isReadOnly={isReadOnly}
+            calculateAmounts={calculateAmounts}
+            taxOptions={taxOptions}
+          />
+        ),
       },
       {
         header: 'Unidad',
         accessorKey: 'uom_id',
-        size: 130,
+        size: 200,
         minSize: 100,
         enableSorting: true,
         cell: ({
@@ -968,7 +1130,7 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
           column: Column<MoveLine>
           table: Table<MoveLine>
         }) => {
-          if (watch('state') === StatusInvoiceEnum.PUBLICADO) {
+          if (watch('state') === StatusInvoiceEnum.REGISTERED) {
             return (
               <span
                 className="text-teal-600 hover:cursor-pointer"
@@ -999,13 +1161,21 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
         size: 100,
         minSize: 100,
         enableSorting: true,
-        cell: ({ row, table }) => <PriceCell row={row} table={table} />,
+        cell: ({ row, table }) => (
+          <PriceField
+            row={row}
+            table={table}
+            isReadOnly={isReadOnly}
+            calculateAmounts={calculateAmounts}
+            taxOptions={taxOptions}
+          />
+        ),
       },
       {
         header: 'Impuestos',
         accessorKey: 'move_lines_taxes',
-        size: 150,
-        minSize: 120,
+        size: 200,
+        minSize: 200,
         cell: ({
           row,
           column,
@@ -1015,7 +1185,7 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
           column: Column<MoveLine>
           table: Table<MoveLine>
         }) => {
-          if (watch('state') === StatusInvoiceEnum.PUBLICADO) {
+          if (watch('state') === StatusInvoiceEnum.REGISTERED) {
             return (
               <div className="flex flex-wrap">
                 {(row.original.move_lines_taxes ?? []).map((item) => (
@@ -1039,12 +1209,23 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
           )
         },
       },
-      /*
+      {
+        header: 'amount_tax',
+        accessorKey: 'amount_tax',
+        size: 150,
+        minSize: 80,
+        enableSorting: true,
+        meta: {
+          align: 'right',
+        },
+        cell: ({ row }) => (
+          <div className="text-right">{formatCurrency(row.original.amount_tax)}</div>
+        ),
+      },
       {
         header: 'amount_untaxed',
         accessorKey: 'amount_untaxed',
         size: 150,
-
         minSize: 80,
         enableSorting: true,
         meta: {
@@ -1055,47 +1236,30 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
         ),
       },
       {
-        header: 'amount_tax',
-        accessorKey: 'amount_tax',
+        header: 'amount_withtaxed',
+        accessorKey: 'amount_withtaxed',
         size: 150,
-
         minSize: 80,
         enableSorting: true,
         meta: {
           align: 'right',
         },
         cell: ({ row }) => (
-          <div className="text-right">{formatCurrency(row.original.amount_tax)}</div>
+          <div className="text-right">{formatCurrency(row.original.amount_withtaxed)}</div>
         ),
       },
-      */
+      // Columna de notas optimizada
       {
-        header: 'Importe',
-        accessorKey: 'amount_withtaxed_total_in_currency',
-        size: 120,
-        minSize: 120,
-        enableSorting: true,
-        meta: {
-          align: 'right',
-        },
-        cell: ({ row }) => (
-          <div className="text-right">{row.original?.amount_withtaxed_total_in_currency || 0}</div>
-        ),
-      },
-
-      /** FULL WIDTH */
-      {
-        accessorKey: 'label',
         header: '',
+        accessorKey: 'label',
         maxSize: 10,
         cell: ({ row, table }) => {
           return (
-            <DebouncedTextArea
-              value={row.original.notes || ''}
-              onChange={(newValue) => handleNotesChange(newValue, row, table)}
-              className="italic w-full disabled:bg-transparent mt-[7px]"
+            <NotesField
+              row={row}
+              table={table}
               disabled={isReadOnly}
-              delay={500}
+              className="italic w-full disabled:bg-transparent mt-[7px]"
             />
           )
         },
@@ -1121,20 +1285,11 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
         },
       },
     ],
-    [
-      productOptions,
-      taxOptions,
-      uomOptions,
-      isReadOnly,
-      handleQuantityTextChange,
-      handlePriceTextChange,
-      data,
-    ]
+    [productOptions, taxOptions, uomOptions, isReadOnly]
   )
 
   return (
-    // <div className="flex flex-col gap-4">
-    <div className="details-table flex flex-col">
+    <div className="flex flex-col">
       <DragEditableTable
         data={data}
         setData={setData}
@@ -1160,11 +1315,7 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
           <TableActions
             onAddRow={(type) => {
               // Usar el setData primero y luego modifyDataSetter en el siguiente ciclo
-              setData((prev) => [
-                ...prev,
-                { ...defaultProduct, line_id: prev.length + 1000, type, label: null },
-              ])
-              setFrmIsChanged(true)
+              setData((prev) => [...prev, { ...defaultProduct, line_id: prev.length + 1000, type }])
               setTimeout(() => {
                 modifyDataSetter(true)
               }, 0)
@@ -1220,7 +1371,9 @@ export const TableActions = ({
     },
   ]
   const isReadOnly =
-    watch('state') === StatusInvoiceEnum.PUBLICADO || watch('state') === StatusInvoiceEnum.CANCELADO
+    watch('state') === StatusInvoiceEnum.REGISTERED ||
+    watch('state') === StatusInvoiceEnum.CANCELADO
+
   return (
     <>
       {isReadOnly ? (

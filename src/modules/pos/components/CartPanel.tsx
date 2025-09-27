@@ -18,6 +18,7 @@ import { usePWA } from '@/hooks/usePWA'
 import { offlineCache } from '@/lib/offlineCache'
 import { usePosActions } from '../hooks/usePosActions'
 import { toast } from 'sonner'
+import { adjustTotal } from '@/shared/helpers/helpers'
 
 export default function CartPanel() {
   const {
@@ -216,7 +217,7 @@ export default function CartPanel() {
   }
 
   useEffect(() => {
-    setTotal(getTotalPriceByOrder(selectedOrder).toFixed(MAX_DECIMALS))
+    setTotal(getTotalPriceByOrder(selectedOrder))
   }, [cart])
   const [localValue, setLocalValue] = useState('')
   const [shouldReplaceValue, setShouldReplaceValue] = useState(false)
@@ -323,7 +324,8 @@ export default function CartPanel() {
               return item
             })
             setModalData(dataUpdate)
-            setFinalCustomer(dataUpdate.find((item: any) => item.selected === true))
+            updateOrderPartner(selectedOrder, rs.oj_data.partner_id, formData.name)
+            //setFinalCustomer(dataUpdate.find((item: any) => item.selected === true))
             setIsChange(true)
             setHandleChange(true)
             closeDialogWithData(dialogId, {})
@@ -364,13 +366,13 @@ export default function CartPanel() {
           openEditModal={(client: any) => {
             fnc_edit_client(client)
           }}
+          customHeader={<CustomHeader fnc_create_button={fnc_create_customer} />}
         />
       ),
-      customHeader: <CustomHeader fnc_create_button={fnc_create_customer} />,
       buttons: [
         {
           text: 'Descartar',
-          type: 'confirm',
+          type: 'cancel',
           onClick: () => {
             setFinalCustomer({
               partner_id: defaultPosSessionData.partner_id,
@@ -784,7 +786,7 @@ export default function CartPanel() {
             </div>
             <div className="flex justify-between text-lg font-bold mt-1">
               <span>Total</span>
-              <span>S/ {total}</span>
+              <span>S/ {adjustTotal(Number(total)).adjusted}</span>
             </div>
           </div>
         )}

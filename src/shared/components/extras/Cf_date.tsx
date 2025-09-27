@@ -10,6 +10,7 @@ interface custom_frm_elementsProps extends frmElementsProps {
   rules?: boolean
   watch: any
   hour?: boolean
+  disableFrmIsChanged?: boolean
 }
 
 const Cf_date = ({
@@ -22,6 +23,7 @@ const Cf_date = ({
   rules,
   watch,
   setValue,
+  disableFrmIsChanged = false,
 }: custom_frm_elementsProps) => {
   /* useEffect(() => {
     if(!formItem?.[fieldName] &&){
@@ -48,6 +50,7 @@ const Cf_date = ({
             editConfig={{ config: editConfig }}
             rules={rules ? required : {}}
             startToday={startToday}
+            disableFrmIsChanged={disableFrmIsChanged}
           />
         </div>
       </div>

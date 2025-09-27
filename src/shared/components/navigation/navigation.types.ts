@@ -21,6 +21,7 @@ export type ModalConfigType = {
   title?: string
   config: FormConfig // ✅ El config que se pasa al modal
   customButtons?: ModalButtonType[] // ✅ Botones personalizados simples
+  initialValues?: any // ✅ Valores iniciales para el formulario
 }
 
 // ===== TIPOS PARA BOTONES DE MODAL =====

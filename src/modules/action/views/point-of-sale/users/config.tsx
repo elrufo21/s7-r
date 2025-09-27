@@ -13,6 +13,7 @@ import {
 } from '@/modules/action/views/settings/users/configView'
 import { Chip } from '@mui/material'
 import { Row } from '@tanstack/react-table'
+import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 
 const UsersConfig: FormConfig = {
   fnc_name: 'fnc_user',
@@ -26,7 +27,17 @@ const UsersConfig: FormConfig = {
   visibility_columns: {},
   module: ModulesEnum.POINTS_OF_SALE,
   new_url: '/action/903/detail/new',
-
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
   fnc_valid: (data) => {
     if (!data['name']) {
       return null

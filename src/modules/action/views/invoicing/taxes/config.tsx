@@ -1,5 +1,6 @@
 import { ViewTypeEnum, FormConfig, ModulesEnum, ItemStatusTypeEnum } from '@/shared/shared.types'
 import { FrmMiddle, FrmMiddleRight, FrmTab0 } from './configView'
+import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 
 const TaxesConfig: FormConfig = {
   fnc_name: 'fnc_tax',
@@ -15,7 +16,17 @@ const TaxesConfig: FormConfig = {
   no_content_title: 'Crear una impuesto',
   no_content_dsc: 'Asigne impuestos a sus productos para organizarlos, filtrarlos y rastrearlos.',
   filters_columns: [],
-
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
   fnc_valid: (data: any) => {
     return data
   },

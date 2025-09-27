@@ -36,6 +36,7 @@ import { useAutocompleteField } from '@/shared/components/form/hooks/useAutocomp
 import { SwitchableTextField } from '@/shared/components/table/drag-editable-table/base-components/inputs'
 import { DragEditableTable } from '@/shared/components/table/drag-editable-table/base-components/EditableTable'
 import { TypeStateOrder } from '@/modules/pos/types'
+import { PaymentTotals } from '../configView'
 
 // Tipos específicos para POS Orders
 interface PosOrderLine {
@@ -182,7 +183,9 @@ const PosOrderLines = ({ watch, setValue, control, errors, editConfig }: frmElem
   const navigate = useNavigate()
 
   const { calculateAmounts, totalInvoice } = useInvoiceCalculations()
-
+  useEffect(() => {
+    calculateAmounts(watch('lines') || [])
+  }, [totalInvoice])
   const {
     frmAction,
     formItem,
@@ -225,7 +228,7 @@ const PosOrderLines = ({ watch, setValue, control, errors, editConfig }: frmElem
     formItem,
   })
 
-  const isReadOnly = watch('state') === (TypeStateOrder.PAID || TypeStateOrder.CANCELED)
+  const isReadOnly = watch('state') === (TypeStateOrder.REGISTERED || TypeStateOrder.CANCELED)
 
   // Inicializar el estado con los datos del tableData si existen
   const [data, setData] = useState<PosOrderLine[]>(() => {
@@ -878,15 +881,17 @@ const PosOrderLines = ({ watch, setValue, control, errors, editConfig }: frmElem
     )
   )
   const QuantityCell = memo(
-    ({ row, table }: { row: Row<PosOrderLine>; table: Table<PosOrderLine> }) => (
-      <SwitchableTextField
-        isReadOnly={isReadOnly}
-        value={row.original.quantity}
-        onBlur={() => {}}
-        type="number"
-        onChange={(e) => handleQuantityTextChange(e, row, table)}
-      />
-    )
+    ({ row, table }: { row: Row<PosOrderLine>; table: Table<PosOrderLine> }) => {
+      return (
+        <SwitchableTextField
+          isReadOnly={isReadOnly}
+          value={row.original.quantity}
+          onBlur={() => {}}
+          type="number"
+          onChange={(e) => handleQuantityTextChange(e, row, table)}
+        />
+      )
+    }
   )
   useEffect(() => {
     Promise.all([loadUomOptions(), loadProductOptions(), loadTaxOptions()])
@@ -994,6 +999,7 @@ const PosOrderLines = ({ watch, setValue, control, errors, editConfig }: frmElem
         enableSorting: true,
         cell: ({ row, table }) => <PriceCell row={row} table={table} />,
       },
+      /*
       {
         header: 'Impuestos',
         accessorKey: 'lines_taxes',
@@ -1032,18 +1038,23 @@ const PosOrderLines = ({ watch, setValue, control, errors, editConfig }: frmElem
           )
         },
       },
+      */
       {
         header: 'Tara',
         accessorKey: 'tara',
         size: 150,
-
         minSize: 80,
         enableSorting: true,
         meta: {
           align: 'right',
         },
-        cell: ({ row }) => <div className="text-right">{row.original.tara_total} Kg</div>,
+        cell: ({ row }) => (
+          <div className="text-right">
+            {row.original.tara_total !== 0 && `${row.original.tara_total} Kg`}
+          </div>
+        ),
       },
+      /*
       {
         header: 'amount_tax',
         accessorKey: 'amount_tax',
@@ -1083,6 +1094,21 @@ const PosOrderLines = ({ watch, setValue, control, errors, editConfig }: frmElem
         },
         cell: ({ row }) => (
           <div className="text-right">{formatCurrency(row.original.amount_withtaxed)}</div>
+        ),
+      },
+      */
+
+      {
+        header: 'Total',
+        accessorKey: 'amount_withtaxed_total',
+        size: 150,
+        minSize: 80,
+        enableSorting: true,
+        meta: {
+          align: 'right',
+        },
+        cell: ({ row }) => (
+          <div className="text-right">{formatCurrency(row.original.amount_withtaxed_total)}</div>
         ),
       },
 
@@ -1188,7 +1214,7 @@ const PosOrderLines = ({ watch, setValue, control, errors, editConfig }: frmElem
         )}
       </DragEditableTable>
 
-      <InvoiceTotals totals={totalInvoice} />
+      <InvoiceTotals totals={formItem} />
 
       <div className="w-full mt-4 flex gap-7">
         <div className="w-4/6">
@@ -1235,7 +1261,7 @@ export const TableActions = ({
     */
   ]
   const isReadOnly =
-    watch('state') === TypeStateOrder.PAID || watch('state') === TypeStateOrder.CANCELED
+    watch('state') === TypeStateOrder.REGISTERED || watch('state') === TypeStateOrder.CANCELED
   return (
     <>
       {isReadOnly ? (
@@ -1276,22 +1302,14 @@ const TotalRow = ({ label, amount, bold = false }: TotalRowProps) => (
 )
 
 export const InvoiceTotals = ({ totals }: { totals: TotalsInvoiceType }) => {
-  const { totals: totalsInvoice, tax_totals } = totals
   return (
-    <div className="flex flex-col gap-2 min-w-[200px] ml-auto p-4 bg-gray-50 rounded-md mt-4">
-      {/* Subtotal */}
-      <TotalRow label="Subtotal" amount={totalsInvoice.amount_untaxed || 0} />
-
-      {/* Impuestos */}
-      {tax_totals.map((tax) => (
-        <TotalRow key={tax.id_tax} label={tax.name} amount={tax.amount} />
-      ))}
-
-      {/* Total */}
-      <div className="border-t border-gray-300 mt-2 pt-2">
-        <TotalRow label="Total" amount={totalsInvoice.amount_total} bold />
-      </div>
-    </div>
+    <PaymentTotals
+      totals={{
+        total: totals?.amount_untaxed || 0,
+        paid: totals?.amount_payment || 0,
+        difference: totals?.amount_residual || 0,
+      }}
+    />
   )
 }
 

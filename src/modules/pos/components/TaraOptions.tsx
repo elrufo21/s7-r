@@ -141,6 +141,7 @@ const TaraOptions = () => {
               className="numpad-button btn2 btn2-white fs-3 lh-lg"
               onClick={() => {
                 handleTaraSelect(value.weight)
+                setHandleChange(true)
                 setTaraValue(selectedOrder, selectedItem || 0, value.weight)
               }}
               style={{

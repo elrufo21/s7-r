@@ -113,7 +113,7 @@ export class OfflineCache {
       'products',
       'categories',
       'payment_method',
-      'pos_order',
+      // 'pos_order',
       'pos_point',
       'pos_session',
       'contact',
@@ -129,7 +129,10 @@ export class OfflineCache {
 
   /** Refresca el cache de productos, categorías y métodos de pago. */
   async refreshCache(executeFnc: any) {
+    const { setSyncLoading } = useAppStore.getState()
+    setSyncLoading(true)
     try {
+      //await this.syncOfflineData(executeFnc, 0, () => {})
       await this.clearAll()
       await this.cacheProducts(executeFnc)
       await this.cacheCategories(executeFnc)
@@ -435,7 +438,7 @@ export class OfflineCache {
         session_id: session_id,
         currency_id: 1,
         company_id: 1,
-        invoice_state: 'P',
+        invoice_state: 'T',
         partner_id: 66135,
         amount_untaxed: 5,
         amount_withtaxed: 40,
@@ -503,7 +506,10 @@ export class OfflineCache {
     executeFnc: any,
     point_id: number,
     setOrderData: any,
-    setSyncLoading?: (loading: boolean) => void
+    setSyncLoading?: (loading: boolean) => void,
+    session_id?: number,
+    cleanOrders?: boolean,
+    reloadOrders?: boolean
   ) {
     const { selectedOrder, setSelectedOrder, setSelectedItem } = useAppStore.getState()
     if (setSyncLoading) setSyncLoading(true)
@@ -624,6 +630,7 @@ export class OfflineCache {
       try {
         const newOrders = await executeFnc('fnc_pos_order', 's_pos', [
           ['0', 'fequal', 'point_id', point_id],
+          ['0', 'fequal', 'session_id', session_id],
           /*[
             '0',
             'multi_filter_in',
@@ -658,8 +665,7 @@ export class OfflineCache {
             setSelectedItem(null)
           }
         } else {
-          console.log('aeaea')
-          setSelectedOrder(null)
+          setSelectedOrder(selectedOrder)
           setSelectedItem(null)
         }
       } catch (error) {
@@ -667,6 +673,13 @@ export class OfflineCache {
 
         const fallbackOrders = await this.getOfflinePosOrders()
         setOrderData(fallbackOrders)
+      }
+      if (cleanOrders) {
+        setOrderData([])
+        await this.clearOfflinePosOrders()
+      }
+      if (reloadOrders) {
+        this.refreshCache(executeFnc)
       }
     } catch (error) {
       console.error('Error general durante la sincronización:', error)

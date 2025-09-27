@@ -1,19 +1,30 @@
 import { ViewTypeEnum, FormConfig, ModulesEnum, ItemStatusTypeEnum } from '@/shared/shared.types'
 import { FrmMiddle, Subtitle } from './configView'
+import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 
-const PosDetailConfig: FormConfig = {
-  fnc_name: 'fnc_detail_pos_order',
+const PosPayBillModal: FormConfig = {
+  fnc_name: 'asd',
   title: 'Detalle de la sesión',
   dsc: 'Detalle de la sesión',
   dsc_view: 'name',
   module: ModulesEnum.POINTS_OF_SALE,
   views: [ViewTypeEnum.LIBRE],
   view_default: ViewTypeEnum.FORM,
-  module_url: '/action/894',
+  module_url: '/action/931',
   item_url: '',
   new_url: '',
   isFavoriteColumn: false,
-
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
   fnc_valid: (data) => {
     if (!data['name']) {
       return null
@@ -132,4 +143,4 @@ const PosDetailConfig: FormConfig = {
   },
 }
 
-export default PosDetailConfig
+export default PosPayBillModal

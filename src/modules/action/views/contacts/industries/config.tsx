@@ -1,6 +1,7 @@
 import { ViewTypeEnum } from '@/shared/shared.types'
 import { FormConfig, ModulesEnum } from '@/shared/shared.types'
 import { FrmMiddle } from './configView'
+import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 
 const IndustriesConfig: FormConfig = {
   fnc_name: 'fnc_partner_industry',
@@ -16,7 +17,17 @@ const IndustriesConfig: FormConfig = {
 
   no_content_title: 'Crear un sector',
   no_content_dsc: 'Especifique los sectores para clasificar sus contactos y elaborar informes.',
-
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
   fnc_valid: (data) => {
     if (!data['name']) {
       return null

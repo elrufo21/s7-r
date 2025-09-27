@@ -19,12 +19,11 @@ export enum InvoiceEnum_edi_state {
 
 export enum StatusInvoiceEnum {
   BORRADOR = 'D', // BORRADOR
-  PUBLICADO = 'P', // REGISTRADO
+  REGISTERED = 'R', // REGISTRADO
   CANCELADO = 'C', // CANCELADO
-  
+
   FULL_PAYMENT = 'FP', // PAGO COMPLETO
   PARTIAL_PAYMENT = 'PP', // PAGO PARCIAL
-  
 }
 
 export enum Enum_Payment_State {
@@ -117,6 +116,7 @@ export interface MoveLine {
 export interface MoveLinesTax {
   label: string
   tax_id: number
+  value?: string | number
 }
 
 export enum Enum_Journal_State {

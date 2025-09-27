@@ -86,7 +86,6 @@ export function FrmMiddle({ control, errors, editConfig, setValue, watch }: frmE
           multiple={false}
           onRowClick={async (option) => {
             setValue('bank_id', option.bank_id)
-
             setFrmIsChanged(true)
             setNewAppDialogs([])
           }}

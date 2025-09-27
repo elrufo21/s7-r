@@ -5,6 +5,7 @@ interface Props {
   onClick: () => void
 }
 const StatButton = ({ icon: Icon, text, value, onClick }: Props) => {
+  if (Number(value) === 0 || typeof value == 'string' || !value) return null
   return (
     <button className="btn btn-outline-secondary stat_button" onClick={onClick}>
       <Icon className="button_icon" />

@@ -1,3 +1,4 @@
+import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 import { ViewTypeEnum, FormConfig, ModulesEnum, ItemStatusTypeEnum } from '@/shared/shared.types'
 
 const PosPaymentConfig: FormConfig = {
@@ -12,7 +13,17 @@ const PosPaymentConfig: FormConfig = {
   item_url: '',
   new_url: '',
   isFavoriteColumn: false,
-
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
   fnc_valid: (data) => {
     if (!data['name']) {
       return null

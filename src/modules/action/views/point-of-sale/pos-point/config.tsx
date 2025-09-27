@@ -1,5 +1,6 @@
 import { ViewTypeEnum, FormConfig, ModulesEnum, ItemStatusTypeEnum } from '@/shared/shared.types'
 import { FrmTitle } from './configView'
+import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 
 const PosPaymentConfig: FormConfig = {
   fnc_name: 'fnc_pos_point',
@@ -15,13 +16,17 @@ const PosPaymentConfig: FormConfig = {
   // isFavoriteColumn: false,
   no_content_title: 'Crear un nuevo PdV',
   no_content_dsc: 'Configure al menos un punto de venta.',
-  ribbonList: [
-    {
-      label: 'ARCHIVADO',
-      state: 'I',
-      className: 'ribbon',
-    },
-  ],
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
 
   fnc_valid: (data) => {
     if (!data['name']) {

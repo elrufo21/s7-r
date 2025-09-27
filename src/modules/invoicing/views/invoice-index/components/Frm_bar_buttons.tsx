@@ -9,6 +9,8 @@ import sendInvoiceConfig from '@/modules/invoicing/views/modal-send-invoice/conf
 import creditNoteConfig from '@/modules/invoicing/views/modal-credit-note/config'
 import debitNoteConfig from '@/modules/invoicing/views/modal-debit-note/config'
 import PaymentTermsConfig from '../../modal-payment/config'
+import { CustomToast } from '@/components/toast/CustomToast'
+import { getRequiredFieldErrors } from '@/shared/helpers/validators'
 
 export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
   const setFrmAction = useAppStore((state) => state.setFrmAction)
@@ -67,7 +69,7 @@ export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
       watch('c51_id') &&
       watch('partner_id')
     ) {
-      setValue('state', StatusInvoiceEnum.PUBLICADO)
+      setValue('state', StatusInvoiceEnum.REGISTERED)
     }
   }
   const onCancel = () => {
@@ -99,12 +101,13 @@ export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
         <FrmBaseDialog
           config={PaymentTermsConfig}
           values={{
-            memo: formItem?.name,
+            [`memo-${dialog}`]: formItem?.name,
             move_id: formItem?.move_id,
             partner_id: formItem?.partner_id,
             date: new Date(),
             state: Enum_Payment_State.IN_PROCESS,
             payment_type: 'R',
+            dialog_id: dialog,
           }}
           setGetData={(fn: any) => (getData = fn)}
         />
@@ -115,8 +118,60 @@ export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
           type: 'confirm',
           onClick: async () => {
             const formData = getData()
-            const res = await executeFnc('fnc_payment', ActionTypeEnum.INSERT, formData)
-            console.log(res)
+            const errorsObj: Record<string, any> = {}
+
+            if (!formData[`journal_id-${dialog}`]) {
+              errorsObj.journal_id = {
+                type: 'required',
+                message: 'El campo "Diario" es obligatorio',
+              }
+            }
+
+            if (!formData[`payment_method_id-${dialog}`]) {
+              errorsObj.payment_method_id = {
+                type: 'required',
+                message: 'Seleccione un método de pago',
+              }
+            }
+
+            // Obtiene los nombres de los campos faltantes usando tu helper
+            const missingFields = getRequiredFieldErrors(errorsObj, {
+              journal_id: 'Diario',
+              payment_method_id: 'Método de pago',
+            })
+
+            if (missingFields.length > 0) {
+              const missingFieldsItems = (
+                <ul className="space-y-2 my-2">
+                  {missingFields.map((field, index) => (
+                    <li key={index} className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+                      <span className="text-sm text-white">
+                        {index + 1}. {field}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )
+
+              CustomToast({
+                title: 'Campos obligatorios',
+                description: missingFieldsItems,
+                type: 'error',
+              })
+
+              return
+            }
+            formData.journal_id = formData[`journal_id-${dialog}`]
+            formData.payment_method_id = formData[`payment_method_id-${dialog}`]
+            formData.date = formData[`date-${dialog}`]
+            formData.memo = formData[`memo-${dialog}`]
+
+            delete formData[`journal_id-${dialog}`]
+            delete formData[`payment_method_id-${dialog}`]
+            delete formData[`date-${dialog}`]
+            delete formData[`memo-${dialog}`]
+            await executeFnc('fnc_payment', ActionTypeEnum.INSERT, formData)
             setFrmAction(FormActionEnum.PRE_SAVE)
             closeDialogWithData(dialog, {})
           },
@@ -198,7 +253,7 @@ export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
       ],
     })
   }
-  if (watch('state') === StatusInvoiceEnum.PUBLICADO)
+  if (watch('state') === StatusInvoiceEnum.REGISTERED)
     return (
       <>
         <button className="btn btn-primary" onClick={sendInvoice}>

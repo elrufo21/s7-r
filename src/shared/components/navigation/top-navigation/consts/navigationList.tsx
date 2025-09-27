@@ -1,6 +1,7 @@
 import { ModulesEnum } from '@/shared/shared.types'
 import { MenuItemType } from '@/shared/components/navigation/navigation.types'
 import Frm_894_config from '@/modules/action/views/point-of-sale/order-detail-modal/config'
+import Frm_830_config from '@/modules/action/views/point-of-sale/pos-pay-bill-modal/config'
 import PosReportSessionConfig from '@/modules/action/views/point-of-sale/report-session-modal/config'
 
 export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
@@ -698,8 +699,51 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
           },
           */
           { title: 'Clientes', key: 'clientes', path: '/action/895' },
+
+          {
+            title: 'Pagar recibos',
+            key: 'pagar-recibos',
+            path: '/action/930',
+            openAsModal: true,
+            modalConfig: {
+              initialValues: {
+                fncName: 'fnc_pos_order',
+                action: 's',
+                data: [[1, 'pag', 1]],
+              },
+              size: 'medium',
+              title: 'Pagar recibo',
+              config: Frm_830_config,
+            },
+          },
         ],
       },
+
+      /*
+      {
+        title: 'Herramientas',
+        key: 'tools-menu',
+        items: [
+          {
+            title: 'Pagar recibos',
+            key: 'pagar-recibos',
+            path: '/action/930',
+            openAsModal: true,
+            modalConfig: {
+              initialValues: {
+                fncName: 'fnc_pos_order',
+                action: 's',
+                data: [[1, 'pag', 1]],
+              },
+              size: 'medium',
+              title: 'Pagar recibo',
+              config: Frm_830_config,
+            },
+          },
+        ],
+      },
+      */
+
       {
         title: 'Productos',
         key: 'productos-menu',
@@ -718,7 +762,7 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
           {
             title: 'Detalles de las ventas',
             key: 'sesiones',
-            path: '/action/894', // ✅ Usar el path del config existente
+            path: '/action/894',
             openAsModal: true,
             modalConfig: {
               size: 'medium',

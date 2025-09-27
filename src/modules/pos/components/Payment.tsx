@@ -14,6 +14,8 @@ import { CustomHeader } from './CustomHeader'
 import { offlineCache } from '@/lib/offlineCache'
 import { usePWA } from '@/hooks/usePWA'
 import { TypeStateOrder, TypeStatePayment } from '../types'
+import { adjustTotal } from '@/shared/helpers/helpers'
+import { now } from '@/shared/utils/dateUtils'
 
 // Definición de la interfaz para los pagos
 interface PaymentItem {
@@ -141,13 +143,13 @@ const Payment = () => {
   }
 
   const getChange = () => {
-    const total = getTotalPriceByOrder(selectedOrder)
+    const total = adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted
     const paid = getTotalPaid()
     return Math.max(0, paid - total)
   }
 
   const getRemainingAmount = () => {
-    const total = getTotalPriceByOrder(selectedOrder)
+    const total = adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted
     const paid = getTotalPaid()
     return Math.max(0, total - paid)
   }
@@ -156,10 +158,9 @@ const Payment = () => {
     setFrmIsChanged(true)
     const id = crypto.randomUUID()
 
-    const orderTotal = getTotalPriceByOrder(selectedOrder)
+    const orderTotal = adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted
     const totalPaid = getTotalPaid()
     const remaining = orderTotal < 0 ? orderTotal - totalPaid : getRemainingAmount()
-
     const newPayment: PaymentItem = {
       payment_id: id,
       company_id: userData.company_id,
@@ -254,10 +255,10 @@ const Payment = () => {
   const validatePayment = () => {
     let message = ''
     if (getRemainingAmount() === 0) return
-    if (getRemainingAmount() === getTotalPriceByOrder(selectedOrder)) {
+    if (getRemainingAmount() === adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted) {
       message = 'Se creara una orden de venta al credito'
     }
-    if (getRemainingAmount() !== getTotalPriceByOrder(selectedOrder)) {
+    if (getRemainingAmount() !== adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted) {
       message = 'Se creara una orden con pago parcial'
     }
     return message
@@ -295,11 +296,12 @@ const Payment = () => {
 
   const handleValidatePayment = async () => {
     let paymentState = TypeStatePayment.PAYMENT
-    if (getRemainingAmount() === getTotalPriceByOrder(selectedOrder)) {
+
+    if (getRemainingAmount() === adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted) {
       paymentState = TypeStatePayment.PENDING_PAYMENT
     }
     if (
-      getRemainingAmount() !== getTotalPriceByOrder(selectedOrder) &&
+      getRemainingAmount() !== adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted &&
       getRemainingAmount() !== 0
     ) {
       paymentState = TypeStatePayment.PARTIAL_PAYMENT
@@ -308,19 +310,32 @@ const Payment = () => {
     const { userData } = state
     const data = orderData.find((item) => item.order_id === selectedOrder)
     const newPayments = data?.payments?.filter((item: any) => item.amount !== 0)
+    const amount_payment = () => {
+      const totalPaid = getTotalPaid()
+      if (paymentState === TypeStatePayment.PAYMENT) {
+        return adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted
+      } else if (paymentState === TypeStatePayment.PARTIAL_PAYMENT) {
+        return totalPaid
+      } else if (paymentState === TypeStatePayment.PENDING_PAYMENT) {
+        return 0
+      }
+    }
+
     if (!data) return
     const updatedData = {
       ...data,
       name: data.name,
       state: TypeStateOrder.REGISTERED,
-      order_date: new Date(),
+      order_date: now().toPlainDateTime().toString(),
       user_id: userData?.user_id,
       session_id: typeof data.order_id === 'string' ? session_id : undefined,
       currency_id: 1,
       company_id: userData?.company_id,
-      invoice_state: data.invoice_state || 'P',
+      invoice_state: data.invoice_state || 'T',
       partner_id: finalCustomer?.partner_id,
       payment_state: paymentState,
+      combined_states: TypeStateOrder.REGISTERED + paymentState,
+      //añadir tipo uom_name:string
       lines: data.lines?.map((item: any, i: number) => ({
         line_id: item?.line_id,
         order_id: selectedOrder,
@@ -341,17 +356,16 @@ const Payment = () => {
         tara_quantity: item?.tara_quantity,
         base_quantity: item?.base_quantity,
         tara_total: item?.tara_total,
+        uom_name: item?.uom_name,
       })),
       order_id: selectedOrder,
       payments: newPayments,
-      amount_untaxed:
-        data.lines?.reduce((total: number, item: any) => total + (item?.price_unit || 0), 0) || 0,
-      amount_withtaxed:
-        data.lines?.reduce(
-          (total: number, item: any) => total + (item?.price_unit || 0) * (item?.quantity || 0),
-          0
-        ) || 0,
-      amount_total: getTotalPriceByOrder(selectedOrder),
+      amount_untaxed: adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted,
+      amount_withtaxed: adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted,
+      amount_total: adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted,
+      amount_adjustment: adjustTotal(getTotalPriceByOrder(selectedOrder)).residual,
+      amount_payment: amount_payment(),
+      amount_residual: getRemainingAmount().toFixed(2),
     }
     if (!isOnline || localMode) {
       await offlineCache.saveOrderOffline({
@@ -774,9 +788,9 @@ const Payment = () => {
           <section className="paymentlines-container">
             {/* <div className="text-[100px] text-center text-[RGBA(17,34,29,1)]"> */}
             <div className="text-[100px] text-center text-[#283833]">
-              {/* S/ {getTotalPriceByOrder(selectedOrder).toFixed(2)} */}
+              {/* S/ {adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted.toFixed(2)} */}
               <span className="text-[60%] opacity-[0.7]">S/ </span>
-              <span className="">{getTotalPriceByOrder(selectedOrder).toFixed(2)}</span>
+              <span className="">{adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted}</span>
             </div>
           </section>
 

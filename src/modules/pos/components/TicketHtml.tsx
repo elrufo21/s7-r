@@ -1,3 +1,4 @@
+import { adjustTotal } from '@/shared/helpers/helpers'
 import React from 'react'
 
 interface TicketHTMLProps {
@@ -72,34 +73,55 @@ const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
   return (
     <div
       style={{
-        width: '226px',
+        width: '300px',
         minHeight: '600px',
-        fontSize: '8px',
+        fontSize: '12px',
         fontFamily: 'monospace',
         backgroundColor: 'white',
-        padding: '10px',
+        padding: '8px',
+        paddingTop: '50px',
+        paddingBottom: '50px',
         color: 'black',
+        fontWeight: 'bold',
       }}
     >
       {/* Encabezado */}
-      <div style={{ textAlign: 'center', marginBottom: '10px' }}>
-        <div style={{ fontSize: '12px', fontWeight: 'bold' }}>Avícola "Pie Grande"</div>
-        <div style={{ fontSize: '8px', marginBottom: '2px' }}>JR. HUANCAS 20 - HUANCAYO</div>
-        <div style={{ fontSize: '8px', marginBottom: '2px' }}>PEDIDOS 964-612067</div>
+      <div style={{ textAlign: 'center', marginBottom: '12px' }}>
+        <div
+          style={{
+            fontSize: '16px',
+            fontWeight: 'bold',
+            marginBottom: '4px',
+          }}
+        >
+          Avícola "Pie Grande"
+        </div>
+        <div style={{ fontSize: '11px', marginBottom: '3px', fontWeight: 'bold' }}>
+          JR. HUANCAS 20 - HUANCAYO
+        </div>
+        <div style={{ fontSize: '11px', marginBottom: '3px', fontWeight: 'bold' }}>
+          PEDIDOS 964-612067
+        </div>
       </div>
 
       {/* Control Section */}
-      <div style={{ marginBottom: '10px', textAlign: 'center' }}>
-        <div style={{ fontSize: '10px', fontWeight: 'bold', marginBottom: '5px' }}>
+      <div style={{ marginBottom: '12px', textAlign: 'center' }}>
+        <div
+          style={{
+            fontSize: '14px',
+            fontWeight: 'bold',
+            marginBottom: '6px',
+          }}
+        >
           CONTROL DE PESO
         </div>
-        <div style={{ fontSize: '8px', marginBottom: '2px' }}>
+        <div style={{ fontSize: '11px', marginBottom: '3px', fontWeight: 'bold' }}>
           Nº {info.receipt_number || info.name}
         </div>
-        <div style={{ fontSize: '8px', marginBottom: '2px' }}>
+        <div style={{ fontSize: '11px', marginBottom: '3px', fontWeight: 'bold' }}>
           FECHA {formatDateToDDMMYYYY(info.order_date || new Date())}
         </div>
-        <div style={{ fontSize: '8px', fontWeight: 'bold' }}>{session?.session_name}</div>
+        <div style={{ fontSize: '11px', fontWeight: 'bold' }}>{session?.session_name}</div>
       </div>
 
       {/* Table Header */}
@@ -107,22 +129,21 @@ const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
         style={{
           display: 'flex',
           borderBottom: '1px solid black',
-          paddingBottom: '2px',
-          marginBottom: '2px',
-          fontSize: '7px',
+          paddingBottom: '3px',
+          marginBottom: '3px',
+          fontSize: '10px',
           fontWeight: 'bold',
         }}
       >
-        <div style={{ width: '25%', textAlign: 'center' }}>Producto</div>
-        <div style={{ width: '10%', textAlign: 'center' }}>Bruto</div>
-        <div style={{ width: '8%', textAlign: 'center' }}>C/T</div>
-        <div style={{ width: '10%', textAlign: 'center' }}>Tara</div>
-        <div style={{ width: '12%', textAlign: 'center' }}>Neto</div>
+        <div style={{ width: '20%', textAlign: 'left' }}>Producto</div>
+        <div style={{ width: '15%', textAlign: 'center' }}>Bruto</div>
+
+        <div style={{ width: '15%', textAlign: 'center' }}>Tara</div>
+        <div style={{ width: '15%', textAlign: 'center' }}>Neto</div>
         <div style={{ width: '15%', textAlign: 'center' }}>Precio</div>
         <div style={{ width: '20%', textAlign: 'center' }}>Total</div>
       </div>
 
-      {/* Table Rows */}
       {info.lines &&
         info.lines.map((item: any, index: number) => (
           <div
@@ -130,20 +151,20 @@ const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
             style={{
               display: 'flex',
               marginBottom: '2px',
-              fontSize: '7px',
+              fontSize: '9px',
+              fontWeight: 'bold',
             }}
           >
-            <div style={{ width: '25%' }}>{item.name}</div>
-            <div style={{ width: '10%', textAlign: 'center' }}>{item.base_quantity}</div>
-            <div style={{ width: '8%', textAlign: 'center' }}>{item.tara_quantity}</div>
-            <div style={{ width: '10%', textAlign: 'center' }}>
-              {(item.tara_total || 0).toFixed(1)}
+            <div style={{ width: '20%', textAlign: 'left' }}>{item.name}</div>
+            <div style={{ width: '15%', textAlign: 'center' }}>{item.base_quantity}</div>
+            <div style={{ width: '15%', textAlign: 'center' }}>
+              {`${item.tara_quantity}/${(item.tara_total || 0).toFixed(1)}`}
             </div>
-            <div style={{ width: '12%', textAlign: 'right' }}>{item.quantity}</div>
+            <div style={{ width: '15%', textAlign: 'center' }}>{item.quantity}</div>
             <div style={{ width: '15%', textAlign: 'center' }}>
               {(Number(item.price_unit) || 0).toFixed(2)}
             </div>
-            <div style={{ width: '20%', textAlign: 'right' }}>
+            <div style={{ width: '20%', textAlign: 'center' }}>
               {(item.amount_untaxed_total || 0).toFixed(2)}
             </div>
           </div>
@@ -152,40 +173,95 @@ const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
       {/* Totales */}
       <div
         style={{
-          marginTop: '10px',
+          marginTop: '12px',
           borderTop: '1px solid black',
-          paddingTop: '5px',
+          paddingTop: '6px',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-          <span style={{ fontSize: '8px', fontWeight: 'bold' }}>TOTAL:</span>
-          <span style={{ fontSize: '8px' }}>{total.toFixed(2)}</span>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            marginBottom: '4px',
+          }}
+        >
+          <span style={{ fontSize: '12px', fontWeight: 'bold' }}>TOTAL:</span>
+          <span style={{ fontSize: '12px', fontWeight: 'bold' }}>
+            {adjustTotal(total).adjusted}
+          </span>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-          <span style={{ fontSize: '8px', fontWeight: 'bold' }}>EFECTIVO:</span>
-          <span style={{ fontSize: '8px' }}>{paymentTotals.efectivo.toFixed(2)}</span>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            marginBottom: '3px',
+          }}
+        >
+          <span style={{ fontSize: '11px', fontWeight: 'bold' }}>EFECTIVO:</span>
+          <span style={{ fontSize: '11px', fontWeight: 'bold' }}>
+            {paymentTotals.efectivo.toFixed(2)}
+          </span>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-          <span style={{ fontSize: '8px', fontWeight: 'bold' }}>TARJETA:</span>
-          <span style={{ fontSize: '8px' }}>{paymentTotals.tarjeta.toFixed(2)}</span>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            marginBottom: '3px',
+          }}
+        >
+          <span style={{ fontSize: '11px', fontWeight: 'bold' }}>TARJETA:</span>
+          <span style={{ fontSize: '11px', fontWeight: 'bold' }}>
+            {paymentTotals.tarjeta.toFixed(2)}
+          </span>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-          <span style={{ fontSize: '8px', fontWeight: 'bold' }}>YAPE:</span>
-          <span style={{ fontSize: '8px' }}>{paymentTotals.yape.toFixed(2)}</span>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            marginBottom: '3px',
+          }}
+        >
+          <span style={{ fontSize: '11px', fontWeight: 'bold' }}>YAPE:</span>
+          <span style={{ fontSize: '11px', fontWeight: 'bold' }}>
+            {paymentTotals.yape.toFixed(2)}
+          </span>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-          <span style={{ fontSize: '8px', fontWeight: 'bold' }}>TRANSF:</span>
-          <span style={{ fontSize: '8px' }}>{paymentTotals.transf.toFixed(2)}</span>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            marginBottom: '3px',
+          }}
+        >
+          <span style={{ fontSize: '11px', fontWeight: 'bold' }}>TRANSF:</span>
+          <span style={{ fontSize: '11px', fontWeight: 'bold' }}>
+            {paymentTotals.transf.toFixed(2)}
+          </span>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-          <span style={{ fontSize: '8px', fontWeight: 'bold' }}>CREDITO:</span>
-          <span style={{ fontSize: '8px' }}>{paymentTotals.credito.toFixed(2)}</span>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            marginBottom: '3px',
+          }}
+        >
+          <span style={{ fontSize: '11px', fontWeight: 'bold' }}>CREDITO:</span>
+          <span style={{ fontSize: '11px', fontWeight: 'bold' }}>
+            {paymentTotals.credito.toFixed(2)}
+          </span>
         </div>
       </div>
 
       {/* Footer */}
-      <div style={{ textAlign: 'center', marginTop: 'auto', paddingTop: '10px' }}>
-        <span>S7</span>
+      <div
+        style={{
+          textAlign: 'center',
+          marginTop: '20px',
+          marginBottom: '50px',
+          paddingTop: '10px',
+        }}
+      >
+        <span style={{ fontSize: '12px', fontWeight: 'bold' }}>S7</span>
       </div>
     </div>
   )

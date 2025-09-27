@@ -2,6 +2,7 @@ import { FormConfig, ItemStatusTypeEnum, ModulesEnum } from '@/shared/shared.typ
 import { FrmMiddle } from './configView'
 import { ViewTypeEnum } from '@/shared/shared.types'
 import { ColorSquare } from '@/shared/components/extras/ColorSquare'
+import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 
 const ContactTagsConfig: FormConfig = {
   fnc_name: 'fnc_partner_category',
@@ -17,6 +18,17 @@ const ContactTagsConfig: FormConfig = {
   no_content_title: 'Crear una etiqueta de contacto',
   no_content_dsc: 'Asigne etiquetas a sus contactos para organizarlos, filtrarlos y rastrearlos.',
   visibility_columns: {},
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
 
   fnc_valid: (data) => {
     if (!data['name']) {

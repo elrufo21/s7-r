@@ -1,6 +1,7 @@
 import { ViewTypeEnum } from '@/shared/shared.types'
 import { FormConfig, ModulesEnum } from '@/shared/shared.types'
 import { FrmMiddle } from './configView'
+import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 
 const ContactTitlesConfig: FormConfig = {
   fnc_name: 'fnc_cia_ct_cti',
@@ -17,7 +18,17 @@ const ContactTitlesConfig: FormConfig = {
   no_content_title: 'Crear un título',
   no_content_dsc:
     'Administre los nombres de contacto así como sus abreviaciones (p. ej. "Sr." "Sra.", etc).',
-
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
   fnc_valid: (data) => {
     if (!data['title_name']) {
       return null

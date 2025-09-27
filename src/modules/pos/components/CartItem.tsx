@@ -1,5 +1,6 @@
 import useAppStore from '@/store/app/appStore'
 import type { CartItem as CartItemType } from '../types'
+import { formatNumber, formatNumberDisplay } from '@/shared/helpers/helpers'
 // import { GrTrash } from 'react-icons/gr'
 
 interface CartItemProps {
@@ -28,14 +29,18 @@ export default function CartItem({
       <div className="flex items-center">
         {/* <div className="font-medium w-6 text-center"> */}
         <div className="w-6 text-center c1">
-          {/*Number.parseFloat(item.quantity).toFixed(maxDecimals)*/ item.quantity}
+          {
+            /*Number.parseFloat(item.quantity).toFixed(maxDecimals)*/ formatNumberDisplay(
+              item.quantity
+            )
+          }
         </div>
 
         <div className="ml-4">
           {/* <div className="font-medium text-gray-900">{item.name}</div> */}
           <div className="text-gray-900">{item.name}</div>
           {/* <div className="text-gray-500 text-sm">- Verde, L</div> */}
-          <div>{`S/ ${item.price_unit.toFixed(2)} por ${item.uom_name}`}</div>
+          <div>{`S/ ${item?.price_unit} por ${item?.uom_name}`}</div>
 
           {item.tara_value || item.tara_quantity ? (
             <>
@@ -45,7 +50,7 @@ export default function CartItem({
               </div>
               <div>
                 Tara:
-                <span className="font-bold">{` ${item.tara_value ? item.tara_value : '0.00'} kg x ${item.tara_quantity || 0} und = ${item.tara_value * (item.tara_quantity || 0)} kg`}</span>
+                <span className="font-bold">{` ${item.tara_value ? item.tara_value : '0.00'} kg x ${item.tara_quantity || 0} und = ${formatNumber(item.tara_value * (item.tara_quantity || 0))} kg`}</span>
               </div>
             </>
           ) : (
@@ -56,7 +61,10 @@ export default function CartItem({
       <div className="flex items-center space-x-3">
         <div className="text-right">
           {/* <div className="font-medium"> */}
-          <div className="c1">{(item.price_unit * item.quantity).toFixed(maxDecimals)}</div>
+          <div className="c1">
+            {' '}
+            {formatNumber(Number(item.price_unit) * Number(item.quantity), maxDecimals)}
+          </div>
 
           {btnDelete && (
             <button

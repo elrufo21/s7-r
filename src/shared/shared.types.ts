@@ -1,5 +1,6 @@
 import { ReactNode } from 'react'
 import { UseFormWatch } from 'react-hook-form'
+import { RibbonConfig } from './components/form/bars/RibbonRender'
 
 export enum ViewTypeEnum {
   BASE = '',
@@ -158,11 +159,7 @@ export type FormConfig = {
   formTitle?: string
   formButtons?: any
   skipValidation?: boolean
-  ribbonList?: {
-    label: string
-    state: string
-    className: string
-  }[]
+  ribbonList?: RibbonConfig
 
   fnc_valid: (data: any, formItem?: any) => any
 

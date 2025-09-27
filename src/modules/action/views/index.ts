@@ -50,6 +50,7 @@ import Frm_899_config from '@/modules/action/views/point-of-sale/pos-variants-pr
 import Frm_900_config from '@/modules/action/views/point-of-sale/containers/config'
 import Frm_901_config from '@/modules/action/views/point-of-sale/weighing-scale/config'
 import Frm_902_config from '@/modules/action/views/point-of-sale/pos-unit-measurement/config'
+import Frm_930_config from '@/modules/action/views/point-of-sale/pos-pay-bill/config'
 
 import Frm_903_config from '@/modules/action/views/point-of-sale/users/config'
 
@@ -109,4 +110,5 @@ export const forms: FormConfigs = {
   Frm_901_config,
   Frm_902_config,
   Frm_903_config,
+  Frm_930_config,
 }

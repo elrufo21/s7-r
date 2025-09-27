@@ -139,7 +139,6 @@ export function FrmBottom({ control, errors, setValue, watch }: frmElementsProps
               errors={errors}
               endButtons={
                 <>
-                  {/* Botón de calculadora solo para efectivo */}
                   {account.isCash && (
                     <button
                       className="btn btn-secondary oe_kanban_action mr-4"
@@ -172,7 +171,6 @@ export function FrmBottom({ control, errors, setValue, watch }: frmElementsProps
       </div>
     )
   }
-  console.log('watch', watch('closing_note'))
   return (
     <>
       <div className="flex flex-col gap-4 w-full min-h-[100px]">
@@ -181,18 +179,19 @@ export function FrmBottom({ control, errors, setValue, watch }: frmElementsProps
 
         <>
           <div className="flex items-center gap-4 h-full">
-            <label className="font-medium text-gray-700 min-w-[140px]">Nota de cierre</label>
-          </div>
-          <div className="flex-1">
-            <PosTextControlled name="closing_note" control={control} errors={errors} />
-          </div>
-        </>
-        <>
-          <div className="flex items-center gap-4 h-full">
             <label className="font-medium text-gray-700 min-w-[140px]">Nota de apertura</label>
           </div>
           <div className="flex-1">
             <PosTextControlled name="opening_note" control={control} errors={errors} />
+          </div>
+        </>
+
+        <>
+          <div className="flex items-center gap-4 h-full">
+            <label className="font-medium text-gray-700 min-w-[140px]">Nota de cierre</label>
+          </div>
+          <div className="flex-1">
+            <PosTextControlled name="closing_note" control={control} errors={errors} />
           </div>
         </>
       </div>
@@ -281,9 +280,6 @@ export function FrmMiddle({ watch }: frmElementsProps) {
   }
 
   return (
-    <div className="o_inner_group w-[500px]">
-      {/* Renderizar todas las cuentas dinámicamente - funciona para cualquier método */}
-      {cashData.accounts.map(renderAccountSection)}
-    </div>
+    <div className="o_inner_group w-[500px]">{cashData.accounts.map(renderAccountSection)}</div>
   )
 }

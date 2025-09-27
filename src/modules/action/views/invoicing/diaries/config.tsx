@@ -9,6 +9,7 @@ import {
   FrmTitle,
 } from './configView'
 import { BsBook } from 'react-icons/bs'
+import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 
 const JournalConfig: FormConfig = {
   fnc_name: 'fnc_journal',
@@ -22,6 +23,17 @@ const JournalConfig: FormConfig = {
   item_url: '/action/622/detail',
   new_url: '/action/622/detail/new',
   isFavoriteColumn: false,
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
   formButtons: [
     {
       icon: BsBook,

@@ -3,10 +3,11 @@ import { Row } from '@tanstack/react-table'
 import { ViewTypeEnum } from '@/shared/shared.types'
 import { FrmMiddle, FrmTab0, FrmTab1, FrmTab2, FrmTab3 } from './configView'
 import { Frm_bar_buttons } from './components/Frm_bar_buttons'
-import { TypeStateOrder } from '@/modules/pos/types'
+import { TypeStateOrder, TypeStatePayment } from '@/modules/pos/types'
 import { formatPlain } from '@/shared/utils/dateUtils'
+import { StatusChip } from '@/shared/components/table/components/StatusChip'
 
-interface PosOrderData {
+export interface PosOrderData {
   order_id: number
   group_id: number
   company_id: number
@@ -58,33 +59,34 @@ const PosOrderConfig: FormConfig = {
   no_content_dsc: 'Inicie una nueva sesión para registrar nuevas órdenes.',
   filters_columns: [],
   visibility_columns: {},
-  ribbonList: [
-    {
-      label: 'En progreso',
-      state: TypeStateOrder.IN_PROGRESS,
-      className: 'ribbon-simple bg-yellow-500',
+  // const { field, ribbonList, transformValue, getLabelFromData, fallback } = config
+  ribbonList: {
+    field: 'payment_state',
+    ribbonList: [
+      {
+        label: 'En progreso',
+        state: TypeStateOrder.IN_PROGRESS,
+        className: 'ribbon-simple bg-yellow-500',
+      },
+      { label: 'PAGADO', state: TypeStatePayment.PAYMENT, className: 'ribbon-simple' },
+      {
+        label: 'PAGADO PARCIAL',
+        state: TypeStatePayment.PARTIAL_PAYMENT,
+        className: 'ribbon-simple bg-yellow-500',
+      },
+      {
+        label: 'PAGO PENDIENTE',
+        state: TypeStatePayment.PENDING_PAYMENT,
+        className: 'ribbon-simple bg-yellow-500',
+      },
+      { label: 'PAGO', state: TypeStateOrder.PAY, className: 'ribbon-simple bg-yellow-500' },
+    ],
+    getLabelFromData: (_, data) => data?.payment_state_description,
+    fallback: {
+      className: 'ribbon-simple bg-blue-500',
+      getLabel: (value) => `Estado desconocido: ${value}`,
     },
-    {
-      label: 'PAGADO',
-      state: 'RPF',
-      className: 'ribbon-simple',
-    },
-    {
-      label: 'PAGADO PARCIAL',
-      state: 'RPP',
-      className: 'ribbon-simple bg-yellow-500',
-    },
-    {
-      label: 'PAGO PENDIENTE',
-      state: 'RPE',
-      className: 'ribbon-simple bg-yellow-500',
-    },
-    {
-      label: 'PAGO',
-      state: TypeStateOrder.PAY,
-      className: 'ribbon-simple bg-yellow-500',
-    },
-  ],
+  },
   fnc_valid: (data: any) => {
     const newData = data.lines.map((item: any, index: number) => {
       if (item.action === ActionTypeEnum.INSERT) {
@@ -196,44 +198,62 @@ const PosOrderConfig: FormConfig = {
           size: 120,
           cell: ({ row }: { row: Row<PosOrderData> }) => {
             const state = row.original.state
-            const defineClass = (state: string) => {
-              // if (state === 'I') return 'text-bg-danger'
-              if (state === 'I') return 'text-bg-warning'
-              if (state === 'Y') return 'text-bg-warning'
+            const stateDescription = row.original.state_description
 
-              if (state === 'E') return 'text-bg-info'
-              if (state === 'P') return 'text-bg-success'
-              if (state === 'RPF') return 'text-bg-success'
-              if (state === 'RPP') return 'text-bg-warning'
-              if (state === 'RPE') return 'text-bg-warning'
-              //if (state === 'C') return 'text-bg-danger'
-              return ''
-            }
             return (
-              <div className={`chip_demo ${defineClass(state)}`}>
-                {row.original.state_description}
-              </div>
+              <StatusChip
+                value={state}
+                description={stateDescription}
+                textMap={{
+                  I: 'En curso',
+                  Y: 'Pago',
+                  C: 'Cancelado',
+                  RPF: 'Pagado',
+                  RPP: 'Pagado Parcial',
+                  RPE: 'Error de Pago',
+                }}
+                classesMap={{
+                  I: 'text-bg-warning',
+                  Y: 'text-bg-warning',
+                  C: 'text-bg-danger',
+                  RPF: 'text-bg-success',
+                  RPP: 'text-bg-warning',
+                  RPE: 'text-bg-warning',
+                }}
+                defaultText="Sin estado"
+              />
             )
           },
         },
 
+        /*
         {
           header: 'Estado de la factura',
           size: 100,
           cell: ({ row }: { row: Row<PosOrderData> }) => {
-            const invoice_state = row.original.invoice_state
-            const defineClass = (state: string) => {
-              if (state === 'P') return 'text-bg-warning'
-              if (state === 'B') return 'text-bg-success'
-              return ''
-            }
+            const invoiceState = row.original.invoice_state
+            const invoiceStateDescription = row.original.invoice_state_description
+
             return (
-              <div className={`chip_demo ${defineClass(invoice_state || '')}`}>
-                {row.original.invoice_state_description}
-              </div>
+              <StatusChip
+                value={invoiceState || ''}
+                description={invoiceStateDescription}
+                textMap={{
+                  T: 'Por facturar',
+                  P: 'Facturado parcialmente',
+                  F: 'Facturado por completo',
+                }}
+                classesMap={{
+                  T: 'text-bg-warning',
+                  P: 'text-bg-success',
+                  F: 'text-bg-success',
+                }}
+                defaultText="Sin estado"
+              />
             )
           },
         },
+        */
       ],
     },
   },
@@ -455,10 +475,23 @@ const PosOrderConfig: FormConfig = {
 
   statusBarConfig: {
     visibleStates: [
-      { state: TypeStateOrder.REGISTERED, label: 'Registrado' },
-      { state: TypeStateOrder.CANCELED, label: 'Cancelado' },
+      { state: TypeStateOrder.IN_PROGRESS, label: 'En curso' },
+      {
+        state: [
+          TypeStateOrder.PAY,
+          TypeStateOrder.REGISTERED,
+          TypeStateOrder.PARTIAL_PAYMENT,
+          TypeStateOrder.PENDING_PAYMENT,
+          TypeStateOrder.PAID,
+        ],
+        label: 'Registrado',
+      },
+      {
+        state: [TypeStateOrder.CANCELED],
+        label: 'Cancelado',
+      },
     ],
-    defaultState: 'I',
+    defaultState: TypeStateOrder.REGISTERED,
   },
 
   form_inputs: {

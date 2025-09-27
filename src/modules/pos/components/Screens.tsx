@@ -16,6 +16,7 @@ import TicketHTML from './TicketHtml'
 
 import { AiOutlineEdit } from 'react-icons/ai'
 import { RiPrinterLine } from 'react-icons/ri'
+import { TypeStateOrder } from '../types'
 
 const Screens = () => {
   const {
@@ -196,7 +197,8 @@ const Screens = () => {
                   </div>
                 </div>
               </div>
-              {(orderSelected?.state === 'P' || orderSelected?.state === 'E') && (
+              {(orderSelected?.state === TypeStateOrder.REGISTERED ||
+                orderSelected?.state === 'E') && (
                 <div className="control-buttons ticket">
                   {/*
                   <button

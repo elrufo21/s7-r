@@ -1,7 +1,7 @@
 import { Controller } from 'react-hook-form'
 import { Calendar } from 'primereact/calendar'
 import { addLocale } from 'primereact/api'
-import { formatShortDate } from '@/shared/utils/dateUtils'
+import { formatPlain, formatShortDate, getHour } from '@/shared/utils/dateUtils'
 import useAppStore from '@/store/app/appStore'
 
 interface DatepickerControlledProps {
@@ -13,6 +13,8 @@ interface DatepickerControlledProps {
   showTodayText?: boolean
   className?: string
   editConfig?: any
+  disableFrmIsChanged?: boolean
+  disableHour?: boolean
 }
 
 export const DatepickerControlled = ({
@@ -23,6 +25,8 @@ export const DatepickerControlled = ({
   showTodayText = true,
   className = '',
   editConfig = { config: {} },
+  disableFrmIsChanged = false,
+  disableHour = true,
 }: DatepickerControlledProps) => {
   const today = startToday ? new Date() : null
   const { setFrmIsChanged } = useAppStore()
@@ -85,9 +89,11 @@ export const DatepickerControlled = ({
             <div className={'ls_view ' + className}>
               {field.value ? (
                 showTodayText && isToday(new Date(field.value)) ? (
-                  `Hoy`
-                ) : (
+                  `Hoy ${disableHour == false ? getHour(field.value) : ''}`
+                ) : disableHour ? (
                   formatShortDate(field.value)
+                ) : (
+                  formatPlain(field.value)
                 )
               ) : (
                 <span className="text-transparent">-</span>
@@ -102,7 +108,9 @@ export const DatepickerControlled = ({
               value={field.value ? new Date(field.value) : today}
               onChange={(e) => {
                 const selectedDate = e.value
-                setFrmIsChanged(true)
+                if (!disableFrmIsChanged) {
+                  setFrmIsChanged(true)
+                }
                 field.onChange(selectedDate)
               }}
               locale="es"

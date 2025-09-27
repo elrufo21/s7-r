@@ -1,5 +1,6 @@
 import { ViewTypeEnum, FormConfig, ModulesEnum, ItemStatusTypeEnum } from '@/shared/shared.types'
 import { FrmPhoto, FrmMiddle, FrmMiddleRight, FrmTitle } from './configView'
+import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 
 const PosPaymentConfig: FormConfig = {
   fnc_name: 'fnc_pos_payment_method',
@@ -16,13 +17,17 @@ const PosPaymentConfig: FormConfig = {
   no_content_title: 'Agregar un nuevo método de pago',
   no_content_dsc:
     'Desde los ajustes generales de la aplicación Facturación, creará métodos de pago bancarios y en efectivo automáticamente.',
-  ribbonList: [
-    {
-      label: 'ARCHIVADO',
-      state: 'I',
-      className: 'ribbon',
-    },
-  ],
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
 
   fnc_valid: (data) => {
     if (!data['name']) {

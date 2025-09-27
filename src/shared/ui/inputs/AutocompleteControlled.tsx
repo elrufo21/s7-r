@@ -26,6 +26,7 @@ type AutocompleteControlledProps = {
   loadMoreResults?: (value?: any) => void
   fnc_enlace?: (value: any, name: any) => void
   is_edit?: boolean
+  disableFrmIsChanged?: boolean
 }
 
 export const AutocompleteControlled = ({
@@ -48,6 +49,7 @@ export const AutocompleteControlled = ({
   createAndEditItem,
   is_edit = false,
   editConfig = { config: {} },
+  disableFrmIsChanged = false,
 }: AutocompleteControlledProps) => {
   const { setFrmIsChanged } = useAppStore()
   const { config } = editConfig
@@ -79,7 +81,7 @@ export const AutocompleteControlled = ({
           return (
             <div className={className}>
               {recordOption ? (
-                <div className='ls_view'>
+                <div className="ls_view">
                   <span
                     className={fnc_enlace ? 'text-teal-600 cursor-pointer' : 'text-black'}
                     onClick={fnc_enlace ? () => executeEnlace(value) : undefined}
@@ -114,7 +116,7 @@ export const AutocompleteControlled = ({
               }}
               onChange={async (_, data) => {
                 handleOnChanged?.(data)
-                setFrmIsChanged(true)
+                if (!disableFrmIsChanged) setFrmIsChanged(true)
                 if (typeof data?.value === 'string') {
                   const newValue = data?.value.split('-')
                   if (newValue.length === 1) {

@@ -15,7 +15,17 @@ const CompaniesConfig: FormConfig = {
   module_url: '/action/4',
   item_url: '/action/4/detail',
   visibility_columns: {},
-
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
   fnc_valid: (data: any) => {
     /**
      * 

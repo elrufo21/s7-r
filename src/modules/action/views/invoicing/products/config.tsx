@@ -13,6 +13,7 @@ import {
 } from '@/modules/action/views/inventory/products/configView'
 import { Chip } from '@mui/material'
 import { compareArrays } from '../../inventory/utils'
+import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 
 const ProductsConfig: FormConfig = {
   fnc_name: 'fnc_product',
@@ -28,13 +29,17 @@ const ProductsConfig: FormConfig = {
   isFavoriteColumn: true,
   no_content_title: 'Crear nuevo producto',
   no_content_dsc: 'Defina productos y categorías para su empresa',
-  ribbonList: [
-    {
-      label: 'ARCHIVADO',
-      state: 'I',
-      className: 'ribbon',
-    },
-  ],
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
 
   fnc_valid: (data, formItem) => {
     const { taxes_sale, taxes_purchase } = data

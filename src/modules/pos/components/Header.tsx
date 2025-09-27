@@ -26,8 +26,8 @@ export default function Header({ pointId }: { pointId: string }) {
     screen,
     openDialog,
     closeDialogWithData,
-    searchTerm,
-    setSearchTerm,
+    searchProduct,
+    setSearchProduct,
     selectedNavbarMenu,
     setSelectedNavbarMenu,
     setSelectedItem,
@@ -39,7 +39,6 @@ export default function Header({ pointId }: { pointId: string }) {
     deleteOrder,
     setHandleChange,
   } = useAppStore()
-
   const { saveCurrentOrder } = usePosActions()
   const { isOnline } = usePWA()
   const { state } = JSON.parse(localStorage.getItem('session-store') ?? '{}')
@@ -61,7 +60,6 @@ export default function Header({ pointId }: { pointId: string }) {
       // await fetchLatestOrder()
     }
   }, [saveCurrentOrder])
-
   useEffect(() => {
     document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => {
@@ -122,10 +120,11 @@ export default function Header({ pointId }: { pointId: string }) {
   }
   function updatePmValues(data: any) {
     if (!data.pm || !Array.isArray(data.pm)) return data
-
+    const isCash = data.watchData?.find((pm: any) => pm.is_cash === true).payment_method_id
     data.pm = data.pm.map((item: any) => {
       // Nombre del campo esperado (pm_{id} o cash_count si es efectivo)
-      const fieldName = item.payment_method_id === 9 ? 'cash_count' : `pm_${item.payment_method_id}`
+      const fieldName =
+        item.payment_method_id === isCash ? 'cash_count' : `pm_${item.payment_method_id}`
 
       // Buscar el valor contado en los campos
       const counted = parseFloat(data[fieldName] ?? 0)
@@ -166,106 +165,172 @@ export default function Header({ pointId }: { pointId: string }) {
     })
   }
   const handleCloseCashRegister = async () => {
-    offlineCache.syncOfflineData(executeFnc, Number(pointId), setOrderData, setSyncLoading)
-    const { oj_data: sessionLogOutData } = await executeFnc('fnc_pos_session_log_out', '', [
-      session_id,
-    ])
-    const { oj_data: sessionData } = await executeFnc('fnc_pos_session', 's1', [session_id])
+    await offlineCache
+      .syncOfflineData(executeFnc, Number(pointId), setOrderData, setSyncLoading, session_id)
+      .then(async () => {
+        const { oj_data: sessionLogOutData } = await executeFnc('fnc_pos_session_log_out', '', [
+          session_id,
+        ])
+        const { oj_data: sessionData } = await executeFnc('fnc_pos_session', 's1', [session_id])
 
-    let getData = () => ({})
-    const dialogId = openDialog({
-      title: 'Cerrando la caja registradora',
-      dialogContent: () => (
-        <FrmBaseDialog
-          config={PosCloseCashConfig}
-          initialValues={{
-            watchData: sessionLogOutData.result_1,
-            pm: sessionLogOutData.result_2,
-            opening_note: sessionData[0]?.opening_note,
-          }}
-          setGetData={(fn: any) => (getData = fn)}
-        />
-      ),
-      buttons: [
-        {
-          text: 'Cerrar caja registradora',
-          type: 'confirm',
-          onClick: async () => {
-            const pass = await confirmDialog('Cerrar caja', 'Se eliminarán todas las órdenes')
-            if (!pass) return
-            const formData = getData()
-            const rawData = {
-              session_id: session_id,
-              state: 'R',
-              stop_at: now().toPlainDateTime().toString(),
-              final_cash: 0,
-              closing_note: '',
-              ...formData,
-            }
-            const data = updatePmValues(rawData)
-            const dataInStore = await offlineCache.getOfflinePosOrders()
-            for (let i = 0; i < dataInStore.length; i++) {
-              if (dataInStore[i].state === 'I' || dataInStore[i].state === 'Y') {
-                deleteOrder(dataInStore[i].order_id)
-                await offlineCache.markOrderAsDeleted(dataInStore[i].order_id)
-                setHandleChange(true)
-              }
-            }
+        let getData = () => ({})
+        const dialogId = openDialog({
+          title: 'Cerrando la caja registradora',
+          dialogContent: () => (
+            <FrmBaseDialog
+              config={PosCloseCashConfig}
+              initialValues={{
+                watchData: sessionLogOutData.result_1,
+                pm: sessionLogOutData.payment_methods,
+                opening_note: sessionData[0]?.opening_note,
+              }}
+              setGetData={(fn: any) => (getData = fn)}
+            />
+          ),
+          buttons: [
+            {
+              text: 'Cerrar caja registradora',
+              type: 'confirm',
+              onClick: async () => {
+                const pass = await confirmDialog('Cerrar caja', 'Se eliminarán todas las órdenes')
+                if (!pass) return
 
-            if (!isOnline) {
-              const sessions = await offlineCache.getOfflinePosSessions()
-              const session = sessions.find((s: any) => s.point_id === pointId)
-              await offlineCache.updatePosSessionOffline({
-                ...data,
-                action: session?.action === 'i' ? 'i' : 'u',
-              })
-            } else {
-              await executeFnc('fnc_pos_session', 'u', {
-                session_id: data.session_id,
-                state: 'R',
-                stop_at: data.stop_at,
-                final_cash: data.cash_count,
-                closing_note: data.closing_note,
-                payment_methods: data.pm,
-                payment_methods_change: true,
-              })
-            }
-            const posPoints = await offlineCache.getOfflinePosPoints()
-            const posPoint = posPoints.find((p: any) => p.point_id === Number(pointId))
-            if (posPoint) {
-              posPoint.session_id = null
-              await offlineCache.updatePosPointOffline(posPoint)
-            }
-            const currentData = JSON.parse(localStorage.getItem('sessions') ?? '[]')
-            const newSessions = currentData.map((s: any) =>
-              s.point_id === Number(pointId) ? { ...s, session_id: null } : s
-            )
-            setSelectedOrder('')
-            localStorage.setItem('sessions', JSON.stringify(newSessions))
-            offlineCache.syncOfflineData(executeFnc, pointId, setOrderData, setSyncLoading)
-            closeDialogWithData(dialogId, {})
+                const formData = getData()
+                const rawData = {
+                  session_id: session_id,
+                  state: 'R',
+                  stop_at: now().toPlainDateTime().toString(),
+                  final_cash: 0,
+                  closing_note: '',
+                  ...formData,
+                }
+                const data = updatePmValues(rawData)
+                // 🔄 Eliminar pedidos en memoria
+                const dataInStore = await offlineCache.getOfflinePosOrders()
+                for (let i = 0; i < dataInStore.length; i++) {
+                  if (dataInStore[i].state === 'I' || dataInStore[i].state === 'Y') {
+                    deleteOrder(dataInStore[i].order_id, true)
+                    await offlineCache.markOrderAsDeleted(dataInStore[i].order_id)
+                    setHandleChange(true)
+                  }
+                }
 
-            setScreen('products')
+                if (!isOnline) {
+                  const sessions = await offlineCache.getOfflinePosSessions()
+                  const session = sessions.find((s: any) => s.point_id === pointId)
+                  await offlineCache.updatePosSessionOffline({
+                    ...data,
+                    action: session?.action === 'i' ? 'i' : 'u',
+                  })
+                } else {
+                  await executeFnc('fnc_pos_session', 'u', {
+                    session_id: data.session_id,
+                    state: 'R',
+                    stop_at: data.stop_at,
+                    final_cash: data.cash_count ?? 0,
+                    closing_note: data.closing_note,
+                    payment_methods: data.pm,
+                    payment_methods_change: true,
+                  })
+                }
 
-            navigate('/points-of-sale')
-          },
-        },
-        {
-          text: 'Descartar',
-          type: 'cancel',
-          onClick: () => {
-            closeDialogWithData(dialogId, null)
-          },
-        },
-        {
-          text: 'Entrada y salida de efectivo',
-          type: 'confirm',
-          onClick: async () => {
-            handleCashInAndOut()
-          },
-        },
-      ],
-    })
+                // 🔄 Actualizar posPoints offline
+                const posPoints = await offlineCache.getOfflinePosPoints()
+                const posPoint = posPoints.find((p: any) => p.point_id === Number(pointId))
+                if (posPoint) {
+                  posPoint.session_id = null
+                  await offlineCache.updatePosPointOffline(posPoint)
+                }
+
+                // 🔄 Actualizar sessions en localStorage
+                const currentData = JSON.parse(localStorage.getItem('sessions') ?? '[]')
+                const newSessions = currentData.map((s: any) =>
+                  s.point_id === Number(pointId) ? { ...s, session_id: null } : s
+                )
+                localStorage.setItem('sessions', JSON.stringify(newSessions))
+
+                // ✅ Remover de local_pos_open
+                const localPosOpen = JSON.parse(localStorage.getItem('local_pos_open') || '[]')
+                const filtered = localPosOpen.filter((p: any) => p.point_id !== Number(pointId))
+                localStorage.setItem('local_pos_open', JSON.stringify(filtered))
+
+                setSelectedOrder('')
+                offlineCache.syncOfflineData(
+                  executeFnc,
+                  pointId,
+                  setOrderData,
+                  setSyncLoading,
+                  session_id,
+                  true
+                )
+
+                closeDialogWithData(dialogId, {})
+                setScreen('products')
+                navigate('/points-of-sale')
+              },
+            },
+            {
+              text: 'Descartar',
+              type: 'cancel',
+              onClick: () => {
+                closeDialogWithData(dialogId, null)
+              },
+            },
+            {
+              text: 'Entrada y salida de efectivo',
+              type: 'cancel',
+              onClick: async () => {
+                handleCashInAndOut()
+              },
+            },
+            {
+              text: 'Venta diaria',
+              type: 'cancel',
+              onClick: async () => {
+                const formData = getData()
+                const rawData = {
+                  session_id: session_id,
+                  state: 'R',
+                  stop_at: now().toPlainDateTime().toString(),
+                  final_cash: 0,
+                  closing_note: '',
+                  ...formData,
+                }
+                const data = updatePmValues(rawData)
+
+                const { oj_data } = await executeFnc('fnc_pos_session', 'u', {
+                  session_id: data.session_id,
+                  stop_at: data.stop_at,
+                  final_cash: data.cash_count,
+                  closing_note: data.closing_note,
+                  payment_methods: data.pm,
+                  payment_methods_change: true,
+                })
+                const { oj_data: rs } = await executeFnc('fnc_pos_session_report', '', [
+                  oj_data.session_id,
+                ])
+                import('@/modules/invoicing/components/SalesReportPDF').then((module) => {
+                  const SalesReportPDF = module.default
+
+                  import('@react-pdf/renderer').then((pdfModule) => {
+                    const { pdf } = pdfModule
+                    pdf(SalesReportPDF({ data: { products: rs.result_1, control: rs.result_3 } }))
+                      .toBlob()
+                      .then((blob) => {
+                        const url = URL.createObjectURL(blob)
+                        const link = document.createElement('a')
+                        link.href = url
+                        link.download = 'detalle-ventas.pdf'
+                        link.click()
+                        URL.revokeObjectURL(url)
+                      })
+                  })
+                })
+              },
+            },
+          ],
+        })
+      })
   }
 
   const fnc_change_order = useCallback(
@@ -345,16 +410,9 @@ export default function Header({ pointId }: { pointId: string }) {
                     (o) => o.state === TypeStateOrder.IN_PROGRESS || o.state === TypeStateOrder.PAY
                   ).length === 0
                 ) {
-                  addNewOrder({
-                    date: new Date(),
-                    user_id: userData?.user_id,
-                    point_id: Number(pointId),
-                    session_id: session_id,
-                    company_id: userData?.company_id,
-                    partner_id: finalCustomer?.partner_id,
-                    partner_name: finalCustomer?.partner_name,
-                    lines: [],
-                  })
+                  setScreen('ticket')
+                  addNewOrder()
+                  setSelectedNavbarMenu('O')
                   return
                 }
                 setSelectedOrder(
@@ -445,8 +503,8 @@ export default function Header({ pointId }: { pointId: string }) {
             type="text"
             className="w-[20rem] pl-10 pr-10 py-2 border rounded-md bg-white text-[16px]"
             placeholder="Buscar productos ..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={searchProduct}
+            onChange={(e) => setSearchProduct(e.target.value)}
             aria-label="Buscar productos"
           />
 
@@ -470,10 +528,10 @@ export default function Header({ pointId }: { pointId: string }) {
           </div>
 
           {/* Botón X para limpiar el input */}
-          {searchTerm && (
+          {searchProduct && (
             <button
               type="button"
-              onClick={() => setSearchTerm('')}
+              onClick={() => setSearchProduct('')}
               className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-black"
             >
               <svg

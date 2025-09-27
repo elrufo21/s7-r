@@ -1,5 +1,6 @@
 import { ViewTypeEnum, FormConfig, ModulesEnum, ItemStatusTypeEnum } from '@/shared/shared.types'
 import { FrmMiddle } from './configView'
+import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 
 const PosPaymentConfig: FormConfig = {
   fnc_name: 'fnc_pos_payment',
@@ -15,6 +16,17 @@ const PosPaymentConfig: FormConfig = {
   // isFavoriteColumn: false,
   no_content_title: 'No se encontraron órdenes',
   no_content_dsc: 'Inicie una nueva sesión para registrar nuevas órdenes.',
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
   fnc_valid: (data) => {
     if (!data['name']) {
       return null

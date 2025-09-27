@@ -2,6 +2,7 @@ import useAppStore from '@/store/app/appStore'
 import { KanbanBox } from './kanban/kanbanBox'
 import { FormConfig } from '@/shared/shared.types'
 import { useNavigate } from 'react-router-dom'
+import { CustomToast } from '@/components/toast/CustomToast'
 
 type KanbanViewProps = {
   config: FormConfig
@@ -73,6 +74,25 @@ export const KanbanView = ({ config }: KanbanViewProps) => {
                         className="btn btn-primary oe_kanban_action"
                         onClick={(e) => {
                           e.stopPropagation()
+
+                          const localPosOpen = JSON.parse(
+                            localStorage.getItem('local_pos_open') || '[]'
+                          )
+                          const isOpen = localPosOpen.some(
+                            (p: any) => p?.point_id === item.point_id
+                          )
+
+                          if (!isOpen) {
+                            CustomToast({
+                              title: 'No se puede seguir vendiendo',
+                              description: `Otro usuario esta en el punto de venta.`,
+                              type: 'warning',
+                            })
+                            console.warn(
+                              `Punto ${item.point_id} no está en local_pos_open. No se abrirá.`
+                            )
+                            return // ❌ NO seguimos vendiendo si no está registrado
+                          }
 
                           const sessions = JSON.parse(localStorage.getItem('sessions') || '[]')
 

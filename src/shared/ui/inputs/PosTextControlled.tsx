@@ -54,11 +54,9 @@ export const PosTextControlled = ({
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
-                {/* Botón ❌ siempre visible */}
                 <IconButton size="small" onClick={() => field.onChange('')}>
                   <GrClose fontSize="small" />
                 </IconButton>
-                {/* Botones extras desde fuera */}
                 {endButtons}
               </InputAdornment>
             ),

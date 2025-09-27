@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { required } from '@/shared/helpers/validators'
 interface custom_frm_elementsProps extends frmElementsProps {
   rules?: boolean
+  disableFrmIsChanged?: boolean
 }
 const Custom_field_currency = ({
   control,
@@ -14,6 +15,7 @@ const Custom_field_currency = ({
   watch,
   label = true,
   rules = false,
+  disableFrmIsChanged = false,
 }: custom_frm_elementsProps) => {
   const [currency, setCurrency] = useState<{ label: string; value: string }[]>([])
   const { formItem, createOptions } = useAppStore()
@@ -57,6 +59,7 @@ const Custom_field_currency = ({
               setValue('currency_name', data.label)
             }}
             rules={rules ? required() : {}}
+            disableFrmIsChanged={disableFrmIsChanged}
           />
         </div>
       </div>

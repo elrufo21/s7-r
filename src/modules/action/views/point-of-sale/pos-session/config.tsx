@@ -10,7 +10,6 @@ import { Frm_bar_buttons } from './components/Frm_bar_buttons'
 import { Row } from 'primereact/row'
 import { formatPlain } from '@/shared/utils/dateUtils'
 import { BsCash, BsFillBasket2Fill } from 'react-icons/bs'
-
 const PosSessionConfig: FormConfig = {
   fnc_name: 'fnc_pos_session',
   title: 'Sesiones',
@@ -25,6 +24,7 @@ const PosSessionConfig: FormConfig = {
   no_content_title: 'No se encontraron sesiones',
   no_content_dsc:
     'Una sesión es un periodo, usualmente un día, durante el cual utiliza el Punto de ventas para realizar sus ventas.',
+
   fnc_valid: (data) => {
     if (!data['name']) {
       return null
@@ -105,7 +105,11 @@ const PosSessionConfig: FormConfig = {
           accessorKey: 'stop_at',
           className: ' text-left',
           cell: ({ row }: { row: Row }) => (
-            <div>{row.original.stop_at ? formatPlain(row.original.stop_at) : ''}</div>
+            <div>
+              {row.original.stop_at && row.original.state == 'R'
+                ? formatPlain(row.original.stop_at)
+                : ''}
+            </div>
           ),
         },
         {
@@ -117,6 +121,9 @@ const PosSessionConfig: FormConfig = {
           header: 'Saldo final',
           accessorKey: 'final_cash',
           className: ' text-left',
+          cell: ({ row }: { row: Row }) => (
+            <div>{row.original.state === 'R' ? row.original.final_cash : ''}</div>
+          ),
         },
       ],
     },

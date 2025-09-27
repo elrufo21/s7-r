@@ -29,13 +29,17 @@ const ContactIndexConfig: FormConfig = {
   no_content_title: 'Crear un contacto en su libreta de direcciones',
   no_content_dsc:
     'S7 le ayuda a llevar seguimiento de todas las actividades relacionadas con sus contactos.',
-  ribbonList: [
-    {
-      label: 'ARCHIVADO',
-      state: 'I',
-      className: 'ribbon',
-    },
-  ],
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
 
   fnc_valid: (data: any, formItem: any) => {
     if (!data?.name) return null

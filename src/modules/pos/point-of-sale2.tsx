@@ -29,6 +29,7 @@ const PointOfSale = () => {
     sync_data,
     setSyncData,
     setSessionId,
+    setPointId,
   } = useAppStore()
   const sessions = JSON.parse(localStorage.getItem('sessions') || '[]')
   const session = sessions.find((s: any) => s.point_id === Number(pointId))
@@ -42,10 +43,16 @@ const PointOfSale = () => {
         //  await offlineCache.generateTestOrders(100, Number(pointId), session_id)
       }
       if (sync_data) {
-        await offlineCache.syncOfflineData(executeFnc, pointId, setOrderData, setSyncLoading)
+        await offlineCache.syncOfflineData(
+          executeFnc,
+          pointId,
+          setOrderData,
+          setSyncLoading,
+          session_id
+        )
         setSyncData(false)
       }
-      await initializePointOfSale(pointId, isOnline)
+      await initializePointOfSale(pointId, isOnline, session_id)
     } catch (error) {
       console.error('Fallo la inicialización de datos del POS:', error)
     }
@@ -76,7 +83,13 @@ const PointOfSale = () => {
   useEffect(() => {
     if (isOnline && !localMode) {
       const getPosOrders = async () => {
-        offlineCache.syncOfflineData(executeFnc, Number(pointId), setOrderData, setSyncLoading)
+        offlineCache.syncOfflineData(
+          executeFnc,
+          Number(pointId),
+          setOrderData,
+          setSyncLoading,
+          session_id
+        )
         offlineCache.clearSyncOrdersQueue()
       }
       getPosOrders()
@@ -98,7 +111,7 @@ const PointOfSale = () => {
 
     let getData = () => ({})
     const dialogId = openDialog({
-      title: `Control de apertura ${pointId ? `- Punto ${pointId}` : ''}`,
+      title: `Control de apertura ${pointId ? `- Punto ${session.session_name}` : ''}`,
       disableClose: true,
       dialogContent: () => (
         <FrmBaseDialog
@@ -122,12 +135,15 @@ const PointOfSale = () => {
               currency_id: 1,
               user_id: userData.user_id,
             }
+
             if (!isOnline) {
               const id = Math.floor(Math.random() * 1000000)
+
               await offlineCache.cachePosSessions(executeFnc, 'i', {
                 session_id: id,
                 ...data,
               })
+
               const posPoints = await offlineCache.getOfflinePosPoints()
               const posPoint = posPoints.find((p: any) => p.point_id === Number(pointId))
               if (posPoint) {
@@ -135,18 +151,32 @@ const PointOfSale = () => {
                 posPoint.state = 'u'
                 await offlineCache.updatePosPointOffline(posPoint)
               }
+
               await offlineCache.updatePosSessionOffline({
                 session_id: id,
                 ...data,
                 action: 'i',
               })
+
+              // ✅ Actualizamos localStorage.sessions
               const newSessions = sessions.map((s: any) =>
                 s.point_id === Number(pointId) ? { ...s, session_id: id } : s
               )
               localStorage.setItem('sessions', JSON.stringify(newSessions))
+
+              // ✅ Actualizamos local_pos_open para habilitar "Seguir vendiendo"
+              const localPosOpen = JSON.parse(localStorage.getItem('local_pos_open') || '[]')
+              const exists = localPosOpen.some((p: any) => p.point_id === Number(pointId))
+              if (!exists) {
+                localPosOpen.push({ point_id: Number(pointId), session_id: id })
+                localStorage.setItem('local_pos_open', JSON.stringify(localPosOpen))
+              }
+
               closeDialogWithData(dialogId, {})
               return
             }
+
+            // ✅ Modo online
             const response = await executeFnc('fnc_pos_session', 'i', data)
             if (response.oj_data?.session_id) {
               const newSessions = sessions.map((s: any) =>
@@ -158,7 +188,20 @@ const PointOfSale = () => {
               localStorage.setItem('sessions', JSON.stringify(newSessions))
 
               setSessionId(response.oj_data?.session_id)
+              setPointId(Number(pointId))
+
+              // ✅ Guardamos en local_pos_open para que luego "Seguir vendiendo" funcione
+              const localPosOpen = JSON.parse(localStorage.getItem('local_pos_open') || '[]')
+              const exists = localPosOpen.some((p: any) => p.point_id === Number(pointId))
+              if (!exists) {
+                localPosOpen.push({
+                  point_id: Number(pointId),
+                  session_id: response.oj_data.session_id,
+                })
+                localStorage.setItem('local_pos_open', JSON.stringify(localPosOpen))
+              }
             }
+
             closeDialogWithData(dialogId, {})
           },
         },

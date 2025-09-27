@@ -10284,3 +10284,126 @@ img, svg {
 {
   min-height: 54.2px;
 }
+
+
+
+.no-spin::-webkit-inner-spin-button,
+.no-spin::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.no-spin[type=number] {
+  -moz-appearance: textfield;
+}
+
+/*
+********************************************************************************** 
+l-toast - ini
+**********************************************************************************
+*/
+
+.l-toast-container {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  
+  border-radius: 0.25rem;
+
+  padding-left: 5px;
+  padding-right: 5px;
+  padding-bottom: 1px;
+  
+  min-height: 70px;
+
+  opacity: 0.8;
+  transition: opacity 0.5s ease-in-out;
+
+  background-color: oklch(45.5% 0.188 13.697);
+}
+
+.l-toast-container.l-toast-success {
+  background-color: oklch(62.7% 0.194 149.214);
+}
+.l-toast-container.l-toast-error {
+  background-color: oklch(58.6% 0.253 17.585);
+}
+.l-toast-container.l-toast-info {
+  background-color: oklch(54.6% 0.245 262.881);
+}
+.l-toast-container.l-toast-warning {
+  background-color: oklch(68.1% 0.162 75.834);
+}
+
+.l-toast-container:hover {
+  opacity: 0.9;
+}
+
+.l-toast-container .l-toast-icon {
+  min-width: 42px;
+  width: 42px;
+  /* justify-items: center; */
+  align-content: center;
+  padding: 10px;
+}
+
+.l-toast-container .l-toast-content {
+display: flex;
+flex-direction: column;
+justify-content: center;
+padding: 10px 5px 10px 15px;
+}
+
+.l-toast-container .l-toast-content > .t_title {
+  color: white;
+  font-weight: bold;
+  font-size: 1rem;
+  width: max-content;
+}
+
+.l-toast-container .l-toast-content > .t_description {
+  color: white;
+}
+
+.l-toast-container .l-toast-close {
+  min-width: 43px;
+  width: 43px;
+  display: flex;
+  align-items: center;
+  padding: 12px 10px 10px 10px;
+}
+.l-toast-container .l-toast-close > button {
+  min-width: 28px;
+  width: 28px;
+  min-height: 28px;
+  height: 28px;
+  justify-items: center;
+  border-radius: 50%;
+}
+
+.l-toast-container.l-toast-success .l-toast-close > button:hover
+{
+  background-color: oklch(72.3% 0.219 149.579);
+}
+
+.l-toast-container.l-toast-error .l-toast-close > button:hover
+{
+  background-color: oklch(64.5% 0.246 16.439);
+}
+
+.l-toast-container.l-toast-info .l-toast-close > button:hover
+{
+  background-color: oklch(62.3% 0.214 259.815);
+}
+
+.l-toast-container.l-toast-warning .l-toast-close > button:hover
+{
+  background-color: oklch(79.5% 0.184 86.047);
+}
+
+
+/*
+********************************************************************************** 
+l-toast - fin
+**********************************************************************************
+*/

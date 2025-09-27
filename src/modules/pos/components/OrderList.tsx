@@ -80,19 +80,22 @@ export const OrderList = () => {
 
   const [selectedOrderInList, setSelectedOrderInList] = useState()
   useEffect(() => {
-    setSelectedOrderInList(orderData[orderData.length - 1].order_id)
+    setSelectedOrderInList(orderData[orderData?.length - 1]?.order_id)
     setCart(orderData.find((o) => o.order_id === selectedOrder)?.lines || [])
   }, [])
   const cache = new OfflineCache()
 
   const columnHelper = createColumnHelper<Order>()
+
   const stateLabels: Record<string, string> = {
-    C: 'Cancelado',
     I: 'En curso',
     Y: 'Pago',
-    P: 'Pagado',
     R: 'Registrado',
-    E: 'Pago pendiente',
+    C: 'Cancelado',
+
+    RPE: 'Pago pendiente',
+    RPP: 'Pago parcial',
+    RPF: 'Pagado',
   }
 
   const columns = useMemo(
@@ -150,18 +153,25 @@ export const OrderList = () => {
           </div>
         ),
       }),
-      columnHelper.accessor('state', {
+      columnHelper.accessor('combined_states', {
         id: 'stateLabel',
         cell: (info) => {
           const value = info.getValue()
+          //const value = (info.getValue() === undefined ? info.row.original.state : info.getValue())
+
           return (
             <div className="flex justify-between items-center min-w-[80px] pointer-events-none">
+              {/*
               <span
                 className={`px-3 py-1 rounded-md text-sm ${
                   value === 'C' ? 'bg-blue-100 text-blue-800' : 'bg-gray-200 text-gray-800'
                 }`}
               >
+              */}
+
+              <span className={`px-3 py-1 rounded-md text-sm bg-gray-200 text-gray-800`}>
                 {stateLabels[value] || 'Desconocido'}
+                {/* {info.row.original.combined_states_description} */}
               </span>
             </div>
           )
@@ -171,7 +181,7 @@ export const OrderList = () => {
         id: 'stateActions',
         cell: (info) => (
           <div className="flex justify-between items-center">
-            {info.row.original.state !== 'P' && info.row.original.state !== 'E' && (
+            {info.row.original.state !== TypeStateOrder.REGISTERED && (
               <button
                 className="text-gray-800 hover:text-red-600 px-2"
                 onClick={(e) => {

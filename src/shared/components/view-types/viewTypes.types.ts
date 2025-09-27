@@ -52,7 +52,6 @@ export interface InvoiceData {
   company_name: string
   state: string
   state_description: string
-  state2: string // VALIDAR SI SE VA A USAR O NO
   payment_state: string
   payment_state_description: string
   sent_state: string

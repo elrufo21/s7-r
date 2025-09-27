@@ -362,6 +362,10 @@ export interface BluetoothConfig {
   device_name: string
 }
 export interface PointsOfSaleSliceState {
+  point_id: number | null
+  setPointId: (point_id: number | null) => void
+  searchProduct: string
+  setSearchProduct: (searchProduct: string) => void
   resetTrigger: number
   resetSelectedItem: () => void
   prevItem: any
@@ -494,14 +498,18 @@ export interface PointsOfSaleSliceState {
   getProductTaraQuantity: (order_id: number | string, product_id: string | number) => number
   deleteProductInOrder: (order_id: number | string, product_id: string) => void
   getTotalPriceByOrder: (order_id: number | string) => number
-  deleteOrder: (order_id: number | string) => void
+  deleteOrder: (order_id: number | string, isCloseSession?: boolean) => void
   updateOrderFromServer: (updatedOrder: any) => void
   changeToPayment: (order_id: number | string) => void
   changeToPaymentLocal: (order_id: number | string) => void
   updateMoveId: (oldMoveId: string, newMoveId: string) => void
 
   // Nueva función para centralizar la carga
-  initializePointOfSale: (pointId: string, isOnline: boolean) => Promise<void>
+  initializePointOfSale: (
+    pointId: string,
+    isOnline: boolean,
+    session_id: string | null
+  ) => Promise<void>
 
   // Funciones para cache en localStorage con namespace seguro
   getOrSetLocalStorage: <T>(key: string, fetchFn: () => Promise<T>) => Promise<T>

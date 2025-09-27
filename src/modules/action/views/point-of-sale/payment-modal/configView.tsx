@@ -1,5 +1,6 @@
 import BaseTextControlled from '@/shared/components/form/base/BaseTextControlled'
 import FormRow from '@/shared/components/form/base/FormRow'
+import { required } from '@/shared/helpers/validators'
 import { frmElementsProps } from '@/shared/shared.types'
 import { AutocompleteControlled } from '@/shared/ui'
 import useAppStore from '@/store/app/appStore'
@@ -27,12 +28,15 @@ export const FrmMiddle = ({ control, errors, editConfig, watch }: frmElementsPro
           errors={errors}
           editConfig={{ config: editConfig }}
           options={paymentMethods}
+          key={'payment_method_id'}
           fnc_loadOptions={() => {
             fnc_load_payment_methods()
           }}
+          rules={required()}
         />
       </FormRow>
       <BaseTextControlled
+        key={'amount'}
         label="Importe"
         name={'amount'}
         control={control}

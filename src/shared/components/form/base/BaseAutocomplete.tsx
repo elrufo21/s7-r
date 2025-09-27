@@ -65,6 +65,7 @@ interface BaseAutocompleteProps {
   // Nueva propiedad para controlar navegación en modo no editable
   allowNavigationWhenNotEditable?: boolean
   draftLabel?: string // Etiqueta para borradores, si aplica
+  disableFrmIsChanged?: boolean
 }
 
 const BaseAutocomplete = ({
@@ -82,6 +83,7 @@ const BaseAutocomplete = ({
   allowCreateAndEdit = false,
   allowSearchMore = false,
   allowNavigationWhenNotEditable = false, // Nueva prop
+  disableFrmIsChanged = false,
 }: BaseAutocompleteProps) => {
   const navigate = useNavigate()
   const { pathname } = useLocation()
@@ -200,8 +202,9 @@ const BaseAutocomplete = ({
           multiple={false}
           onRowClick={async (option) => {
             setValue(name, option[config.primaryKey])
-            setFrmIsChanged(true)
-            setNewAppDialogs([])
+            if (disableFrmIsChanged === false) setFrmIsChanged(true)
+            closeDialogWithData(dialogId, {})
+            //clouseDialog()setNewAppDialogs([])
           }}
           defaultFiters={filters}
         />
@@ -243,6 +246,7 @@ const BaseAutocomplete = ({
       placeholder={placeholder}
       fnc_enlace={shouldShowNavigationLink() ? fncEnlace : undefined}
       rules={rulers ? required() : {}}
+      disableFrmIsChanged={disableFrmIsChanged}
     />
   )
 }

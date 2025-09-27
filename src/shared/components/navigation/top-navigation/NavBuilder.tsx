@@ -32,6 +32,7 @@ const NavBuilder: FC = () => {
     setDinamicModule,
     breadcrumb,
     setBreadcrumb,
+    executeFnc,
   } = useAppStore((state) => state)
   const { setAditionalFilters } = useUserStore()
   const { default_values } = config
@@ -100,13 +101,25 @@ const NavBuilder: FC = () => {
               <MenuItem
                 className="MenuItem_N2"
                 key={`${subSubItem.key}-${ind}`}
-                onClick={() => {
+                onClick={async () => {
                   if (subSubItem.openAsModal) {
+                    let initialValues = {}
+                    const values = subSubItem.modalConfig?.initialValues
+                    if (subSubItem.modalConfig?.initialValues) {
+                      const { oj_data } =
+                        (await executeFnc(values.fncName, values.action, values.data)) || {}
+
+                      initialValues = oj_data[0]
+                      console.log('initialValues', initialValues)
+                    }
                     const dialogId = openDialog({
                       title: subSubItem.title,
                       dialogContent: () =>
                         subSubItem.modalConfig?.config ? (
-                          <FrmBaseDialog config={subSubItem.modalConfig.config} />
+                          <FrmBaseDialog
+                            config={subSubItem.modalConfig.config}
+                            initialValues={initialValues}
+                          />
                         ) : (
                           <div>No hay configuración disponible</div>
                         ),
@@ -142,11 +155,25 @@ const NavBuilder: FC = () => {
       return (
         <MenuItem
           key={subItem.key}
-          onClick={() => {
+          onClick={async () => {
             if (subItem.openAsModal) {
+              let initialValues = {}
+              const values = subItem.modalConfig?.initialValues
+              if (subItem.modalConfig?.initialValues) {
+                const { oj_data } =
+                  (await executeFnc(values.fncName, values.action, values.data)) || {}
+
+                initialValues = oj_data
+                console.log('initialValues', initialValues)
+              }
               const dialogId = openDialog({
                 title: subItem.title,
-                dialogContent: () => <FrmBaseDialog config={subItem.modalConfig?.config} />,
+                dialogContent: () => (
+                  <FrmBaseDialog
+                    config={subItem.modalConfig?.config}
+                    initialValues={{ orderLines: initialValues }}
+                  />
+                ),
                 buttons: [
                   ...(subItem.modalConfig?.customButtons || []).map((button: any) => ({
                     text: button.text,

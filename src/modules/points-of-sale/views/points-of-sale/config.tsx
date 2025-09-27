@@ -1,3 +1,4 @@
+import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 import { FormConfig, ModulesEnum } from '@/shared/shared.types'
 import { ViewTypeEnum } from '@/shared/shared.types'
 
@@ -13,13 +14,17 @@ const PosIndexConfig: FormConfig = {
   item_url: '/points-of-sale',
   new_url: '',
   no_content_dsc: 'Crea un punto de venta',
-  ribbonList: [
-    {
-      label: 'ARCHIVADO',
-      state: 'I',
-      className: 'ribbon',
-    },
-  ],
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
 
   fnc_valid: (data: any) => {
     return data

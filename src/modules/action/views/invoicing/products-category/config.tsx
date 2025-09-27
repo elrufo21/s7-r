@@ -1,5 +1,6 @@
 import { ViewTypeEnum, FormConfig, ModulesEnum, ItemStatusTypeEnum } from '@/shared/shared.types'
 import { FrmMiddle, FrmTitle } from '@/modules/action/views/inventory/products-category/configView'
+import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 
 const ProductsCategoryConfig: FormConfig = {
   fnc_name: 'fnc_product_category',
@@ -16,7 +17,17 @@ const ProductsCategoryConfig: FormConfig = {
   no_content_dsc:
     'Asigne una categoria a sus productos para organizarlos, filtrarlos y rastrearlos.',
   visibility_columns: {},
-
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
   fnc_valid: (data: any) => {
     if (!data['name']) {
       return null

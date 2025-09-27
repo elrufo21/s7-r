@@ -11,6 +11,7 @@ import {
   TopTitle,
 } from '@/modules/contacts/views/contact-index/configView'
 import { FormConfig, ModulesEnum } from '@/shared/shared.types'
+import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 
 const CustomersConfig: FormConfig = {
   fnc_name: 'fnc_partner',
@@ -24,7 +25,17 @@ const CustomersConfig: FormConfig = {
   item_url: '/action/detail/606',
   new_url: '/action/606/detail/new',
   no_content_dsc: 'Crea un cliente en tu libreta de direcciones',
-
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
   fnc_valid: (data) => {
     //default: (data)=>{return data}
     if (data['type'] === 'C') {

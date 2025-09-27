@@ -15,7 +15,7 @@ import CompanyField from '@/shared/components/extras/CompanyField'
 import { DatepickerControlled, TextControlled } from '@/shared/ui'
 import { PosOrderStateEnum } from '../types'
 import { formatDateTimeToDDMMYYYYHHMM } from '@/shared/utils/utils'
-import { TypeStateOrder } from '@/modules/pos/types'
+import { TypeStateOrder, TypeStatePayment } from '@/modules/pos/types'
 
 // Tipos específicos para Pagos POS
 interface PosPayment {
@@ -51,6 +51,7 @@ export function FrmMiddle({ control, errors, editConfig, setValue, watch }: frmE
   const isEdit =
     watch('state') === TypeStateOrder.PAID ||
     watch('state') === 'E' ||
+    watch('state') === TypeStateOrder.REGISTERED ||
     watch('state') === TypeStateOrder.IN_PROGRESS ||
     watch('state') === TypeStateOrder.PAY ||
     watch('state') === TypeStateOrder.CANCELED
@@ -242,9 +243,7 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
     setModifyData(true)
   }
 
-  const isReadOnly =
-    watch('state') === TypeStateOrder.PAID || watch('state') === TypeStateOrder.CANCELED
-
+  const isReadOnly = watch('payment_state') === TypeStatePayment.PAYMENT
   // Manejar cambio de método de pago
   const handleChangePaymentMethod = async (
     row: any,
@@ -379,8 +378,8 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
         enableResizing: false,
         cell: ({ row }) => (
           <div className="flex justify-center items-center">
-            {watch('state') !== TypeStateOrder.PAID ||
-            watch('state') !== TypeStateOrder.CANCELED ? (
+            {watch('state') !== TypeStateOrder.REGISTERED ||
+            watch('payment_state') !== TypeStatePayment.PAYMENT ? (
               <button
                 type="button"
                 onClick={() => handleDeletePayment(row.original.payment_id)}
@@ -395,7 +394,7 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
         ),
       },
     ],
-    [paymentMethodOptions]
+    [paymentMethodOptions, isReadOnly]
   )
   // Función para agregar nueva fila
   const addRow = () => {
@@ -503,7 +502,7 @@ interface PaymentTotalsProps {
   }
 }
 
-const PaymentTotals = ({ totals }: PaymentTotalsProps) => (
+export const PaymentTotals = ({ totals }: PaymentTotalsProps) => (
   <div className="flex flex-col gap-2 min-w-[200px] ml-auto p-4 bg-gray-50 rounded-md mt-4">
     <div className="flex justify-between">
       <span>Total:</span>

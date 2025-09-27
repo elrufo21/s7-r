@@ -4,7 +4,7 @@ export const CustomHeader = ({ fnc_create_button }: any) => {
   const { searchTerm, setSearchTerm } = useAppStore()
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border-b gap-2">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border-b gap-2 z-[1000]">
       <div className="flex items-center space-x-2">
         <button
           className="btn btn-primary btn-lg lh-lg me-2 rounded-sm"
@@ -12,15 +12,14 @@ export const CustomHeader = ({ fnc_create_button }: any) => {
         >
           <span className="font-medium">Crear</span>
         </button>
-        <h2 className="text-base sm:text-lg">Elija un cliente</h2>
       </div>
-      <div className="relative flex-1 max-w-full sm:max-w-xs sm:mx-4 order-3 sm:order-2">
+      <div className="relative flex-1 max-w-full sm:max-w-xs sm:mx-4 order-3 sm:order-2 z-50">
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Buscar clientes..."
-          className="w-full pl-10 pr-10 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
+          className="w-full pl-10 pr-10 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500 z-50"
         />
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <svg

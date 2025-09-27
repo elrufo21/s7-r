@@ -1,6 +1,6 @@
 import { FormConfig, ListFilterItem, ListGByItem } from '@/shared/shared.types'
 import { useModuleList } from '@/shared/hooks/useModule'
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { SearchInput } from '../navigation/panel-navigation/control-panel/components/SearchInput'
 import { ExpandedState, Row, Table } from '@tanstack/react-table'
 import { ListView } from '../view-types/ListView'
@@ -19,6 +19,7 @@ interface ModalBaseProps {
   dataFiltered?: any[]
   openEditModal?: (client: any) => void
   defaultFiters?: Filter[]
+  customHeader?: React.ReactNode
 }
 
 export const ModalBase = ({
@@ -30,6 +31,7 @@ export const ModalBase = ({
   dataFiltered = [],
   openEditModal,
   defaultFiters = [],
+  customHeader,
 }: ModalBaseProps) => {
   const { itemsPerPage, columnsVisibility, setColumnsVisibility } = useAppStore()
   const [filters, setFilters] = useState<any[]>([[1, 'pag', 1]])
@@ -169,13 +171,16 @@ export const ModalBase = ({
         </div>
       )}
       {contactModal ? (
-        <ClientModal
-          onSelectClient={(row) => {
-            onRowClick?.(row)
-          }}
-          data={dataFiltered}
-          openEditModal={openEditModal}
-        />
+        <>
+          {customHeader}
+          <ClientModal
+            onSelectClient={(row) => {
+              onRowClick?.(row)
+            }}
+            data={dataFiltered}
+            openEditModal={openEditModal}
+          />
+        </>
       ) : (
         <ListView
           config={config}

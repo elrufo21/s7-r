@@ -75,7 +75,6 @@ export const DragEditableTable = <T extends Record<string, any>>({
               newAction =
                 action !== ActionTypeEnum.INSERT ? ActionTypeEnum.UPDATE : ActionTypeEnum.INSERT
             }
-
             return {
               ...row,
               ...updates,
@@ -169,7 +168,10 @@ export const DragEditableTable = <T extends Record<string, any>>({
               // Actualizar TODOS los visibles con action: UPDATE (sin importar su estado original)
               const updatedVisibleData = visibleData.map((item: any) => ({
                 ...item,
-                action: ActionTypeEnum.UPDATE,
+                action:
+                  item.action === ActionTypeEnum.INSERT
+                    ? ActionTypeEnum.INSERT
+                    : ActionTypeEnum.UPDATE,
               }))
 
               return [...updatedVisibleData, ...deletedData]

@@ -1,6 +1,7 @@
 import { ViewTypeEnum } from '@/shared/shared.types'
 import { FormConfig, ModulesEnum } from '@/shared/shared.types'
 import { FrmMiddle, FrmMiddleRight, FrmTitle } from './configView'
+import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 
 const BanksConfig: FormConfig = {
   fnc_name: 'fnc_location_n3',
@@ -17,7 +18,17 @@ const BanksConfig: FormConfig = {
   no_content_title: 'Crear un contacto en su directorio',
   no_content_dsc:
     'Odoo le ayuda a llevar fácilmente un seguimiento de todas las actividades relacionadas con sus contactos.',
-
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
   fnc_valid: (data) => {
     return data
   },

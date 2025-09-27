@@ -1,13 +1,18 @@
-import { Operation } from '@/modules/pos/types'
+import { Operation, TypeStateOrder } from '@/modules/pos/types'
 import { AppStoreProps, PointsOfSaleSliceState, SetState } from '@/store/store.types'
-import { OfflineCache } from '@/lib/offlineCache'
+import { offlineCache, OfflineCache } from '@/lib/offlineCache'
 import { now } from '@/shared/utils/dateUtils'
 import { ActionTypeEnum } from '@/shared/shared.types'
+import { adjustTotal, formatNumber } from '@/shared/helpers/helpers'
 
 const createPos = (
   set: SetState<PointsOfSaleSliceState>,
   get: () => AppStoreProps
 ): PointsOfSaleSliceState => ({
+  point_id: null,
+  setPointId: (point_id) => set({ point_id }),
+  searchProduct: '',
+  setSearchProduct: (searchProduct) => set({ searchProduct }),
   resetTrigger: 0,
   prevItem: {},
   setPrevItem: (prevItem) => set({ prevItem }),
@@ -183,8 +188,8 @@ const createPos = (
             )
             return {
               ...p,
-              base_quantity: base_quantity,
-              quantity: effectiveQuantity,
+              base_quantity: formatNumber(base_quantity),
+              quantity: formatNumber(effectiveQuantity),
             }
           }
           return p
@@ -328,12 +333,16 @@ const createPos = (
       order_date: now().toPlainDateTime().toString(),
       name: newId,
       lines: [],
-      state: 'I',
+      state: TypeStateOrder.IN_PROGRESS,
+      combined_states: TypeStateOrder.IN_PROGRESS,
       position: get().orderData.length + 1,
       partner_id: get().defaultPosSessionData.partner_id,
       partner_name: get().defaultPosSessionData.name,
       order_sequence: newSequence,
       receipt_number: receiptNumber,
+      session_id: get().session_id,
+      point_id: get().point_id,
+      currency_id: get().defaultPosSessionData.currency_id,
     }
 
     // Guardar offline
@@ -442,7 +451,8 @@ const createPos = (
     const quantity_by_product = order?.lines
       ?.filter((p: any) => p.product_id === product_id)
       .reduce((acc: number, p: any) => acc + p.quantity, 0)
-    return quantity_by_product || 0
+    const { adjusted } = adjustTotal(quantity_by_product)
+    return adjusted || 0
   },
 
   getProductTaraValue: (order_id, product_id) => {
@@ -496,7 +506,7 @@ const createPos = (
       (sum: number, item: any) => sum + item.price_unit * item.quantity,
       0
     )
-    return total ? Number.parseFloat(total?.toFixed(2)) : 0
+    return total ? formatNumber(total) : 0
   },
   setSelectedLine: (order_id, line_id) => {
     set((state) => {
@@ -547,10 +557,18 @@ const createPos = (
     })
   },
 
-  deleteOrder: (order_id) => {
+  deleteOrder: (order_id, isCloseSession = false) => {
     set((state) => {
-      const remainingOrders = state.orderData.filter((order) => order.order_id !== order_id)
+      const remainingOrders = state.orderData
+        .filter((order) => order.order_id !== order_id)
+        .filter(
+          (order) =>
+            order.state === TypeStateOrder.IN_PROGRESS || order.state === TypeStateOrder.PAY
+        )
       const newSelectedOrder = remainingOrders.length > 0 ? remainingOrders[0].order_id : ''
+      if (remainingOrders.length === 0 && !isCloseSession) {
+        state.addNewOrder()
+      }
       return {
         orderData: remainingOrders.filter((order) => order.state !== 'P'),
         selectedOrder: newSelectedOrder,
@@ -598,7 +616,8 @@ const createPos = (
 
       const updatedOrder = {
         ...order,
-        state: 'Y',
+        state: TypeStateOrder.PAY,
+        combined_states: TypeStateOrder.PAY,
       }
 
       return {
@@ -761,14 +780,30 @@ const createPos = (
     }
   },
 
-  forceReloadPosData: async (pointId: string, isOnline: boolean = true) => {
+  forceReloadPosData: async (
+    pointId: string,
+    isOnline: boolean = true,
+    session_id: string | null
+  ) => {
     const { refreshAllCache, initializePointOfSale } = get()
 
-    await refreshAllCache()
-    await initializePointOfSale(pointId, isOnline)
+    await offlineCache.syncOfflineData(
+      get().executeFnc,
+      pointId,
+      get().setOrderData,
+      get().setSyncLoading,
+      session_id,
+      false,
+      true
+    )
+    //await initializePointOfSale(pointId, isOnline, session_id)
   },
 
-  initializePointOfSale: async (pointId: string, isOnline: boolean = true) => {
+  initializePointOfSale: async (
+    pointId: string,
+    isOnline: boolean = true,
+    session_id: string | null
+  ) => {
     const { executeFnc, getOrSetLocalStorage } = get()
 
     try {
@@ -781,7 +816,12 @@ const createPos = (
         return
       }
 
-      if (offlineOrders && offlineOrders.length > 0) {
+      if (
+        offlineOrders &&
+        offlineOrders.filter(
+          (o) => o.state === TypeStateOrder.IN_PROGRESS || o.state === TypeStateOrder.PAY
+        ).length > 0
+      ) {
         const [
           offlineProducts,
           offlineCategories,
@@ -797,7 +837,7 @@ const createPos = (
         ])
 
         set({
-          orderData: offlineOrders.filter((o: any) => o.state !== 'P'),
+          orderData: offlineOrders.filter((o: any) => o.state !== TypeStateOrder.PAID),
           products: offlineProducts,
           filteredProducts: offlineProducts,
           categories: offlineCategories,
@@ -813,6 +853,7 @@ const createPos = (
 
       const ordersRes = await executeFnc('fnc_pos_order', 's_pos', [
         [0, 'fequal', 'point_id', pointId],
+        [0, 'fequal', 'session_id', session_id],
         /*[
           0,
           'multi_filter_in',
@@ -859,38 +900,50 @@ const createPos = (
       ])
 
       let initialOrders = ordersRes?.oj_data || []
-      let firstOrderId =
-        initialOrders.filter((o: any) => o.state === 'I')[0]?.order_id ?? crypto.randomUUID()
 
       if (initialOrders.filter((o: any) => o.state === 'I').length === 0) {
+        //No carga el seleccionado
         const secuence = JSON.parse(localStorage.getItem('secuence') || '[]')
         const firstOrderId = crypto.randomUUID()
         const firstSequence = 1
         const formattedSession = String(secuence).padStart(4, '0')
         const formattedSequence = String(firstSequence).padStart(4, '0')
         const firstReceiptNumber = `${formattedSession}-${formattedSequence}`
+        const sessions = JSON.parse(localStorage.getItem('sessions') || '')
+        const activeSession = sessions.find((session) => session.active).session_id
         initialOrders = [
           {
             order_id: firstOrderId,
             name: firstOrderId,
             lines: [],
-            state: 'I',
+            state: TypeStateOrder.IN_PROGRESS,
             payments: [],
             position: 1,
             order_sequence: firstSequence,
             receipt_number: firstReceiptNumber,
             order_date: now().toPlainDateTime().toString(),
+            partner_id: get().defaultPosSessionData.partner_id,
+            partner_name: get().defaultPosSessionData.name,
+            combined_states: TypeStateOrder.IN_PROGRESS,
+            point_id: pointId,
+            session_id: activeSession,
+            currency_id: get().defaultPosSessionData.currency_id,
+            invoice_state: 'T',
+            amount_total: 0,
+            amount_with_tax: 0,
+            amount_untaxed: 0,
+            amount_adjustment: 0,
           },
         ]
       }
-
+      await offlineCache.saveOrderOffline({ ...initialOrders[0], action: ActionTypeEnum.INSERT })
       set({
         orderData: initialOrders.filter((o: any) => o.state !== 'P'),
         products,
         filteredProducts: products,
         categories,
         customers,
-        selectedOrder: firstOrderId,
+        selectedOrder: initialOrders[0].order_id,
         paymentMethods,
         containers,
       })
@@ -927,8 +980,8 @@ const createPos = (
               ...p,
               tara_value: tara_value,
               tara_total: tara_total,
-              base_quantity: baseQuantity,
-              quantity: effectiveQuantity,
+              base_quantity: formatNumber(baseQuantity),
+              quantity: formatNumber(effectiveQuantity),
             }
           }
           return p
@@ -959,8 +1012,8 @@ const createPos = (
               ...p,
               tara_quantity: tara_quantity,
               tara_total: tara_total,
-              base_quantity: baseQuantity,
-              quantity: effectiveQuantity,
+              base_quantity: formatNumber(baseQuantity),
+              quantity: formatNumber(effectiveQuantity),
             }
           }
           return p

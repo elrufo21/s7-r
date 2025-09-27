@@ -1,5 +1,6 @@
 import { ViewTypeEnum, FormConfig, ModulesEnum, ItemStatusTypeEnum } from '@/shared/shared.types'
 import { FrmMiddle } from './configView'
+import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 
 const UnitMeasurementConfig: FormConfig = {
   fnc_name: 'fnc_uom',
@@ -12,6 +13,17 @@ const UnitMeasurementConfig: FormConfig = {
   module_url: '/action/91',
   item_url: '/action/91/detail',
   new_url: '/action/91/detail/new',
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
   fnc_valid: (data) => {
     //const hasErrors = data.units.some((unit: any) => !unit.name || !unit.factor || !unit.rounding)
 

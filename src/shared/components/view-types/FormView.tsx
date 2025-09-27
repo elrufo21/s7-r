@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form'
 import { Tabs } from '@/shared/ui'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import useAppStore from '@/store/app/appStore'
 import { toast } from 'sonner'
 import { uploadStringImages } from '@/data/storage/manager_files'
@@ -12,6 +12,9 @@ import { useActionModule } from '@/shared/hooks/useModule'
 import { StatusContactEnum } from './viewTypes.types'
 import { getRequiredFieldErrors } from '@/shared/helpers/validators'
 import { FrmBarStatus } from '@/shared/components/form/bars/FrmBarStatus'
+import { RibbonRenderer } from '../form/bars/RibbonRender'
+
+import { CustomToast } from '@/components/toast/CustomToast'
 
 export const FormView = ({ item }: { item?: any }) => {
   const navigate = useNavigate()
@@ -62,6 +65,23 @@ export const FormView = ({ item }: { item?: any }) => {
     fncName: config.fnc_name,
     id: idAction || '',
   })
+  //
+
+  const prevFrmIsChanged = useRef<boolean>(false)
+
+  useEffect(() => {
+    if (prevFrmIsChanged.current) {
+      console.log('Autoguardado', id, { ...watch() })
+
+      //handleSubmit(() => saveCore())()
+    }
+
+    prevFrmIsChanged.current = frmIsChanged
+  }, [id])
+  // Mantenemos la referencia actualizada
+  useEffect(() => {
+    prevFrmIsChanged.current = frmIsChanged
+  }, [frmIsChanged])
   useEffect(() => {
     setFrmLoading(isPending)
   }, [isPending, setFrmLoading])
@@ -238,20 +258,25 @@ export const FormView = ({ item }: { item?: any }) => {
     return null
   }
 
-  useEffect(() => {
-    setCanChangeGroupBy(true)
-    setFrmIsChanged(false)
-    setFrmIsChangedItem(false)
-    return () => {
-      console.log('Funcion de guardado en caso exista cambios', frmIsChanged)
-      if (frmIsChanged) {
-        handleSubmit(() => saveCore())()
+  /*useEffect(
+    () => {
+      setCanChangeGroupBy(true)
+      setFrmIsChanged(false)
+      setFrmIsChangedItem(false)
+      return () => {
+        console.log('Funcion de guardado en caso exista cambios', frmIsChanged)
+        if (frmIsChanged) {
+          handleSubmit(() => saveCore())()
+        }
       }
-    }
-  }, [])
+    },
+    [
+    ]
+  )*/
 
   const saveCore = async (actionProp: ActionTypeEnum = ActionTypeEnum.UPDATE) => {
     const currentForm = { ...watch() }
+    console.log('Guardando', currentForm)
     const validForm = fnc_valid(currentForm, formItem)
     if (validForm) {
       if (imagenFields?.length > 0) {
@@ -328,6 +353,24 @@ export const FormView = ({ item }: { item?: any }) => {
           const missingFields = getRequiredFieldErrors(errors, config.fieldLabels)
 
           if (missingFields.length > 0) {
+            const missingFields_items = (
+              <ul className="space-y-2 my-2">
+                {missingFields.map((field, index) => (
+                  <li key={index} className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+                    <span className="text-sm text-white">{field}</span>
+                  </li>
+                ))}
+              </ul>
+            )
+
+            CustomToast({
+              title: 'Campos obligatorios',
+              description: missingFields_items,
+              type: 'error',
+            })
+
+            /*
             toast.error(
               <div className="flex items-start gap-3">
                 <div className="flex-1">
@@ -357,8 +400,14 @@ export const FormView = ({ item }: { item?: any }) => {
                 },
               }
             )
+            */
           } else {
-            toast.error('Error al validar el formulario')
+            // toast.error('Error al validar el formulario')
+            CustomToast({
+              title: 'Error al validar el formulario',
+              // description: `Otro usuario esta en el punto de venta.`,
+              type: 'error',
+            })
           }
 
           setFrmLoading(false)
@@ -460,17 +509,7 @@ export const FormView = ({ item }: { item?: any }) => {
           <div
             className={`o_form_sheet position-relative ${frm_bar_buttons || frm_bar_status || config.statusBarConfig ? 'border-top-width-0' : ''}`}
           >
-            {(() => {
-              const currentState = watch('state')
-              const matchingRibbon = config.ribbonList?.find(
-                (ribbon) => ribbon.state === currentState
-              )
-
-              return matchingRibbon ? (
-                <div className={`${matchingRibbon.className}`}>{matchingRibbon.label}</div>
-              ) : null
-            })()}
-
+            {config.ribbonList && <RibbonRenderer config={config.ribbonList} watch={watch} />}
             {/* {(frm_bar_buttons || frm_bar_status) && <div className="ribbon-simple">PAGADO</div>} 
             {(frm_bar_buttons || frm_bar_status) && config.fnc_name === 'fnc_account_move' && (
               <div className="ribbon-simple reversed">REVERTIDO</div>

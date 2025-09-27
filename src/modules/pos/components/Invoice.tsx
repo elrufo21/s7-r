@@ -305,7 +305,7 @@ const Invoice = () => {
                 </i>
                 <span className="fs-3 fw-bolder">Pago exitoso</span>
                 <div className="fs-4 fw-bold d-flex justify-content-center align-items-center gap-2">
-                  <span>S/&nbsp;{(order as any)?.amount_withtaxed?.toFixed(2)}</span>
+                  <span>S/&nbsp;{(order as any)?.amount_total?.toFixed(2)}</span>
                   <span className="bg-green-600 edit-order-payment badge bg-success text-white rounded cursor-pointer pt-1">
                     Editar pago
                   </span>

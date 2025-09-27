@@ -32,8 +32,7 @@ export function FrmTitle({ watch }: frmElementsProps) {
 
 export function FrmMiddle({ control, errors, editConfig, setValue, watch }: frmElementsProps) {
   const [contactInfo, setContactInfo] = useState<ContactInfo>({})
-  const { formItem, executeFnc, setFrmConfigControls } = useAppStore()
-
+  const { formItem, executeFnc, setFrmConfigControls, newAppDialogs } = useAppStore()
   useEffect(() => {
     const data = async () => {
       if (!watch('partner_id')) {
@@ -51,13 +50,14 @@ export function FrmMiddle({ control, errors, editConfig, setValue, watch }: frmE
     data()
   }, [watch('partner_id')])
   const isEdit =
-    watch('state') === StatusInvoiceEnum.PUBLICADO || watch('state') === StatusInvoiceEnum.CANCELADO
+    watch('state') === StatusInvoiceEnum.REGISTERED ||
+    watch('state') === StatusInvoiceEnum.CANCELADO
   const state = watch('state')
   useEffect(() => {
     if (
       !watch('name') ||
       watch('state') === StatusInvoiceEnum.CANCELADO ||
-      watch('state') === StatusInvoiceEnum.PUBLICADO ||
+      watch('state') === StatusInvoiceEnum.REGISTERED ||
       watch('state') === StatusInvoiceEnum.BORRADOR
     ) {
       setFrmConfigControls({
@@ -114,7 +114,7 @@ export function FrmMiddle({ control, errors, editConfig, setValue, watch }: frmE
         },
       })
     }
-  }, [isEdit, state])
+  }, [isEdit, state, newAppDialogs])
 
   return (
     <>
@@ -345,7 +345,6 @@ export function FrmMiddleRight({ control, errors, editConfig, setValue, watch }:
       //   setIsPaymentTerm(true)
     }
   }, [formItem])
-  console.log('payment_term_id', !watch('payment_term_id'))
   return (
     <>
       <Cf_date
@@ -390,7 +389,7 @@ export function FrmMiddleRight({ control, errors, editConfig, setValue, watch }:
                       rules={{}}
                     />
                   </div>
-                  {formItem?.state !== StatusInvoiceEnum.PUBLICADO && (
+                  {formItem?.state !== StatusInvoiceEnum.REGISTERED && (
                     <span className="grow-0 o_form_label mx-3 oe_edit_only h-[21px]">o</span>
                   )}
                 </>
@@ -442,7 +441,7 @@ export function FrmMiddleRight({ control, errors, editConfig, setValue, watch }:
                       editConfig={editConfig }
                     />
                   </div>
-                  {formItem?.state !== StatusInvoiceEnum.PUBLICADO && (
+                  {formItem?.state !== StatusInvoiceEnum.REGISTERED && (
                     <span className="grow-0 o_form_label mx-3 oe_edit_only">o</span>
                   )}
                 </>
@@ -537,6 +536,14 @@ export function FrmMiddleRight({ control, errors, editConfig, setValue, watch }:
           filters={[
             [0, 'flike', 'process_lower', '["|C|"]'],
             ['s2', '[]', '', 'code_name'],
+            /* [
+              0,
+              'multi_filter_in',
+              [
+                { key_db: 'doc_code_prefix', value: 'B' },
+                { key_db: 'doc_code_prefix', value: 'F' },
+              ],
+            ],*/
           ]}
           allowSearchMore={true}
           config={{

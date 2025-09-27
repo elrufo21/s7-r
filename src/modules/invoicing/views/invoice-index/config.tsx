@@ -3,8 +3,6 @@ import { FrmMiddle, FrmMiddleRight, FrmTab1, FrmTab2, FrmTitle } from './configV
 import {
   MoveLine,
   StatusInvoiceEnum,
-  InvoiceEnum_payment_state,
-  InvoiceEnum_sent_state,
   InvoiceEnum_edi_state,
 } from '@/modules/invoicing/invoice.types'
 import { FormConfig, ModulesEnum } from '@/shared/shared.types'
@@ -14,6 +12,7 @@ import { InvoiceData } from '@/shared/components/view-types/viewTypes.types'
 import EditableDraggableTable from './components/InvoiceLines'
 import { Frm_bar_buttons } from './components/Frm_bar_buttons'
 import { BsCardChecklist } from 'react-icons/bs'
+import useAppStore from '@/store/app/appStore'
 
 const InvoiceIndexConfig: FormConfig = {
   fnc_name: 'fnc_account_move',
@@ -36,7 +35,7 @@ const InvoiceIndexConfig: FormConfig = {
   statusBarConfig: {
     allStates: [
       { state: StatusInvoiceEnum.BORRADOR, label: 'Borrador' },
-      { state: StatusInvoiceEnum.PUBLICADO, label: 'Registrado' },
+      { state: StatusInvoiceEnum.REGISTERED, label: 'Registrado' },
       { state: StatusInvoiceEnum.CANCELADO, label: 'Cancelado' },
     ],
     defaultState: StatusInvoiceEnum.BORRADOR,
@@ -50,12 +49,13 @@ const InvoiceIndexConfig: FormConfig = {
 
       return allStates.filter(
         (item) =>
-          item.state === StatusInvoiceEnum.BORRADOR || item.state === StatusInvoiceEnum.PUBLICADO
+          item.state === StatusInvoiceEnum.BORRADOR || item.state === StatusInvoiceEnum.REGISTERED
       )
     },
   },
 
   fnc_valid: (data) => {
+    const { defaultCompany } = useAppStore.getState()
     if (!data.move_lines?.length && data.state != StatusInvoiceEnum.BORRADOR) {
       return null
     }
@@ -74,14 +74,13 @@ const InvoiceIndexConfig: FormConfig = {
     const { name, ...d } = data
     console.log(name)
     //delete
-    return d
+    return { ...d, company_id: defaultCompany?.company_id || null }
   },
 
   default_values: {
     company_id: null,
     // tdoc: '',
     state: 'D',
-    state2: '',
     name: null,
     partner_id: null,
     invoice_date: new Date(),
@@ -95,7 +94,7 @@ const InvoiceIndexConfig: FormConfig = {
     bank_account_id: null,
     delivery_date: '',
     fiscal_position_id: null,
-    typed: '',
+    type: 'S',
     amount_total: 0,
     move_id: null,
     group_id: null,
@@ -105,7 +104,7 @@ const InvoiceIndexConfig: FormConfig = {
     {
       icon: BsCardChecklist,
       text: 'Pagos',
-      value: '5',
+      value: 'stat_payments',
       onClick: (context: any) => {
         context.setAditionalFilters([[0, 'fequal', 'move_id', context?.formItem?.move_id]])
         // Siempre aseguramos que el breadcrumb tenga el listado y el form
@@ -294,7 +293,7 @@ const InvoiceIndexConfig: FormConfig = {
             const state = row.original.state
             const defineClass = (state: string) => {
               if (state === StatusInvoiceEnum.BORRADOR) return 'text-bg-info'
-              if (state === StatusInvoiceEnum.PUBLICADO) return 'text-bg-neutro'
+              if (state === StatusInvoiceEnum.REGISTERED) return 'text-bg-neutro'
               if (state === StatusInvoiceEnum.CANCELADO) return 'text-bg-danger'
 
               if (state === StatusInvoiceEnum.FULL_PAYMENT) return 'Cancelado'

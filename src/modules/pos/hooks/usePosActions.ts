@@ -7,6 +7,7 @@ import { useCallback, useEffect } from 'react'
 import { usePWA } from '@/hooks/usePWA'
 import { offlineCache } from '@/lib/offlineCache'
 import { now } from '@/shared/utils/dateUtils'
+import { adjustTotal, formatNumber } from '@/shared/helpers/helpers'
 
 interface OrderData {
   order_id: string | number
@@ -144,9 +145,15 @@ export const usePosActions = () => {
 
         const syncQueue = await offlineCache.getSyncOrdersQueue()
         const allPendingOrders = [...ordersWithAction, ...syncQueue]
-
+        const session = getSessionData()
         if (allPendingOrders.length >= 50) {
-          offlineCache.syncOfflineData(executeFnc, Number(pointId), setOrderData, setSyncLoading)
+          offlineCache.syncOfflineData(
+            executeFnc,
+            Number(pointId),
+            setOrderData,
+            setSyncLoading,
+            session.session_id
+          )
         }
 
         return { success: true, data }
@@ -197,9 +204,9 @@ export const usePosActions = () => {
             session_id: session?.session_id,
             currency_id: 1,
             company_id: userData?.company_id,
-            invoice_state: data.invoice_state || 'P',
-            partner_id: finalCustomer?.partner_id,
-            partner_name: finalCustomer?.name,
+            invoice_state: data.invoice_state || 'T',
+            partner_id: data?.partner_id,
+            partner_name: data?.partner_name,
             position: (data as any).position || 1,
             lines: data.lines?.map((item: any, i: number) => ({
               line_id: item?.line_id,
@@ -209,34 +216,40 @@ export const usePosActions = () => {
               name: item?.name,
               quantity: item?.quantity,
               uom_id: item?.uom_id,
-              price_unit: item?.price_unit,
+              price_unit: formatNumber(item?.price_unit),
               notes: null,
-              amount_untaxed: item?.price_unit,
+              amount_untaxed: formatNumber(item?.price_unit),
               amount_tax: 0,
               tara_value: item?.tara_value,
               tara_quantity: item?.tara_quantity,
               tara_total: item?.tara_total,
-              amount_withtaxed: item?.price_unit,
-              amount_untaxed_total: item?.price_unit * item?.quantity,
-              amount_tax_total: item?.price_unit * item?.quantity,
-              amount_withtaxed_total: item?.price_unit * item?.quantity,
+              amount_withtaxed: formatNumber(item?.price_unit),
+              amount_untaxed_total: formatNumber(item?.price_unit * item?.quantity),
+              amount_tax_total: 0,
+              amount_withtaxed_total: formatNumber(item?.price_unit * item?.quantity),
               base_quantity: item?.base_quantity,
               selected: item?.line_id === selectedItem, // Marcar como seleccionado si coincide
               uom_name: item?.uom_name,
             })),
             order_id: selectedOrder,
             amount_untaxed:
-              data.lines?.reduce(
-                (total: number, item: any) => total + (item?.price_unit || 0),
-                0
-              ) || 0,
+              adjustTotal(
+                data.lines?.reduce(
+                  (total: number, item: any) =>
+                    total + (item?.price_unit || 0) * (item?.quantity || 0),
+                  0
+                )
+              ).adjusted || 0,
             amount_withtaxed:
-              data.lines?.reduce(
-                (total: number, item: any) =>
-                  total + (item?.price_unit || 0) * (item?.quantity || 0),
-                0
-              ) || 0,
-            amount_total: getTotalPriceByOrder(selectedOrder),
+              adjustTotal(
+                data.lines?.reduce(
+                  (total: number, item: any) =>
+                    total + (item?.price_unit || 0) * (item?.quantity || 0),
+                  0
+                )
+              ).adjusted || 0,
+            amount_total: adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted,
+            amount_adjustment: adjustTotal(getTotalPriceByOrder(selectedOrder)).residual,
           }
           const result = await saveOrder(
             typeof selectedOrder === 'string' ? ActionTypeEnum.INSERT : ActionTypeEnum.UPDATE,
@@ -284,7 +297,7 @@ export const usePosActions = () => {
               currency_id: 1,
               name: '',
               company_id: userData?.company_id,
-              invoice_state: data.invoice_state || 'Y',
+              invoice_state: data.invoice_state || 'T',
               partner_id: finalCustomer?.partner_id,
               partner_name: finalCustomer?.name,
               position: (data as any).position || 1,
@@ -296,34 +309,40 @@ export const usePosActions = () => {
                 name: item?.name,
                 quantity: item?.quantity,
                 uom_id: item?.uom_id,
-                price_unit: item?.price_unit,
+                price_unit: formatNumber(item?.price_unit),
                 notes: null,
-                amount_untaxed: item?.price_unit,
+                amount_untaxed: formatNumber(item?.price_unit),
                 tara_value: item?.tara_value,
                 tara_quantity: item?.tara_quantity,
                 base_quantity: item?.base_quantity,
                 tara_total: item?.tara_total,
                 amount_tax: 0,
-                amount_withtaxed: item?.price_unit,
-                amount_untaxed_total: item?.price_unit * item?.quantity,
-                amount_tax_total: item?.price_unit * item?.quantity,
-                amount_withtaxed_total: item?.price_unit * item?.quantity,
+                amount_withtaxed: formatNumber(item?.price_unit),
+                amount_untaxed_total: formatNumber(item?.price_unit * item?.quantity),
+                amount_tax_total: 0,
+                amount_withtaxed_total: formatNumber(item?.price_unit * item?.quantity),
                 selected: item?.line_id === selectedItem,
                 uom_name: item?.uom_name,
               })),
               order_id: selectedOrder,
               amount_untaxed:
-                data.lines?.reduce(
-                  (total: number, item: any) => total + (item?.price_unit || 0),
-                  0
-                ) || 0,
+                adjustTotal(
+                  data.lines?.reduce(
+                    (total: number, item: any) =>
+                      total + (item?.price_unit || 0) * (item?.quantity || 0),
+                    0
+                  )
+                ).adjusted || 0,
               amount_withtaxed:
-                data.lines?.reduce(
-                  (total: number, item: any) =>
-                    total + (item?.price_unit || 0) * (item?.quantity || 0),
-                  0
-                ) || 0,
-              amount_total: getTotalPriceByOrder(selectedOrder),
+                adjustTotal(
+                  data.lines?.reduce(
+                    (total: number, item: any) =>
+                      total + (item?.price_unit || 0) * (item?.quantity || 0),
+                    0
+                  )
+                ).adjusted || 0,
+              amount_total: adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted,
+              amount_adjustment: adjustTotal(getTotalPriceByOrder(selectedOrder)).residual,
             }
           )
           if (result.success && result.data?.order_id && endureOrder) {

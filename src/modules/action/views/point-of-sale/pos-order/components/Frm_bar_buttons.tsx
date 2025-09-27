@@ -86,6 +86,11 @@ export function Frm_bar_buttons({ watch, setValue }: frmElementsProps) {
           Pago
         </button>
       )}
+      {watch('state') === PosOrderStateEnum.REGISTERED && (
+        <button className="btn btn-secondary" onClick={() => {}}>
+          Cancelar
+        </button>
+      )}
     </>
   )
 }

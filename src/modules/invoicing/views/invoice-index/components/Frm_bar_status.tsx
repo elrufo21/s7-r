@@ -7,7 +7,7 @@ export function Frm_bar_status() {
 
   const allStates = [
     { state: StatusInvoiceEnum.BORRADOR, label: 'Borrador' },
-    { state: StatusInvoiceEnum.PUBLICADO, label: 'Registrado' },
+    { state: StatusInvoiceEnum.REGISTERED, label: 'Registrado' },
     { state: StatusInvoiceEnum.CANCELADO, label: 'Cancelado' },
   ]
 
@@ -16,7 +16,7 @@ export function Frm_bar_status() {
       return item.state === StatusInvoiceEnum.BORRADOR || item.state === StatusInvoiceEnum.CANCELADO
     }
 
-    return item.state === StatusInvoiceEnum.BORRADOR || item.state === StatusInvoiceEnum.PUBLICADO
+    return item.state === StatusInvoiceEnum.BORRADOR || item.state === StatusInvoiceEnum.REGISTERED
   })
 
   return (

@@ -1,6 +1,7 @@
 import { ItemStatusTypeEnum, ViewTypeEnum } from '@/shared/shared.types'
 import { FormConfig, ModulesEnum } from '@/shared/shared.types'
 import { FrmMiddle, FrmMiddleBottom, FrmMiddleRight, FrmTitle } from './configView'
+import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 
 const BankAccountsConfig: FormConfig = {
   fnc_name: 'fnc_partner_bank_accounts',
@@ -17,7 +18,17 @@ const BankAccountsConfig: FormConfig = {
   no_content_title: 'Crear una cuenta bancaria',
   no_content_dsc:
     'Desde aquí puede administrar todas las cuentas bancarias que están vinculadas a usted y a sus contactos.',
-
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
   fnc_valid: (data) => {
     if (!data['number']) {
       return null

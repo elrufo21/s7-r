@@ -3,6 +3,7 @@ import { FrmMiddle, FrmTab1 } from './configView'
 import { Chip } from '@mui/material'
 import { Row } from '@tanstack/react-table'
 import { RowData, Unit } from './unitMeasurement.type'
+import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 
 const UnitMeasurementConfig: FormConfig = {
   fnc_name: 'fnc_uom_category',
@@ -15,6 +16,17 @@ const UnitMeasurementConfig: FormConfig = {
   module_url: '/action/90',
   item_url: '/action/90/detail',
   new_url: '/action/90/detail/new',
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
   fnc_valid: (data) => {
     //const hasErrors = data.units.some((unit: any) => !unit.name || !unit.factor || !unit.rounding)
 

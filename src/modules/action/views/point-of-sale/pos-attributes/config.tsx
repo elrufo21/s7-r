@@ -1,6 +1,7 @@
 import { ViewTypeEnum, FormConfig, ModulesEnum, ItemStatusTypeEnum } from '@/shared/shared.types'
 import { FrmMiddle } from '@/modules/action/views/inventory/product_attribute/configView'
 import ProductVariantsTable from '@/modules/action/views/inventory/product_attribute/components/productAttributes'
+import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 
 const PosAttributesConfig: FormConfig = {
   fnc_name: 'fnc_product_attributes_template',
@@ -17,7 +18,17 @@ const PosAttributesConfig: FormConfig = {
   no_content_title: 'No se encontraron atributos',
   no_content_dsc: 'Inicie una nueva sesión para registrar nuevos atributos.',
   visibility_columns: {},
-
+  ribbonList: {
+    field: 'state',
+    ribbonList: [
+      {
+        label: 'ARCHIVADO',
+        state: StatusContactEnum.ARCHIVE,
+        className: 'ribbon ',
+      },
+    ],
+    getLabelFromData: (_, data) => data?.state_description,
+  },
   fnc_valid: (data: any) => {
     if (!data['name']) {
       return null
