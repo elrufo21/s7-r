@@ -116,6 +116,7 @@ export function FrmMiddle({ control, errors, editConfig, setValue, watch }: frmE
           errors={errors}
           editConfig={{ config: editConfig }}
           rules={[]}
+          disableHour={false}
         />
       </FormRow>
       <BaseTextControlled
@@ -162,7 +163,7 @@ export function FrmMiddle({ control, errors, editConfig, setValue, watch }: frmE
           control={control}
           errors={errors}
           setValue={setValue}
-          formItem={formItem}
+          formItem={formItem || watch()}
           editConfig={editConfig}
           fnc_name={'fnc_partner'}
           idField={'partner_id'}
@@ -440,7 +441,6 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
       difference: difference,
     }
   }, [data, watch])
-
   return (
     <div className="flex flex-col">
       <DndTable

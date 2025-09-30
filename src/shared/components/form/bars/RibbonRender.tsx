@@ -22,7 +22,6 @@ interface Props {
 }
 
 export function RibbonRenderer({ watch, config }: Props) {
-  console.log('Config', config)
   const { field, ribbonList, transformValue, getLabelFromData, fallback } = config
 
   const data = typeof watch === 'function' ? watch() : watch

@@ -33,7 +33,7 @@ const PointOfSale = () => {
   } = useAppStore()
   const sessions = JSON.parse(localStorage.getItem('sessions') || '[]')
   const session = sessions.find((s: any) => s.point_id === Number(pointId))
-  const { session_id } = session || {}
+  const { session_id } = session || 0
   const isOnlineRef = useRef(isOnline)
   const loadInitialData = async () => {
     if (!pointId) return
@@ -61,6 +61,8 @@ const PointOfSale = () => {
     isOnlineRef.current = isOnline
   }, [isOnline])
   useEffect(() => {
+    setPointId(Number(pointId))
+    if (session_id !== 0 && session_id) setSessionId(session_id)
     return () => {
       if (!isOnlineRef.current) {
         offlineCache.addPosOrderToQueue()

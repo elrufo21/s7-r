@@ -1214,7 +1214,7 @@ const PosOrderLines = ({ watch, setValue, control, errors, editConfig }: frmElem
         )}
       </DragEditableTable>
 
-      <InvoiceTotals totals={formItem} />
+      <InvoiceTotals totals={formItem || watch()} />
 
       <div className="w-full mt-4 flex gap-7">
         <div className="w-4/6">

@@ -17,6 +17,8 @@ import TicketHTML from './TicketHtml'
 import { AiOutlineEdit } from 'react-icons/ai'
 import { RiPrinterLine } from 'react-icons/ri'
 import { TypeStateOrder } from '../types'
+import { useParams } from 'react-router-dom'
+import { offlineCache } from '@/lib/offlineCache'
 
 const Screens = () => {
   const {
@@ -34,8 +36,14 @@ const Screens = () => {
     closeDialogWithData,
     executeFnc,
     finalCustomer,
+    setOrderData,
+    setSyncData,
+    setSyncLoading,
+    session_id,
+    setSelectedOrderInList,
+    selectedOrderInList,
   } = useAppStore()
-
+  const { pointId } = useParams()
   const fnc_printTicket = async (order_id: string) => {
     // Obtener los datos completos de la orden
     const { oj_data } = await executeFnc('fnc_pos_order', 's1', [order_id])
@@ -133,16 +141,53 @@ const Screens = () => {
       }
     }
   }, [screen])
-  const fnc_detailsModal = async (order_id: string) => {
-    const { oj_data } = await executeFnc('fnc_pos_order', 's1', [order_id])
+  const fnc_detailsModal = async (order_id: string | number) => {
+    let orderID = order_id
+    let data
+    if (!Number(order_id)) {
+      const { selectedOr } = await offlineCache.syncOfflineData(
+        executeFnc,
+        pointId,
+        setOrderData,
+        setSyncLoading,
+        session_id,
+        null,
+        null,
+        true
+      )
+      setSyncData(false)
+      const { oj_data } = await executeFnc('fnc_pos_order', 's1', [selectedOr])
+      data = oj_data[0]
+      setSelectedOrderInList(selectedOr)
+    } else {
+      await offlineCache
+        .syncOfflineData(executeFnc, pointId, setOrderData, setSyncLoading, session_id)
+        .then(async () => {
+          setSyncData(false)
+          const { oj_data } = await executeFnc('fnc_pos_order', 's1', [orderID])
+          data = oj_data[0]
+        })
+      setSelectedOrderInList(orderID)
+    }
+    let getData = () => ({})
     const dialogId = openDialog({
       title: 'Detalles de la orden',
-      dialogContent: () => <FrmBaseDialog config={orderConfig} initialValues={oj_data[0]} />,
+      dialogContent: () => (
+        <FrmBaseDialog
+          config={orderConfig}
+          setGetData={(fn: any) => (getData = fn)}
+          initialValues={{ ...data, dialogId }}
+          onFinish={() => alert('FF')}
+        />
+      ),
       buttons: [
         {
           type: 'cancel',
           text: 'Cerrar',
           onClick: () => {
+            const formData = getData()
+            console.log('formData', formData)
+            setSelectedOrderInList(formData.order_id)
             closeDialogWithData(dialogId, {})
           },
         },
@@ -220,7 +265,7 @@ const Screens = () => {
 
                   <button
                     onClick={() => {
-                      fnc_detailsModal(orderSelected?.order_id || '')
+                      fnc_detailsModal(selectedOrderInList || '')
                     }}
                     className="btn-style-1 h-[100px] flex-1 bg-gray-200 hover:bg-gray-300 transition-colors duration-200 p-6 rounded-[0.25rem] text-gray-700 font-medium text-center"
                   >

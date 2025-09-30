@@ -1,8 +1,7 @@
 import { useAppStore } from '@/store/app/appStore'
 import { FormConfig } from '@/shared/shared.types'
 
-export function FrmBarStatus() {
-  const { config } = useAppStore()
+export function FrmBarStatus({ config }: { config: any }) {
   const formItem = useAppStore((state) => state.formItem)
 
   const statusBarConfig: FormConfig['statusBarConfig'] = config?.statusBarConfig

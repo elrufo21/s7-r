@@ -87,11 +87,14 @@ const ControlPanelForm = ({ config }: ControlPanelFormProps) => {
 
   const handleDelete = () => {
     setAppDialog({
-      title: '¡Adios Registro!',
+      title: '¡Hasta nunca!',
       content: '¿Está seguro que desea eliminar este registro?',
       open: true,
       handleConfirm: async () => await DeleteRow(),
       actions: true,
+      handleCancel() {
+        setFrmAction(null)
+      },
     })
   }
   const buttonContext = {
@@ -241,7 +244,11 @@ const ControlPanelForm = ({ config }: ControlPanelFormProps) => {
                       >
                         <div>
                           {displayItem?.state === 'A' && (
-                            <MenuItem onClick={handleChangeStatus}>
+                            <MenuItem
+                              onClick={() => {
+                                handleChangeStatus()
+                              }}
+                            >
                               <ListItemIcon>
                                 <RiInboxArchiveLine style={{ fontSize: '16px' }} />
                               </ListItemIcon>
@@ -250,7 +257,7 @@ const ControlPanelForm = ({ config }: ControlPanelFormProps) => {
                           )}
 
                           {displayItem?.state === 'I' && (
-                            <MenuItem onClick={handleChangeStatus}>
+                            <MenuItem onClick={() => handleChangeStatus()}>
                               <ListItemIcon>
                                 <RiInboxUnarchiveLine style={{ fontSize: '16px' }} />
                               </ListItemIcon>

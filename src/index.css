@@ -10401,9 +10401,114 @@ padding: 10px 5px 10px 15px;
   background-color: oklch(79.5% 0.184 86.047);
 }
 
-
 /*
 ********************************************************************************** 
 l-toast - fin
 **********************************************************************************
 */
+
+/*
+********************************************************************************** 
+l-modal-question - ini
+**********************************************************************************
+*/
+
+.l-modal-question 
+{
+  /* overflow: initial; */
+}
+.l-modal-question .MuiDialog-paper
+{
+  padding: 20px 40px 25px 40px;
+  min-width: 500px;
+}
+.l-modal-question .MuiDialog-paper .MuiDialogContent-root:nth-child(1)
+{
+  padding: 0;
+  margin: 10px 0 15px 0;
+  -webkit-flex: none !important;
+}
+.l-modal-question .MuiDialogContentText-root
+{
+  text-align: center;
+  font-size: 2rem;
+  color: rgba(0, 0, 0, 0.87);
+
+}
+.l-modal-question .MuiDialog-paper .MuiDialogContent-root:nth-child(2)
+{
+  text-align: center;
+  font-size: 1.25rem;
+  color: rgba(0, 0, 0, 0.87);
+  margin-top: 0.5rem;
+  margin-bottom: 2.5rem;
+  /* width: 100%; */
+  padding: 0;
+  /* overflow: initial; */
+}
+.l-modal-question .MuiDialogActions-root 
+{
+  padding: 0;
+  width: 100%;
+  gap: 1.75rem;
+}
+.l-modal-question .MuiDialogActions-root button
+{
+  width: 50%;
+  color: #111827;
+  min-height: 48px;
+  line-height: 2 !important;
+  margin: 0;
+  padding: 6px 16px 6px 16px;
+  text-transform: none;
+  font-size: 16px !important;
+  font-weight: 400;
+}
+/* Button generic */
+.l-modal-question .MuiDialogActions-root button.btn_generic
+{
+  --bg-color-btn_generic: #ebecee;
+  background-color: var(--bg-color-btn_generic);
+  border-color: var(--bg-color-btn_generic);
+}
+.l-modal-question .MuiDialogActions-root button.btn_generic:hover
+{
+  --bg-color-btn_question-hover: #e7e8ea;
+  background-color: var(--bg-color-btn_question-hover) !important;
+  border-color: var(--bg-color-btn_question-hover) !important;
+}
+/* Button confirm */
+.l-modal-question .MuiDialogActions-root button.btn_confirm
+{
+  --bg-color-btn_confirm: oklch(70.4% 0.14 182.503);
+  background-color: var(--bg-color-btn_confirm);
+  border-color: var(--bg-color-btn_confirm);
+  color: #FFF !important;
+}
+.l-modal-question .MuiDialogActions-root button.btn_confirm:hover
+{
+  --bg-color-modal_question-btn_confirm-hover: oklch(60% 0.118 184.704);
+  background-color: var(--bg-color-modal_question-btn_confirm-hover) !important;
+  border-color: var(--bg-color-modal_question-btn_confirm-hover) !important;
+}
+/* Button delete */
+.l-modal-question .MuiDialogActions-root button.btn_delete
+{
+  --bg-color-modal_question-btn_delete: oklch(64.5% 0.246 16.439);
+  background-color: var(--bg-color-modal_question-btn_delete);
+  border-color: var(--bg-color-modal_question-btn_delete);
+  color: #FFF !important;
+}
+.l-modal-question .MuiDialogActions-root button.btn_delete:hover
+{
+  --bg-color-modal_question-btn_delete-hover: oklch(58.6% 0.253 17.585);
+  background-color: var(--bg-color-modal_question-btn_delete-hover) !important;
+  border-color: var(--bg-color-modal_question-btn_delete-hover) !important;
+}
+
+/*
+********************************************************************************** 
+l-modal-question - fin
+**********************************************************************************
+*/
+

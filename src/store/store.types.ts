@@ -362,6 +362,8 @@ export interface BluetoothConfig {
   device_name: string
 }
 export interface PointsOfSaleSliceState {
+  selectedOrderInList: number | string
+  setSelectedOrderInList: (selectedOrderInList: number | string) => void
   point_id: number | null
   setPointId: (point_id: number | null) => void
   searchProduct: string

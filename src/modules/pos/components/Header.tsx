@@ -15,6 +15,7 @@ import { offlineCache } from '@/lib/offlineCache'
 import { usePWA } from '@/hooks/usePWA'
 import { now } from '@/shared/utils/dateUtils'
 import { TypeStateOrder } from '../types'
+import { FiAlertTriangle } from 'react-icons/fi'
 
 export default function Header({ pointId }: { pointId: string }) {
   const {
@@ -56,8 +57,6 @@ export default function Header({ pointId }: { pointId: string }) {
       const selected = order?.[0]?.lines?.filter((i: any) => i.selected)
 
       setSelectedItem(selected?.[0]?.line_id)
-      // Aquí puedes hacer otra acción, por ejemplo:
-      // await fetchLatestOrder()
     }
   }, [saveCurrentOrder])
   useEffect(() => {
@@ -122,11 +121,9 @@ export default function Header({ pointId }: { pointId: string }) {
     if (!data.pm || !Array.isArray(data.pm)) return data
     const isCash = data.watchData?.find((pm: any) => pm.is_cash === true).payment_method_id
     data.pm = data.pm.map((item: any) => {
-      // Nombre del campo esperado (pm_{id} o cash_count si es efectivo)
       const fieldName =
         item.payment_method_id === isCash ? 'cash_count' : `pm_${item.payment_method_id}`
 
-      // Buscar el valor contado en los campos
       const counted = parseFloat(data[fieldName] ?? 0)
 
       return {
@@ -137,6 +134,62 @@ export default function Header({ pointId }: { pointId: string }) {
     })
 
     return data
+  }
+
+  const diferenceDialog = (title: string, diferences: any) => {
+    return new Promise<boolean>((resolve) => {
+      const dialogId = openDialog({
+        title,
+        dialogContent: () => (
+          <div className="flex items-center justify-center p-6">
+            <div className="max-w-lg w-full p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md">
+                  <FiAlertTriangle className="text-slate-900 w-6 h-6" />
+                </div>
+                <h2 className="text-xl font-semibold text-slate-900">
+                  Aún tienes cuentas sin cerrar
+                </h2>
+              </div>
+
+              <p className="text-slate-800 mb-4">
+                Se encontraron diferencias en los siguientes métodos de pago:
+              </p>
+
+              <ul className="space-y-2">
+                {diferences.map((item) => (
+                  <li
+                    key={item.payment_method_id}
+                    className="flex justify-between items-center bg-slate-700/30 border border-slate-600/40 rounded-lg p-3"
+                  >
+                    <span className="text-slate-900 font-medium">{item.name}</span>
+                    <span className="text-slate-900 font-semibold">S/ {item.difference}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ),
+        buttons: [
+          {
+            text: 'Continuar',
+            type: 'confirm',
+            onClick: () => {
+              closeDialogWithData(dialogId, [])
+              resolve(true)
+            },
+          },
+          {
+            text: 'Cancelar',
+            type: 'cancel',
+            onClick: () => {
+              closeDialogWithData(dialogId, [])
+              resolve(false)
+            },
+          },
+        ],
+      })
+    })
   }
   const confirmDialog = (title: string, message: string) => {
     return new Promise<boolean>((resolve) => {
@@ -163,6 +216,18 @@ export default function Header({ pointId }: { pointId: string }) {
         ],
       })
     })
+  }
+  function getDiferences(data) {
+    return data.pm
+      .filter((pmItem) => pmItem.difference !== 0)
+      .map((pmItem) => {
+        const match = data.watchData.find((w) => w.payment_method_id === pmItem.payment_method_id)
+        return {
+          payment_method_id: pmItem.payment_method_id,
+          name: match ? match.name : null,
+          difference: pmItem.difference || 0,
+        }
+      })
   }
   const handleCloseCashRegister = async () => {
     await offlineCache
@@ -192,9 +257,6 @@ export default function Header({ pointId }: { pointId: string }) {
               text: 'Cerrar caja registradora',
               type: 'confirm',
               onClick: async () => {
-                const pass = await confirmDialog('Cerrar caja', 'Se eliminarán todas las órdenes')
-                if (!pass) return
-
                 const formData = getData()
                 const rawData = {
                   session_id: session_id,
@@ -205,6 +267,12 @@ export default function Header({ pointId }: { pointId: string }) {
                   ...formData,
                 }
                 const data = updatePmValues(rawData)
+
+                let pass = await diferenceDialog('', getDiferences(data))
+                if (!pass) return
+
+                pass = await confirmDialog('Cerrar caja', 'Se eliminarán todas las órdenes')
+                if (!pass) return
                 // 🔄 Eliminar pedidos en memoria
                 const dataInStore = await offlineCache.getOfflinePosOrders()
                 for (let i = 0; i < dataInStore.length; i++) {

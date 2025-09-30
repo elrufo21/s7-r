@@ -391,7 +391,6 @@ export class OfflineCache {
 
     const tx = db.transaction('pos_order', 'readwrite')
     const store = tx.objectStore('pos_order')
-
     if (existing) {
       await store.put({ ...existing, ...order })
     } else {
@@ -509,11 +508,13 @@ export class OfflineCache {
     setSyncLoading?: (loading: boolean) => void,
     session_id?: number,
     cleanOrders?: boolean,
-    reloadOrders?: boolean
+    reloadOrders?: boolean,
+    orderSelected?: boolean
   ) {
-    const { selectedOrder, setSelectedOrder, setSelectedItem } = useAppStore.getState()
+    const { selectedOrder, setSelectedOrder, setSelectedItem, selectedOrderInList } =
+      useAppStore.getState()
     if (setSyncLoading) setSyncLoading(true)
-
+    let selectedOrderInListRT
     try {
       const ordersQueue = await this.getSyncOrdersQueue()
       const orders = await this.getOfflinePosOrders()
@@ -612,6 +613,12 @@ export class OfflineCache {
                 setSelectedOrder(result.oj_data.order_id)
                 selectedLine = result.oj_data.order_id
               }
+
+              if (orderSelected) {
+                if (order.order_id === selectedOrderInList) {
+                  selectedOrderInListRT = result.oj_data.order_id
+                }
+              }
               return
             }
           },
@@ -685,6 +692,9 @@ export class OfflineCache {
       console.error('Error general durante la sincronización:', error)
     } finally {
       if (setSyncLoading) setSyncLoading(false)
+    }
+    return {
+      selectedOr: selectedOrderInListRT,
     }
   }
 

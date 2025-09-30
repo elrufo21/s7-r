@@ -34,7 +34,6 @@ export const FormView = ({ item }: { item?: any }) => {
     setDataFormShow,
     dataFormShow,
     setViewType,
-    setCanChangeGroupBy,
     breadcrumb,
     setBreadcrumb,
   } = useAppStore((state) => state)
@@ -167,7 +166,7 @@ export const FormView = ({ item }: { item?: any }) => {
         },
         onError(err) {
           console.log(err)
-          toast.error('Error al eliminar registro.')
+          // toast.error('Error al eliminar registro.')
         },
       }
     )
@@ -190,15 +189,15 @@ export const FormView = ({ item }: { item?: any }) => {
     if (state === StatusContactEnum.UNARCHIVE) {
       setAppDialog({
         title: 'Confirmación',
-        content: '¿Está seguro que desea Archivar este registro?',
+        content: '¿Está seguro que desea "archivar" este registro?',
         open: true,
         handleConfirm: async () => {
           await handleChangeStatus(currentForm)
         },
         handleCancel: () => {
-          //returnStatePrev();
+          setFrmAction(null)
         },
-        textConfirm: 'Archivar',
+        textConfirm: '¡Si, archívelo!',
         actions: true,
       })
     }
@@ -276,7 +275,6 @@ export const FormView = ({ item }: { item?: any }) => {
 
   const saveCore = async (actionProp: ActionTypeEnum = ActionTypeEnum.UPDATE) => {
     const currentForm = { ...watch() }
-    console.log('Guardando', currentForm)
     const validForm = fnc_valid(currentForm, formItem)
     if (validForm) {
       if (imagenFields?.length > 0) {
@@ -490,7 +488,7 @@ export const FormView = ({ item }: { item?: any }) => {
                 <div className="o_form_bar_status">
                   <div className="bar_status">
                     {config.statusBarConfig ? (
-                      <FrmBarStatus />
+                      <FrmBarStatus config={config} />
                     ) : (
                       frm_bar_status?.({
                         watch,

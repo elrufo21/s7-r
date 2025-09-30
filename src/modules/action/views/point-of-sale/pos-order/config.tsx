@@ -207,18 +207,22 @@ const PosOrderConfig: FormConfig = {
                 textMap={{
                   I: 'En curso',
                   Y: 'Pago',
-                  C: 'Cancelado',
                   RPF: 'Pagado',
                   RPP: 'Pagado Parcial',
                   RPE: 'Error de Pago',
+                  CPF: 'Cancelado',
+                  CPP: 'Cancelado',
+                  CPE: 'Cancelado',
                 }}
                 classesMap={{
                   I: 'text-bg-warning',
                   Y: 'text-bg-warning',
-                  C: 'text-bg-danger',
                   RPF: 'text-bg-success',
                   RPP: 'text-bg-warning',
                   RPE: 'text-bg-warning',
+                  CPF: 'text-bg-danger',
+                  CPP: 'text-bg-danger',
+                  CPE: 'text-bg-danger',
                 }}
                 defaultText="Sin estado"
               />

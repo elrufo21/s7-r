@@ -6,7 +6,6 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import { Typography } from '@mui/material'
 
-import { BsExclamationCircle } from 'react-icons/bs'
 import useAppStore from '@/store/app/appStore'
 
 const Dialog = () => {
@@ -29,34 +28,48 @@ const Dialog = () => {
   }
 
   const handleClose = () => {
+    appDialog?.handleCancel()
     setAppDialog({ ...appDialog, open: false })
   }
 
   return (
     <DialogMui
-      sx={{ overflow: 'initial' }}
+      className="l-modal-question"
       maxWidth={appDialog.isForm && 'md'}
       open={appDialog.open}
       onClose={handleClose}
     >
+      {/*
+      <button
+      className='bg-gray-400'
+        aria-label="close"
+        onClick={handleClose}
+        style={{
+          position: 'absolute',
+          right: 8,
+          top: 8,
+        }}
+      >
+        <IoCloseSharp className="h-5 w-5 " />
+      </button>
+      */}
       {appDialog.isForm ? (
         <DialogTitle sx={{ m: 0, p: 2 }} id="customized-dialog-title">
           {appDialog.title}
         </DialogTitle>
       ) : (
         <DialogContent>
+          {/*
           <div className="flex justify-center">
-            <BsExclamationCircle size={40} className="text-lred dark:text-bred" />
+            <BsExclamationCircle size={80} className="text-lred dark:text-bred" style={{ color: "rgba(0, 0, 0, 0.87)"}} />
           </div>
-          <DialogContentText className="mb-5 font-medium text-center text-2xl">
-            {appDialog.title}
-          </DialogContentText>
+          */}
+          <DialogContentText className="">{appDialog.title}</DialogContentText>
         </DialogContent>
       )}
 
-      <DialogContent sx={{ padding: 0, overflow: 'initial' }} className="w-full mb-3">
-        {appDialog.content}
-      </DialogContent>
+      <DialogContent className="">{appDialog.content}</DialogContent>
+
       {appDialog.isForm ? (
         <DialogActions>
           <div className="o_form_buttons_edit d-flex gap-1">
@@ -81,26 +94,22 @@ const Dialog = () => {
       ) : (
         <DialogActions>
           {appDialog.actions ? (
-            <div className="w-full grid_native grid-flow-col justify-stretch">
-              <Button sx={{ paddingX: 2 }} onClick={handleClose}>
-                <Typography fontSize={'16px'} sx={{ textTransform: 'none' }}>
-                  ¡No, cancelar!
-                </Typography>
-              </Button>
+            <>
               <Button
-                className="text-lred dark:text-bred"
+                className={`${appDialog.textConfirm ? 'btn_confirm' : 'btn_delete'}`}
                 sx={{ paddingX: 2 }}
                 onClick={onConfirm}
                 autoFocus
               >
-                <Typography fontSize={'16px'} sx={{ textTransform: 'none' }}>
-                  {appDialog.textConfirm ? appDialog.textConfirm : '¡Si, elimínalo!'}
-                </Typography>
+                {appDialog.textConfirm ? appDialog.textConfirm : '¡Si, elimínalo!'}
               </Button>
-            </div>
+              <Button onClick={handleClose} className="btn_generic">
+                ¡No, cancelar!
+              </Button>
+            </>
           ) : (
             <div className="w-full grid_native grid-flow-col justify-stretch">
-              <Button sx={{ paddingX: 2 }} onClick={handleClose}>
+              <Button onClick={handleClose}>
                 <Typography fontSize={'16px'} sx={{ textTransform: 'none' }}>
                   Cerrar
                 </Typography>

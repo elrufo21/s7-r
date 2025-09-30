@@ -196,6 +196,7 @@ const PosSessionConfig: FormConfig = {
         watch={watch}
       />
     ),
+    /*
     tabs: [
       {
         name: 'Metodos de pago',
@@ -210,12 +211,13 @@ const PosSessionConfig: FormConfig = {
         ),
       },
     ],
+    */
   },
 
   statusBarConfig: {
     visibleStates: [
       { state: 'I', label: 'En curso' },
-      { state: 'C', label: 'Control de cierre' },
+      // { state: 'C', label: 'Control de cierre' },
       { state: 'R', label: 'Cerrado y registrado' },
     ],
     defaultState: 'I',

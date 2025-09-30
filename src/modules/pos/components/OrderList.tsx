@@ -76,9 +76,10 @@ export const OrderList = () => {
     setTotal,
     getTotalPriceByOrder,
     localMode,
+    setSelectedOrderInList,
+    selectedOrderInList,
   } = useAppStore()
 
-  const [selectedOrderInList, setSelectedOrderInList] = useState()
   useEffect(() => {
     setSelectedOrderInList(orderData[orderData?.length - 1]?.order_id)
     setCart(orderData.find((o) => o.order_id === selectedOrder)?.lines || [])
@@ -237,7 +238,6 @@ export const OrderList = () => {
   const handleRowClick = async (row: Order) => {
     // Actualizar el estado de selección usando el store
     setSelectedOrderInList(row.order_id)
-
     const orderSource = row.state === 'P' || row.state === 'E' ? paidOrders : orderData
     const order = orderSource.find((item: any) => item.order_id === row.order_id)
 
@@ -253,11 +253,11 @@ export const OrderList = () => {
       setTotal(total)
       setOrderSelected({ order_id: row.order_id, state: row.state })
     } else {
+      setOrderSelected({ order_id: row.order_id, state: row.state })
       setCart([])
       setTotal(0)
     }
   }
-
   return (
     <div className="w-full h-full">
       <DataTable

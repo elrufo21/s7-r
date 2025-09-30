@@ -9,6 +9,8 @@ const createPos = (
   set: SetState<PointsOfSaleSliceState>,
   get: () => AppStoreProps
 ): PointsOfSaleSliceState => ({
+  selectedOrderInList: 0,
+  setSelectedOrderInList: (selectedOrderInList) => set({ selectedOrderInList }),
   point_id: null,
   setPointId: (point_id) => set({ point_id }),
   searchProduct: '',

@@ -76,6 +76,7 @@ export function FrmMiddle({ control, errors, editConfig }: frmElementsProps) {
             errors={errors}
             editConfig={{ config: editConfig }}
             rules={[]}
+            disableHour={false}
           />
         </FormRow>
       )}

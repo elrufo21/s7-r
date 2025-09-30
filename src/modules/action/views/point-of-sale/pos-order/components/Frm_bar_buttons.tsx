@@ -4,6 +4,7 @@ import PosPaymentModalConfig from '../../payment-modal/config'
 import { useEffect } from 'react'
 import { FrmBaseDialog } from '@/shared/components/core'
 import { PosOrderStateEnum } from '../../types'
+import { TypeStateOrder } from '@/modules/pos/types'
 
 export function Frm_bar_buttons({ watch, setValue }: frmElementsProps) {
   const setFrmAction = useAppStore((state) => state.setFrmAction)
@@ -68,6 +69,15 @@ export function Frm_bar_buttons({ watch, setValue }: frmElementsProps) {
     setValue('state', 'I')
     setFrmAction(FormActionEnum.PRE_SAVE)
   }
+  const cancelOrder = () => {
+    if (watch('dialogId')) {
+      setValue('state', TypeStateOrder.CANCELED)
+      setFrmAction(FormActionEnum.PRE_SAVE)
+    } else {
+      setValue('state', TypeStateOrder.CANCELED)
+      setFrmAction(FormActionEnum.PRE_SAVE)
+    }
+  }
 
   return (
     <>
@@ -87,7 +97,12 @@ export function Frm_bar_buttons({ watch, setValue }: frmElementsProps) {
         </button>
       )}
       {watch('state') === PosOrderStateEnum.REGISTERED && (
-        <button className="btn btn-secondary" onClick={() => {}}>
+        <button
+          className="btn btn-secondary"
+          onClick={() => {
+            cancelOrder()
+          }}
+        >
           Cancelar
         </button>
       )}

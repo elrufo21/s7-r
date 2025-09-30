@@ -5,6 +5,8 @@ import { Tabs } from '@/shared/ui'
 import { toast } from 'sonner'
 import { uploadStringImages } from '@/data/storage/manager_files'
 import { FormConfig, ViewTypeEnum } from '@/shared/shared.types'
+import { FrmBarStatus } from '../../form/bars/FrmBarStatus'
+import { RibbonRenderer } from '../../form/bars/RibbonRender'
 
 interface FrmBaseDialogProps {
   config: FormConfig
@@ -266,26 +268,18 @@ export const FrmBaseDialog = ({
                             </>
                           )}
                         </div>
-
-                        {frm_bar_status && (
-                          <div className="o_form_bar_status">
-                            <div className="bar_status">
-                              {frm_bar_status({
-                                control,
-                                errors,
-                                editConfig: frmConfigControls,
-                                frmState: frmDialogState,
-                                watch,
-                                setValue,
-                              })}
-                            </div>
+                        <div className="o_form_bar_status">
+                          <div className="bar_status">
+                            <FrmBarStatus config={config} />
                           </div>
-                        )}
+                        </div>
                       </div>
                     </>
                   )}
                   <div className="o_form_sheet position-relative">
-                    {formItem?.state === 'C' && <div className="ribbon">Archivado</div>}
+                    {config.ribbonList && (
+                      <RibbonRenderer config={config.ribbonList} watch={watch} />
+                    )}
 
                     <form>
                       {frm_photo &&

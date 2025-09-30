@@ -335,6 +335,7 @@ const Payment = () => {
       partner_id: finalCustomer?.partner_id,
       payment_state: paymentState,
       combined_states: TypeStateOrder.REGISTERED + paymentState,
+      point_id: pointId,
       //añadir tipo uom_name:string
       lines: data.lines?.map((item: any, i: number) => ({
         line_id: item?.line_id,

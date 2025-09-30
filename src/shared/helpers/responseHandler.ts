@@ -1,4 +1,5 @@
 import { toast } from 'sonner'
+import { CustomToast } from '@/components/toast/CustomToast'
 
 export function handleExecuteResponse(res: any) {
   const { oj_info, oj_data } = res.data[0]
@@ -23,7 +24,13 @@ export function handleExecuteResponse(res: any) {
       title = 'Error general'
       message = `Limitación: ${oj_info.sqlerrm}`
     }
-    toast['error'](title, { description: message })
+
+    CustomToast({
+      title: title,
+      description: message,
+      type: 'error',
+    })
+
     throw new Error(message)
   }
   if (oj_data === null || res === null) {
