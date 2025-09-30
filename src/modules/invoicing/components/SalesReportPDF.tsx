@@ -5,7 +5,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     color: '#333333',
     fontFamily: 'Helvetica',
-    // fontFamily: 'Montserrat', 
+    // fontFamily: 'Montserrat',
     fontSize: '10px',
     padding: '25px 35px',
   },
@@ -353,7 +353,6 @@ const formatAmount = (amount, currency) => {
 const SalesReportPDF = ({ data }) => (
   <Document>
     <Page size="A4" style={styles.page}>
-
       {/*
       <View style={styles.header}>
         <View>
@@ -373,7 +372,6 @@ const SalesReportPDF = ({ data }) => (
       </Text>
 
       <View style={styles.section}>
-
         {/* c1 */}
         {/* <Text style={styles.sectionTitle}>Ventas</Text> */}
 
@@ -456,7 +454,6 @@ const SalesReportPDF = ({ data }) => (
         ))}
 
         {/* </View> */}
-
       </View>
     </Page>
   </Document>
