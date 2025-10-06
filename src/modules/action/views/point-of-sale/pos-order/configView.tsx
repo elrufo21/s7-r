@@ -189,7 +189,7 @@ export function FrmTab0({ watch, control, errors, setValue, editConfig }: frmEle
 }
 
 export function FrmTab1({ watch, setValue }: frmElementsProps) {
-  const { formItem, setFrmIsChangedItem, createOptions } = useAppStore()
+  const { formItem, setFrmIsChangedItem, createOptions, frmAction } = useAppStore()
   const [data, setData] = useState<PosPayment[]>([])
 
   // Estado para manejar modificaciones
@@ -227,7 +227,7 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
 
     setData(normalizedPayments)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formItem])
+  }, [formItem, frmAction])
 
   // Manejadores de cambios directos sobre el estado
   const handleUpdatePayment = (paymentId: number, newValues: Partial<PosPayment>) => {
@@ -315,63 +315,7 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
           />
         ),
       },
-      {
-        header: 'Número de tarjeta (últimos 4 dígitos)',
-        accessorKey: 'card_number',
-        size: 200,
-        minSize: 150,
-        cell: ({ row }) => (
-          <SwitchableTextField
-            isReadOnly={isReadOnly}
-            value={row.original.card_number || ''}
-            onBlur={(e) => {
-              handleUpdatePayment(row.original.payment_id, {
-                card_number: e.target.value,
-              })
-            }}
-            onChange={() => {}}
-            type="text"
-          />
-        ),
-      },
-      {
-        header: 'Emisor de la tarjeta',
-        accessorKey: 'card_issuer',
-        size: 150,
-        minSize: 120,
-        cell: ({ row }) => (
-          <SwitchableTextField
-            isReadOnly={isReadOnly}
-            value={row.original.card_issuer || ''}
-            onBlur={(e) => {
-              handleUpdatePayment(row.original.payment_id, {
-                card_issuer: e.target.value,
-              })
-            }}
-            onChange={() => {}}
-            type="text"
-          />
-        ),
-      },
-      {
-        header: 'Nombre del titular de la tarjeta',
-        accessorKey: 'card_holder_name',
-        size: 200,
-        minSize: 150,
-        cell: ({ row }) => (
-          <SwitchableTextField
-            isReadOnly={isReadOnly}
-            value={row.original.card_holder_name || ''}
-            onBlur={(e) => {
-              handleUpdatePayment(row.original.payment_id, {
-                card_holder_name: e.target.value,
-              })
-            }}
-            onChange={() => {}}
-            type="text"
-          />
-        ),
-      },
+
       {
         id: 'action',
         header: '',
@@ -406,6 +350,7 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
         ...defaultPosPayment,
         payment_id: newId,
         _resetKey: Date.now(),
+        amount: totals.difference,
       } as PosPayment,
     ])
     setModifyData(true)

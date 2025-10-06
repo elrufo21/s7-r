@@ -92,11 +92,15 @@ export const OrderList = () => {
     I: 'En curso',
     Y: 'Pago',
     R: 'Registrado',
-    C: 'Cancelado',
+    //C: 'Cancelado',
 
     RPE: 'Pago pendiente',
     RPP: 'Pago parcial',
     RPF: 'Pagado',
+
+    CPE: 'Cancelado',
+    CPP: 'Cancelado',
+    CPF: 'Cancelado',
   }
 
   const columns = useMemo(
@@ -182,17 +186,18 @@ export const OrderList = () => {
         id: 'stateActions',
         cell: (info) => (
           <div className="flex justify-between items-center">
-            {info.row.original.state !== TypeStateOrder.REGISTERED && (
-              <button
-                className="text-gray-800 hover:text-red-600 px-2"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleDeleteClick(info.row.original)
-                }}
-              >
-                <GrTrash style={{ fontSize: '16px' }} />
-              </button>
-            )}
+            {info.row.original.state !== TypeStateOrder.REGISTERED &&
+              info.row.original.state !== TypeStateOrder.CANCELED && (
+                <button
+                  className="text-gray-800 hover:text-red-600 px-2"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDeleteClick(info.row.original)
+                  }}
+                >
+                  <GrTrash style={{ fontSize: '16px' }} />
+                </button>
+              )}
           </div>
         ),
       }),

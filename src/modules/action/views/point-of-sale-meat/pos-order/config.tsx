@@ -1,0 +1,526 @@
+// POS 2
+import { ActionTypeEnum, FormConfig, ModulesEnum } from '@/shared/shared.types'
+import { Row } from '@tanstack/react-table'
+import { ViewTypeEnum } from '@/shared/shared.types'
+import {
+  FrmMiddle,
+  FrmTab0,
+  FrmTab1,
+  FrmTab2,
+  FrmTab3,
+} from '@/modules/action/views/point-of-sale/pos-order/configView'
+import { Frm_bar_buttons } from '@/modules/action/views/point-of-sale/pos-order/components/Frm_bar_buttons'
+import { TypeStateOrder, TypeStatePayment } from '@/modules/pos/types'
+import { formatPlain } from '@/shared/utils/dateUtils'
+import { StatusChip } from '@/shared/components/table/components/StatusChip'
+import { CustomToast } from '@/components/toast/CustomToast'
+
+export interface PosOrderData {
+  order_id: number
+  group_id: number
+  company_id: number
+  copy_id: number
+  copied_id: number
+  parent_id: number
+  state: string
+  state_description: string
+  creation_user: string
+  creation_date: Date
+  modification_user: string
+  modification_date: Date
+  name: string
+  partner_id: string
+  order_date: Date
+  session_id: string
+  currency_id: string
+  pos_reference: string
+  order_number: string
+  general_customer_note: string
+  amount_untaxed: number
+  amount_tax: number
+  amount_withtaxed: number
+  amount_payment: number
+  amount_residual: number
+  session_name?: string
+  point_name?: string
+  receipt_number?: string
+  order_sequence_ft?: string
+  partner_name?: string
+  user_name?: string
+  amount_withtaxed_currency?: string
+  invoice_state?: string
+  invoice_state_description?: string
+}
+
+const PosOrderConfig: FormConfig = {
+  fnc_name: 'fnc_pos_order',
+  title: 'Órdenes',
+  dsc: 'Órdenes',
+  module: ModulesEnum.POINTS_OF_SALE_MEAT,
+  module_url: '/action/201',
+  dsc_view: 'receipt_number',
+  views: [ViewTypeEnum.KANBAN, ViewTypeEnum.LIST],
+  view_default: ViewTypeEnum.LIST,
+  item_url: '/action/201/detail',
+  new_url: '',
+  no_content_title: 'No se encontraron órdenes',
+  no_content_dsc: 'Inicie una nueva sesión para registrar nuevas órdenes.',
+  visibility_columns: {},
+  // const { field, ribbonList, transformValue, getLabelFromData, fallback } = config
+  ribbonList: {
+    field: 'payment_state',
+    ribbonList: [
+      {
+        label: 'En progreso',
+        state: TypeStateOrder.IN_PROGRESS,
+        className: 'ribbon-simple bg-yellow-500',
+      },
+      { label: 'PAGADO', state: TypeStatePayment.PAYMENT, className: 'ribbon-simple' },
+      {
+        label: 'PAGADO PARCIAL',
+        state: TypeStatePayment.PARTIAL_PAYMENT,
+        className: 'ribbon-simple bg-yellow-500',
+      },
+      {
+        label: 'PAGO PENDIENTE',
+        state: TypeStatePayment.PENDING_PAYMENT,
+        className: 'ribbon-simple bg-yellow-500',
+      },
+      { label: 'PAGO', state: TypeStateOrder.PAY, className: 'ribbon-simple bg-yellow-500' },
+    ],
+    getLabelFromData: (_, data) => data?.payment_state_description,
+    fallback: {
+      className: 'ribbon-simple bg-blue-500',
+      getLabel: (value) => `Estado desconocido: ${value}`,
+    },
+  },
+  fnc_valid: (data: any) => {
+    const newData = data.lines.map((item: any, index: number) => {
+      if (item.action === ActionTypeEnum.INSERT) {
+        return {
+          ...item,
+          order_id: data.order_id,
+          amount_tax: 0,
+          position: index + 1,
+          amount_withtaxed: item?.price_unit,
+          amount_untaxed_total: item?.price_unit * item?.quantity,
+          amount_tax_total: item?.price_unit * item?.quantity,
+          amount_withtaxed_total: item?.price_unit * item?.quantity,
+        }
+      }
+
+      return item
+    })
+    data.lines = newData
+    data.lines = data?.lines.map((item: any, index: number) => ({
+      ...item,
+      position: index + 1,
+    }))
+    const totalPagos = (data.payments || []).reduce(
+      (acc: number, p: any) => acc + (Number(p.amount) || 0),
+      0
+    )
+
+    const totalPedido = Number(data.amount_withtaxed) || 0
+
+    if (totalPagos > totalPedido) {
+      CustomToast({
+        title: 'El pago excede la diferencia.',
+        description: 'Ingrese un monto igual o menor a la diferencia.',
+        type: 'warning',
+      })
+      return null
+    }
+    return data
+  },
+
+  default_values: {},
+  formButtons: [],
+  grid: {
+    idRow: 'order_id',
+    isDragable: false,
+    col_name: 'partner_name',
+
+    list: {
+      columns: [
+        /*
+        {
+          header: 'Ref. de la orden',
+          size: 150,
+          cell: ({ row }: { row: Row<PosOrderData> }) => <div>{row.original.name}</div>,
+        },
+        */
+        {
+          header: 'Número de recibo',
+          size: 150,
+          cell: ({ row }: { row: Row<PosOrderData> }) => <div>{row.original.receipt_number}</div>,
+        },
+        {
+          header: 'Fecha',
+          size: 120,
+          cell: ({ row }: { row: Row<PosOrderData> }) => (
+            <div>{row.original.order_date ? formatPlain(row.original.order_date) : ''}</div>
+          ),
+        },
+        {
+          header: 'Sesión',
+          size: 120,
+          cell: ({ row }: { row: Row<PosOrderData> }) => <div>{row.original.session_name}</div>,
+        },
+        /*
+        {
+          header: 'Punto de venta',
+          size: 150,
+          cell: ({ row }: { row: Row<PosOrderData> }) => <div>{row.original.point_name}</div>,
+        },
+        */
+        /*
+        {
+          header: 'Número de orden',
+          size: 150,
+          cell: ({ row }: { row: Row<PosOrderData> }) => (
+            <div>{row.original.order_sequence_ft}</div>
+          ),
+        },
+        */
+        {
+          header: 'Cliente',
+          size: 180,
+          cell: ({ row }: { row: Row<PosOrderData> }) => <div>{row.original.partner_name}</div>,
+        },
+        {
+          header: 'Cajero',
+          size: 150,
+          cell: ({ row }: { row: Row<PosOrderData> }) => <div>{row.original.user_name}</div>,
+        },
+        {
+          header: 'Total',
+          size: 120,
+          meta: {
+            textAlign: 'text-right',
+            headerAlign: 'text-right',
+          },
+          cell: ({ row }: { row: Row<PosOrderData> }) => (
+            <div>
+              {row.original.amount_withtaxed_currency
+                ? row.original.amount_withtaxed_currency
+                : '0.00'}
+            </div>
+          ),
+        },
+
+        // {
+        //   header: 'Estado',
+        //   size: 100,
+        //   cell: ({ row }: { row: Row<PosOrderData> }) => <div>{row.original.state}</div>,
+        // },
+
+        {
+          header: 'Estado',
+          size: 120,
+          cell: ({ row }: { row: Row<PosOrderData> }) => {
+            const state = row.original.state
+            const stateDescription = row.original.state_description
+
+            return (
+              <StatusChip
+                value={state}
+                description={stateDescription}
+                textMap={{
+                  I: 'En curso',
+                  Y: 'Pago',
+                  RPF: 'Pagado',
+                  RPP: 'Pagado Parcial',
+                  RPE: 'Error de Pago',
+                  CPF: 'Cancelado',
+                  CPP: 'Cancelado',
+                  CPE: 'Cancelado',
+                }}
+                classesMap={{
+                  I: 'text-bg-warning',
+                  Y: 'text-bg-warning',
+                  RPF: 'text-bg-success',
+                  RPP: 'text-bg-warning',
+                  RPE: 'text-bg-warning',
+                  CPF: 'text-bg-danger',
+                  CPP: 'text-bg-danger',
+                  CPE: 'text-bg-danger',
+                }}
+                defaultText="Sin estado"
+              />
+            )
+          },
+        },
+
+        /*
+        {
+          header: 'Estado de la factura',
+          size: 100,
+          cell: ({ row }: { row: Row<PosOrderData> }) => {
+            const invoiceState = row.original.invoice_state
+            const invoiceStateDescription = row.original.invoice_state_description
+
+            return (
+              <StatusChip
+                value={invoiceState || ''}
+                description={invoiceStateDescription}
+                textMap={{
+                  T: 'Por facturar',
+                  P: 'Facturado parcialmente',
+                  F: 'Facturado por completo',
+                }}
+                classesMap={{
+                  T: 'text-bg-warning',
+                  P: 'text-bg-success',
+                  F: 'text-bg-success',
+                }}
+                defaultText="Sin estado"
+              />
+            )
+          },
+        },
+        */
+      ],
+    },
+  },
+
+  filters: [
+    {
+      list: [
+        {
+          group: '1',
+          title: 'Mis órdenes',
+          key: '1.1',
+          key_db: 'partner_id',
+          value: 'partner_id',
+          type: 'check',
+        },
+      ],
+    },
+    {
+      list: [
+        {
+          group: '2',
+          title: 'Registrado',
+          key: '2.1',
+          key_db: 'state',
+          value: 'R',
+          type: 'check',
+        },
+        {
+          group: '2',
+          title: 'Cancelado',
+          key: '2.2',
+          key_db: 'state',
+          value: 'C',
+          type: 'check',
+        },
+      ],
+    },
+    {
+      list: [
+        {
+          group: '3',
+          title: 'Pago pendiente',
+          key: '3.1',
+          key_db: 'payment_state',
+          value: 'PE',
+          type: 'check',
+        },
+        {
+          group: '3',
+          title: 'Pago parcial',
+          key: '3.2',
+          key_db: 'payment_state',
+          value: 'PP',
+          type: 'check',
+        },
+        {
+          group: '3',
+          title: 'Pagado',
+          key: '3.3',
+          key_db: 'payment_state',
+          value: 'PF',
+          type: 'check',
+        },
+      ],
+    },
+  ],
+
+  group_by: [
+    {
+      list: [
+        {
+          title: 'Sesión',
+          key: '',
+          key_gby: '',
+        },
+        {
+          title: 'Cajero',
+          key: '',
+          key_gby: '',
+        },
+        {
+          title: 'Punto de venta',
+          key: 'state',
+          key_gby: 'state',
+        },
+        {
+          title: 'Cliente',
+          key: 'state',
+          key_gby: 'state',
+        },
+        {
+          title: 'Estado',
+          key: 'state',
+          key_gby: 'state',
+        },
+        {
+          title: 'Fecha de la orden',
+          key: 'state',
+          key_gby: 'state',
+        },
+      ],
+    },
+  ],
+
+  filters_columns: [
+    {
+      dsc: 'Número de recibo',
+      key: 'receipt_number',
+      default: true,
+    },
+    {
+      dsc: 'Cliente',
+      key: 'partner_name',
+      default: false,
+    },
+    {
+      dsc: 'Cajero',
+      key: 'user_name',
+      default: false,
+    },
+    {
+      dsc: 'Sesión',
+      key: 'session_name',
+      default: false,
+    },
+    {
+      dsc: 'Punto de venta',
+      key: 'point_name',
+      default: false,
+    },
+    /*
+    {
+      dsc: 'Producto',
+      key: 'category_name',
+      default: false,
+    },
+    */
+  ],
+
+  configControls: {},
+
+  statusBarConfig: {
+    visibleStates: [
+      { state: TypeStateOrder.IN_PROGRESS, label: 'En curso' },
+      {
+        state: [
+          TypeStateOrder.PAY,
+          TypeStateOrder.REGISTERED,
+          TypeStateOrder.PARTIAL_PAYMENT,
+          TypeStateOrder.PENDING_PAYMENT,
+          TypeStateOrder.PAID,
+        ],
+        label: 'Registrado',
+      },
+      {
+        state: [TypeStateOrder.CANCELED],
+        label: 'Cancelado',
+      },
+    ],
+    defaultState: TypeStateOrder.REGISTERED,
+  },
+
+  form_inputs: {
+    imagenFields: [],
+    auditoria: true,
+    frm_bar_buttons: ({ watch, control, errors, editConfig = {}, setValue }) => (
+      <Frm_bar_buttons
+        watch={watch}
+        control={control}
+        errors={errors}
+        editConfig={editConfig}
+        setValue={setValue}
+      />
+    ),
+    frm_middle: ({ watch, control, errors, editConfig = {}, setValue }) => (
+      <FrmMiddle
+        control={control}
+        errors={errors}
+        fnc_name={'fnc_partner'}
+        setValue={setValue}
+        editConfig={editConfig}
+        watch={watch}
+      />
+    ),
+    tabs: [
+      {
+        name: 'Productos',
+        content: ({ watch, control, errors, editConfig = {}, setValue }) => (
+          <FrmTab0
+            watch={watch}
+            control={control}
+            errors={errors}
+            editConfig={editConfig}
+            setValue={setValue}
+          />
+        ),
+      },
+      {
+        name: 'Pagos',
+        content: ({ watch, control, errors, editConfig = {}, setValue }) => (
+          <FrmTab1
+            watch={watch}
+            control={control}
+            errors={errors}
+            editConfig={editConfig}
+            setValue={setValue}
+          />
+        ),
+      },
+      {
+        name: 'Información adicional',
+        content: ({ watch, control, errors, editConfig = {}, setValue }) => (
+          <FrmTab2
+            watch={watch}
+            control={control}
+            errors={errors}
+            editConfig={editConfig}
+            setValue={setValue}
+          />
+        ),
+      },
+      {
+        name: 'Nota de cliente',
+        content: ({ watch, control, errors, editConfig = {}, setValue }) => (
+          <FrmTab3
+            watch={watch}
+            control={control}
+            errors={errors}
+            editConfig={editConfig}
+            setValue={setValue}
+          />
+        ),
+      },
+    ],
+  },
+
+  fieldLabels: {
+    journal_id: 'Diario',
+    currency_id: 'Moneda',
+    document_type_id: 'Tipo de Documento',
+  },
+}
+
+export default PosOrderConfig

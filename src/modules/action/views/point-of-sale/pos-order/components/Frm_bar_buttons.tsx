@@ -4,11 +4,11 @@ import PosPaymentModalConfig from '../../payment-modal/config'
 import { useEffect } from 'react'
 import { FrmBaseDialog } from '@/shared/components/core'
 import { PosOrderStateEnum } from '../../types'
-import { TypeStateOrder } from '@/modules/pos/types'
+import { TypeStateOrder, TypeStatePayment } from '@/modules/pos/types'
 
 export function Frm_bar_buttons({ watch, setValue }: frmElementsProps) {
   const setFrmAction = useAppStore((state) => state.setFrmAction)
-  const { openDialog, closeDialogWithData } = useAppStore((state) => state)
+  const { openDialog, closeDialogWithData, setFrmDialogAction } = useAppStore((state) => state)
 
   const setFrmConfigControls = useAppStore((state) => state.setFrmConfigControls)
 
@@ -65,14 +65,24 @@ export function Frm_bar_buttons({ watch, setValue }: frmElementsProps) {
     setValue('state', 'N')
     setFrmAction(FormActionEnum.PRE_SAVE)
   }
+  const returnRegistered = () => {
+    if (watch('dialogId')) {
+      setValue('state', TypeStateOrder.REGISTERED)
+      setFrmDialogAction('u')
+    } else {
+      setValue('state', TypeStateOrder.REGISTERED)
+      setFrmAction(FormActionEnum.PRE_SAVE)
+    }
+  }
   const pay_order = () => {
     setValue('state', 'I')
     setFrmAction(FormActionEnum.PRE_SAVE)
   }
   const cancelOrder = () => {
     if (watch('dialogId')) {
+      setFrmDialogAction('u')
       setValue('state', TypeStateOrder.CANCELED)
-      setFrmAction(FormActionEnum.PRE_SAVE)
+      //setFrmAction(FormActionEnum.PRE_SAVE)
     } else {
       setValue('state', TypeStateOrder.CANCELED)
       setFrmAction(FormActionEnum.PRE_SAVE)
@@ -81,7 +91,7 @@ export function Frm_bar_buttons({ watch, setValue }: frmElementsProps) {
 
   return (
     <>
-      {watch('state') === PosOrderStateEnum.PAID ? (
+      {watch('state') === PosOrderStateEnum.PAID && (
         <>
           <button className="btn btn-secondary" onClick={() => {}}>
             Factura
@@ -91,9 +101,12 @@ export function Frm_bar_buttons({ watch, setValue }: frmElementsProps) {
             Devolver producto
           </button>
         </>
-      ) : (
-        <button className="btn btn-primary" onClick={openModal}>
-          Pago
+      )}
+      {(watch('payment_state') == TypeStatePayment.PARTIAL_PAYMENT ||
+        watch('payment_state') == TypeStatePayment.PENDING_PAYMENT) && <></>}
+      {watch('state') === PosOrderStateEnum.CANCELED && (
+        <button className="btn btn-secondary" onClick={returnRegistered}>
+          Restablecer a Registrado
         </button>
       )}
       {watch('state') === PosOrderStateEnum.REGISTERED && (

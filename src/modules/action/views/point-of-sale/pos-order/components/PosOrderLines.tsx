@@ -228,8 +228,9 @@ const PosOrderLines = ({ watch, setValue, control, errors, editConfig }: frmElem
     formItem,
   })
 
-  const isReadOnly = watch('state') === (TypeStateOrder.REGISTERED || TypeStateOrder.CANCELED)
-
+  const isReadOnly =
+    watch('state') === TypeStateOrder.REGISTERED || watch('state') === TypeStateOrder.CANCELED
+  console.log('tableData', tableData)
   // Inicializar el estado con los datos del tableData si existen
   const [data, setData] = useState<PosOrderLine[]>(() => {
     if (tableData?.length > 0) {
@@ -1262,6 +1263,8 @@ export const TableActions = ({
   ]
   const isReadOnly =
     watch('state') === TypeStateOrder.REGISTERED || watch('state') === TypeStateOrder.CANCELED
+
+  console.log('isReadOnly', isReadOnly)
   return (
     <>
       {isReadOnly ? (

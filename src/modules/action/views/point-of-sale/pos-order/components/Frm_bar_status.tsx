@@ -1,9 +1,10 @@
 import { TypeStateOrder } from '@/modules/pos/types'
+import { frmElementsProps } from '@/shared/shared.types'
 import { useAppStore } from '@/store/app/appStore'
 
-export function Frm_bar_status() {
+export function Frm_bar_status({ watch }: frmElementsProps) {
   const formItem = useAppStore((state) => state.formItem)
-  const currentState = formItem?.state ?? TypeStateOrder.IN_PROGRESS
+  const currentState = formItem?.state || watch('state')
 
   const allStates = [
     //{ state: TypeStateOrder.IN_PROGRESS || TypeStateOrder.PAY, label: 'En progreso' },

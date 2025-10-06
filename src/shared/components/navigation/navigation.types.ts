@@ -26,10 +26,17 @@ export type ModalConfigType = {
 
 // ===== TIPOS PARA BOTONES DE MODAL =====
 
+export type ExecuteFncType = (fnc_name: string, action: string, params: any) => Promise<any>
+
 export type ModalButtonType = {
   text: string
   type?: 'primary' | 'secondary' | 'cancel' | 'danger' | 'confirm'
-  onClick: (dialogId: string, closeDialogWithData: (id: string, data: any) => void) => void
+  // now receives executeFnc as third param (optional) so buttons can call app API
+  onClick: (
+    dialogId: string,
+    closeDialogWithData: (id: string, data: any) => void,
+    executeFnc?: ExecuteFncType
+  ) => void
 }
 
 // ===== TIPOS DE TAMAÑOS DE MODAL =====

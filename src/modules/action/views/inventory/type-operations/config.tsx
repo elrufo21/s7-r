@@ -2,7 +2,7 @@ import { ViewTypeEnum, FormConfig, ModulesEnum, ItemStatusTypeEnum } from '@/sha
 import { FrmTab0, FrmTitle } from './configView'
 import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 
-const UnitMeasurementConfig: FormConfig = {
+const TypeOperationsConfig: FormConfig = {
   fnc_name: 'fnc_types_operations',
   title: 'Tipos de operaciones',
   dsc: 'Tipo de operación',
@@ -95,4 +95,4 @@ const UnitMeasurementConfig: FormConfig = {
   },
 }
 
-export default UnitMeasurementConfig
+export default TypeOperationsConfig

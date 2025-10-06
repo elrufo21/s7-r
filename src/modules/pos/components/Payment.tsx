@@ -31,7 +31,7 @@ interface PaymentItem {
   currency_id: number
 }
 
-const PaymentMethodCard = ({
+export const PaymentMethodCard = ({
   method,
   onClick,
 }: {
@@ -256,10 +256,10 @@ const Payment = () => {
     let message = ''
     if (getRemainingAmount() === 0) return
     if (getRemainingAmount() === adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted) {
-      message = 'Se creara una orden de venta al credito'
+      message = 'Se creara una orden de venta al crédito'
     }
     if (getRemainingAmount() !== adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted) {
-      message = 'Se creara una orden con pago parcial'
+      message = 'Se creara una orden de venta con pago parcial'
     }
     return message
   }

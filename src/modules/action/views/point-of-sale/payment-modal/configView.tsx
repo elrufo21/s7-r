@@ -1,3 +1,4 @@
+import BaseAutocomplete from '@/shared/components/form/base/BaseAutocomplete'
 import BaseTextControlled from '@/shared/components/form/base/BaseTextControlled'
 import FormRow from '@/shared/components/form/base/FormRow'
 import { required } from '@/shared/helpers/validators'
@@ -6,7 +7,7 @@ import { AutocompleteControlled } from '@/shared/ui'
 import useAppStore from '@/store/app/appStore'
 import { useState } from 'react'
 
-export const FrmMiddle = ({ control, errors, editConfig, watch }: frmElementsProps) => {
+export const FrmMiddle = ({ control, errors, editConfig, watch, setValue }: frmElementsProps) => {
   const [paymentMethods, setPaymentMethods] = useState<{ value: any; label: string }[]>([])
   const { createOptions } = useAppStore()
 
@@ -22,7 +23,24 @@ export const FrmMiddle = ({ control, errors, editConfig, watch }: frmElementsPro
   return (
     <>
       <FormRow label={'Metodo de pago'}>
-        <AutocompleteControlled
+        <BaseAutocomplete
+          name={'payment_method_id'}
+          label="payment_method_name"
+          control={control}
+          errors={errors}
+          setValue={setValue}
+          filters={[]}
+          rulers={false}
+          allowSearchMore={false}
+          editConfig={{ config: editConfig }}
+          formItem={[]}
+          config={{
+            fncName: 'fnc_pos_payment_method',
+            primaryKey: 'payment_method_id',
+          }}
+        />
+        {/**
+         <AutocompleteControlled
           name={'payment_method_id'}
           control={control}
           errors={errors}
@@ -34,6 +52,7 @@ export const FrmMiddle = ({ control, errors, editConfig, watch }: frmElementsPro
           }}
           rules={required()}
         />
+        */}
       </FormRow>
       <BaseTextControlled
         key={'amount'}

@@ -48,7 +48,6 @@ const BaseTextControlled = ({
       navigate(`/action/${navigationConfig.modelId}/detail/${navigationConfig.recordId}`)
     }
   }
-
   return (
     <FormRow label={label} editConfig={editConfig} fieldName={name} className="min-w-[140px]">
       <TextControlled

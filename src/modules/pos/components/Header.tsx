@@ -95,7 +95,6 @@ export default function Header({ pointId }: { pointId: string }) {
   const handleCashInAndOut = async () => {
     const dialogId = openDialog({
       title: '',
-      customHeader: <CustomHeaderCashInAndOut />,
       dialogContent: () => (
         <FrmBaseDialog config={PosModalCashinAndOut} viewType={ViewTypeEnum.LIBRE} />
       ),

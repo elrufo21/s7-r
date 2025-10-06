@@ -62,10 +62,33 @@ export function getHour(date: Date | string) {
   return d.toPlainTime().toString().slice(0, 5)
 }
 
-export function formatShortDate(date: Date | string) {
+export function formatShortDate(date: Date | string, useShortMonth: boolean = false) {
   const d = toPlainDateTime(date)
   if (!d) return ''
+
   const day = String(d.day).padStart(2, '0')
+
+  if (useShortMonth) {
+    const months = [
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic',
+    ]
+    const monthName = months[d.month - 1]
+
+    const currentYear = new Date().getFullYear()
+    return d.year === currentYear ? `${day} ${monthName}` : `${day} ${monthName} ${d.year}`
+  }
+
   const month = String(d.month).padStart(2, '0')
   const year = String(d.year).slice(-2)
   return `${day}/${month}/${year}`

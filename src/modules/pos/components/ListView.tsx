@@ -61,9 +61,8 @@ export function DataTable<TData extends { isSelected?: boolean }, TValue = any>(
   const { pointId } = useParams()
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: data.length > 0 ? data.length : pageSize, // Mostrar todos los elementos si hay datos
+    pageSize: data?.length > 0 ? data?.length : pageSize, // Mostrar todos los elementos si hay datos
   })
-
   const [globalFilter, setGlobalFilter] = useState<string>('')
 
   const [selectedStatus, setSelectedStatus] = useState<string>(

@@ -158,7 +158,7 @@ const Screens = () => {
       setSyncData(false)
       const { oj_data } = await executeFnc('fnc_pos_order', 's1', [selectedOr])
       data = oj_data[0]
-      setSelectedOrderInList(selectedOr)
+      setSelectedOrderInList(selectedOr || 0)
     } else {
       await offlineCache
         .syncOfflineData(executeFnc, pointId, setOrderData, setSyncLoading, session_id)
@@ -180,13 +180,23 @@ const Screens = () => {
           onFinish={() => alert('FF')}
         />
       ),
+      handleCloseDialog: async () => {
+        closeDialogWithData(dialogId, {})
+        await offlineCache
+          .syncOfflineData(executeFnc, pointId, setOrderData, setSyncLoading, session_id)
+          .then(async () => {
+            setSyncData(false)
+            const { oj_data } = await executeFnc('fnc_pos_order', 's1', [orderID])
+            data = oj_data[0]
+          })
+        setSelectedOrderInList(orderID)
+      },
       buttons: [
         {
           type: 'cancel',
           text: 'Cerrar',
           onClick: () => {
             const formData = getData()
-            console.log('formData', formData)
             setSelectedOrderInList(formData.order_id)
             closeDialogWithData(dialogId, {})
           },
@@ -243,6 +253,7 @@ const Screens = () => {
                 </div>
               </div>
               {(orderSelected?.state === TypeStateOrder.REGISTERED ||
+                orderSelected?.state === TypeStateOrder.CANCELED ||
                 orderSelected?.state === 'E') && (
                 <div className="control-buttons ticket">
                   {/*

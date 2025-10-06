@@ -1,3 +1,4 @@
+// POS 1
 import { ActionTypeEnum, FormConfig, ModulesEnum } from '@/shared/shared.types'
 import { Row } from '@tanstack/react-table'
 import { ViewTypeEnum } from '@/shared/shared.types'
@@ -57,7 +58,6 @@ const PosOrderConfig: FormConfig = {
   new_url: '',
   no_content_title: 'No se encontraron órdenes',
   no_content_dsc: 'Inicie una nueva sesión para registrar nuevas órdenes.',
-  filters_columns: [],
   visibility_columns: {},
   // const { field, ribbonList, transformValue, getLabelFromData, fallback } = config
   ribbonList: {
@@ -80,6 +80,11 @@ const PosOrderConfig: FormConfig = {
         className: 'ribbon-simple bg-yellow-500',
       },
       { label: 'PAGO', state: TypeStateOrder.PAY, className: 'ribbon-simple bg-yellow-500' },
+      {
+        label: 'CANCELADO',
+        state: TypeStateOrder.CANCELED,
+        className: 'ribbon-simple bg-yellow-500 ',
+      },
     ],
     getLabelFromData: (_, data) => data?.payment_state_description,
     fallback: {
@@ -267,7 +272,7 @@ const PosOrderConfig: FormConfig = {
       list: [
         {
           group: '1',
-          title: 'Mis facturas',
+          title: 'Mis órdenes',
           key: '1.1',
           key_db: 'partner_id',
           value: 'partner_id',
@@ -278,25 +283,17 @@ const PosOrderConfig: FormConfig = {
     {
       list: [
         {
-          group: 'state',
-          title: 'Borrador',
-          key: 'draft',
-          key_db: 'state',
-          value: 'B',
-          type: 'check',
-        },
-        {
-          group: 'state',
+          group: '2',
           title: 'Registrado',
-          key: 'registered',
+          key: '2.1',
           key_db: 'state',
           value: 'R',
           type: 'check',
         },
         {
-          group: 'state',
+          group: '2',
           title: 'Cancelado',
-          key: 'cancelated',
+          key: '2.2',
           key_db: 'state',
           value: 'C',
           type: 'check',
@@ -306,100 +303,28 @@ const PosOrderConfig: FormConfig = {
     {
       list: [
         {
-          group: '2',
-          title: 'Sin enviar',
-          key: '',
-          key_db: '',
-          value: '',
+          group: '3',
+          title: 'Pago pendiente',
+          key: '3.1',
+          key_db: 'payment_state',
+          value: 'PE',
           type: 'check',
         },
-      ],
-    },
-    {
-      list: [
         {
-          group: '',
-          title: 'Facturas',
-          key: '',
-          key_db: '',
-          value: '',
-          type: '',
-        },
-        {
-          group: '',
-          title: 'Notas de credito',
-          key: '',
-          key_db: '',
-          value: '',
-          type: '',
-        },
-        {
-          group: '',
-          title: 'Notas de debito',
-          key: '',
-          key_db: '',
-          value: '',
-          type: '',
-        },
-      ],
-    },
-    {
-      list: [
-        {
-          group: '',
-          title: 'Por revisar',
-          key: '',
-          key_db: '',
-          value: '',
+          group: '3',
+          title: 'Pago parcial',
+          key: '3.2',
+          key_db: 'payment_state',
+          value: 'PP',
           type: 'check',
         },
-      ],
-    },
-    {
-      list: [
         {
-          group: '',
-          title: 'Por pagar',
-          key: '',
-          key_db: '',
-          value: '',
-          type: '',
-        },
-        {
-          group: '',
-          title: 'En proceso de pago',
-          key: '',
-          key_db: '',
-          value: '',
-          type: '',
-        },
-        {
-          group: '',
-          title: 'Vencidas',
-          key: '',
-          key_db: '',
-          value: '',
-          type: '',
-        },
-      ],
-    },
-    {
-      list: [
-        {
-          group: '',
-          title: 'Fecha de facturas',
-          key: '',
-          key_db: '',
-          value: '',
-          type: '',
-        },
-        {
-          group: '',
-          title: 'Fecha de vencimiento',
-          key: '',
-          key_db: '',
-          value: '',
-          type: '',
+          group: '3',
+          title: 'Pagado',
+          key: '3.3',
+          key_db: 'payment_state',
+          value: 'PF',
+          type: 'check',
         },
       ],
     },
@@ -409,70 +334,72 @@ const PosOrderConfig: FormConfig = {
     {
       list: [
         {
-          title: 'Vendedor',
+          title: 'Sesión',
           key: '',
           key_gby: '',
         },
         {
-          title: 'Contacto',
+          title: 'Cajero',
           key: '',
           key_gby: '',
+        },
+        {
+          title: 'Punto de venta',
+          key: 'state',
+          key_gby: 'state',
+        },
+        {
+          title: 'Cliente',
+          key: 'state',
+          key_gby: 'state',
         },
         {
           title: 'Estado',
           key: 'state',
           key_gby: 'state',
         },
+        {
+          title: 'Fecha de la orden',
+          key: 'state',
+          key_gby: 'state',
+        },
       ],
+    },
+  ],
+
+  filters_columns: [
+    {
+      dsc: 'Número de recibo',
+      key: 'receipt_number',
+      default: true,
     },
     {
-      list: [
-        {
-          title: 'Equipo de ventas',
-          key: '',
-          key_gby: '',
-        },
-        {
-          title: 'Metodo de pago',
-          key: '',
-          key_gby: '',
-        },
-        {
-          title: 'Diario',
-          key: '',
-          key_gby: '',
-        },
-        {
-          title: 'Empresa',
-          key: '',
-          key_gby: '',
-        },
-      ],
+      dsc: 'Cliente',
+      key: 'partner_name',
+      default: false,
     },
     {
-      list: [
-        {
-          title: 'Fecha de factura ',
-          key: '',
-          key_gby: '',
-        },
-        {
-          title: 'Fecha de vencimiento',
-          key: '',
-          key_gby: '',
-        },
-        {
-          title: 'Fecha contable',
-          key: '',
-          key_gby: '',
-        },
-        {
-          title: 'Tipo de documento',
-          key: '',
-          key_gby: '',
-        },
-      ],
+      dsc: 'Cajero',
+      key: 'user_name',
+      default: false,
     },
+    {
+      dsc: 'Sesión',
+      key: 'session_name',
+      default: false,
+    },
+    {
+      dsc: 'Punto de venta',
+      key: 'point_name',
+      default: false,
+    },
+    /*
+    {
+      dsc: 'Producto',
+      key: 'category_name',
+      default: false,
+    },
+    */
   ],
 
   configControls: {},

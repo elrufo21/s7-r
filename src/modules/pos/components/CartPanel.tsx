@@ -19,6 +19,7 @@ import { offlineCache } from '@/lib/offlineCache'
 import { usePosActions } from '../hooks/usePosActions'
 import { toast } from 'sonner'
 import { adjustTotal } from '@/shared/helpers/helpers'
+import { CustomToast } from '@/components/toast/CustomToast'
 
 export default function CartPanel() {
   const {
@@ -965,8 +966,12 @@ export default function CartPanel() {
                     className="btn btn-primary btn-lg flex-auto min-h-[70px]"
                     disabled={frmLoading}
                     onClick={() => {
-                      if (total === (0).toFixed(2)) {
-                        toast.error('No se puede continuar: el monto debe ser distinto de 0.')
+                      if (total === 0) {
+                        CustomToast({
+                          title: 'Error al continuar a pago',
+                          description: 'No se puede continuar: el monto debe ser distinto de 0.',
+                          type: 'error',
+                        })
                         return
                       }
                       setBackToProducts(false)

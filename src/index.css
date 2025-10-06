@@ -4765,6 +4765,32 @@ Buttons
   display: flex;
   padding: 5px 12px;
 }
+.btn-success
+{
+  color: #FFF;
+  background-color: #28a745;
+  border-color: #28a745;
+  box-shadow: 0;
+}
+.btn-success:hover
+{
+  color: #FFF;
+  background-color: #228e3b;
+  border-color: #208637;
+}
+.btn-danger
+{
+  color: #FFF;
+  background-color: #d44c59;
+  border-color: #d44c59;
+  box-shadow: 0;
+}
+.btn-danger:hover
+{
+  color: #FFF;
+  background-color: #b4414c;
+  border-color: #aa3d47;
+}
 
 /*
 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -9362,24 +9388,24 @@ img, svg {
   padding-bottom: 0.5rem;
 }
 
-/* .numpad-button:where(:not(.modal-body .numpad-button, .table-selector .numpad-button)):first-child */
+/* .numpad-button:where(:not(.modal-children .numpad-button, .table-selector .numpad-button)):first-child */
 .numpad-button:first-child
 {
   /* border-radius: 0.25rem 0 0 0; */
 }
-/* .numpad-button:where(:not(.modal-body .numpad-button, .table-selector .numpad-button)):nth-child(4) */
+/* .numpad-button:where(:not(.modal-children .numpad-button, .table-selector .numpad-button)):nth-child(4) */
 .numpad-button:nth-child(4)
 {
   /* border-radius: 0 0.25rem 0 0; */
 }
 
-/* .numpad-button:where(:not(.modal-body .numpad-button, .table-selector .numpad-button)):nth-last-child(4) */
+/* .numpad-button:where(:not(.modal-children .numpad-button, .table-selector .numpad-button)):nth-last-child(4) */
 .numpad-button:nth-last-child(4)
 {
   /* border-radius: 0 0 0 0.25rem; */
 }
 
-/* .numpad-button:where(:not(.modal-body .numpad-button, .table-selector .numpad-button)):last-child */
+/* .numpad-button:where(:not(.modal-children .numpad-button, .table-selector .numpad-button)):last-child */
 .numpad-button:last-child
 {
   /* border-radius: 0 0 0.25rem 0; */
@@ -9561,6 +9587,7 @@ img, svg {
   width: 60px !important;
   min-width: 60px !important;
 }
+
 .pos-orders .btn2
 {
   /* padding-left: 1.5rem; */
@@ -10512,3 +10539,81 @@ l-modal-question - fin
 **********************************************************************************
 */
 
+
+/*
+********************************************************************************** 
+modal-children - start
+**********************************************************************************
+*/
+
+.modal-children
+{
+  padding: 0;
+}
+
+.modal-children .o_form_view .o_form_sheet_bg
+{
+  padding-top: 16px;
+}
+
+.modal-children .o_form_view .o_form_sheet
+{
+  margin: 0;
+}
+
+/*
+********************************************************************************** 
+modal-children - end
+**********************************************************************************
+*/
+
+
+
+
+.grid111
+{
+  display: flex;
+  justify-content: space-evenly; /* O space-between o space-around */
+  width: 100%; /* Ajusta según sea necesario */
+  gap: 15px;
+}
+
+
+.hijo11 {
+  /* Estilos para tus divs, como un borde o color */
+  /* background-color: lightblue; */
+  /* padding: 20px; */
+  /* border: 1px solid blue; */
+  /* text-align: center; */
+  flex: 1; /* Para que los hijos tomen espacio igual en el eje principal */
+}
+
+.btn2-carnes
+{
+  --btn-font-size: 1rem;
+
+  font-size: var(--btn-font-size);
+  color: var(--btn-color);
+  background-color: var(--btn-bg);
+  border: 1px solid var(--btn-border-color);
+
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  
+  font-weight: 500;
+  line-height: 1.5;
+  
+  text-align: center;
+  text-align: -webkit-center;
+  vertical-align: middle;
+  cursor: pointer;
+  user-select: none;
+  
+  border-radius: 0.25rem;
+
+  box-shadow: 0;
+  transition: none;
+
+  -webkit-appearance: button;
+  text-transform: none;
+}

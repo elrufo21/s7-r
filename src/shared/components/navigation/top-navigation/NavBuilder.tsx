@@ -110,7 +110,6 @@ const NavBuilder: FC = () => {
                         (await executeFnc(values.fncName, values.action, values.data)) || {}
 
                       initialValues = oj_data[0]
-                      console.log('initialValues', initialValues)
                     }
                     const dialogId = openDialog({
                       title: subSubItem.title,
@@ -128,7 +127,7 @@ const NavBuilder: FC = () => {
                         ...(subSubItem.modalConfig?.customButtons || []).map((button: any) => ({
                           text: button.text,
                           type: button.type,
-                          onClick: () => button.onClick(dialogId, closeDialogWithData),
+                          onClick: () => button.onClick(dialogId, closeDialogWithData, executeFnc),
                         })),
                         // Botón cerrar siempre presente
                         {
@@ -164,7 +163,6 @@ const NavBuilder: FC = () => {
                   (await executeFnc(values.fncName, values.action, values.data)) || {}
 
                 initialValues = oj_data
-                console.log('initialValues', initialValues)
               }
               const dialogId = openDialog({
                 title: subItem.title,
@@ -178,7 +176,7 @@ const NavBuilder: FC = () => {
                   ...(subItem.modalConfig?.customButtons || []).map((button: any) => ({
                     text: button.text,
                     type: button.type,
-                    onClick: () => button.onClick(dialogId, closeDialogWithData),
+                    onClick: () => button.onClick(dialogId, closeDialogWithData, executeFnc),
                   })),
                   {
                     text: 'Cerrar',

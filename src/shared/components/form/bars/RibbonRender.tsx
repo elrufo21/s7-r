@@ -27,7 +27,6 @@ export function RibbonRenderer({ watch, config }: Props) {
   const data = typeof watch === 'function' ? watch() : watch
   const rawValue = typeof watch === 'function' ? watch(field) : data?.[field]
   const fieldValue = transformValue ? transformValue(rawValue) : rawValue
-
   if (!fieldValue) return null
 
   const matchingRibbon = ribbonList.find((ribbon) => ribbon.state === fieldValue)

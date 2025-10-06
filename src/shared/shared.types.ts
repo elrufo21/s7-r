@@ -117,6 +117,7 @@ export enum ModulesEnum {
   ACTION = 'action',
   POINTS_OF_SALE = 'points-of-sale',
   POS = 'pos',
+  POINTS_OF_SALE_MEAT = 'points-of-sale-meat',
 }
 
 export type ListGByItem = {

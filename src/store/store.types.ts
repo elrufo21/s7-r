@@ -257,6 +257,7 @@ export interface OpenDialogProps {
   customHeader?: any
   fullScreen?: boolean
   disableClose?: boolean
+  handleCloseDialog?: (() => Promise<void>) | null
 }
 export interface NewAppDialogProps {
   id: string
@@ -271,6 +272,7 @@ export interface NewAppDialogProps {
   contactModal?: boolean
   customHeader?: any
   fullScreen?: boolean
+  handleCloseDialog?: (() => Promise<void>) | null
 }
 export interface DialogSliceState {
   newAppDialogs: NewAppDialogProps[]
@@ -289,6 +291,7 @@ export interface DialogSliceState {
     contactModal,
     customHeader,
     fullScreen,
+    handleCloseDialog,
   }: OpenDialogProps) => string
   closeDialogWithData: (dialogId: string, data: any, key?: string) => void
   frmDialogAction: any
@@ -362,6 +365,11 @@ export interface BluetoothConfig {
   device_name: string
 }
 export interface PointsOfSaleSliceState {
+  characteristic: BluetoothRemoteGATTCharacteristic | null
+  setCharacteristic: (c: BluetoothRemoteGATTCharacteristic | null) => void
+
+  connectToDevice: () => Promise<void>
+  disconnect: () => void
   selectedOrderInList: number | string
   setSelectedOrderInList: (selectedOrderInList: number | string) => void
   point_id: number | null

@@ -47,7 +47,8 @@ export const PosTextControlled = ({
           value={field.value ?? ''}
           inputProps={{ style }}
           InputLabelProps={{ shrink }}
-          className={`w-full pl-3 pr-3 py-2 border rounded-md bg-white text-[16px] ${multiline ? 'h-auto' : ''} ${className}`}
+          // className={`w-full pl-3 pr-3 py-2 border rounded-md bg-white text-[16px] ${multiline ? 'h-auto' : ''} ${className}`}
+          className={`w-full pl-3 pr-3 py-2 rounded-md bg-white text-[16px] ${multiline ? 'h-auto' : ''} ${className}`}
           error={!!errors[name]}
           helperText={errors[name]?.message}
           onChange={(e) => field.onChange(e.target.value)}

@@ -3,14 +3,14 @@ import { useState } from 'react'
 import { Button, Menu, MenuItem, Typography, Tooltip } from '@mui/material'
 import { MdKeyboardArrowDown } from 'react-icons/md'
 
-interface MenuOption {
+interface FilterOption {
   label: string
   value: string
-  children?: MenuOption[]
+  children?: FilterOption[]
 }
 
 interface HierarchicalDropdownProps {
-  options: MenuOption[]
+  options: FilterOption[]
   selectedValue?: string
   onSelect?: (value: string) => void
   buttonClassName?: string
@@ -25,7 +25,8 @@ export default function HierarchicalDropdown({
   menuClassName = '',
 }: HierarchicalDropdownProps) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-  const [selected, setSelected] = useState(selectedValue || options[0]?.value || '')
+  const [selected, setSelected] = useState(selectedValue || '')
+
   const open = Boolean(anchorEl)
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -42,26 +43,29 @@ export default function HierarchicalDropdown({
     handleClose()
   }
 
-  const getSelectedLabel = () => {
-    const findLabel = (items: MenuOption[]): string => {
-      for (const item of items) {
-        if (item.value === selected) return item.label
-        if (item.children) {
-          const childLabel = findLabel(item.children)
-          if (childLabel) return childLabel
-        }
+  const findSelectedLabel = (items: FilterOption[], value: string): string => {
+    for (const item of items) {
+      if (item.value === value) return item.label
+      if (item.children) {
+        const childLabel = findSelectedLabel(item.children, value)
+        if (childLabel) return childLabel
       }
-      return ''
     }
-    return findLabel(options)
+    return ''
   }
 
-  const renderMenuItems = (items: MenuOption[], level = 0) => {
+  const getSelectedLabel = () => findSelectedLabel(options, selected) || 'Seleccionar'
+
+  const renderMenuItems = (items: FilterOption[], level = 0) => {
     return items.map((item) => (
       <div key={item.value}>
         <MenuItem
           onClick={() => handleSelect(item.value)}
-          className={`text-sm ${selected === item.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
+          className={`text-sm ${
+            selected === item.value
+              ? 'bg-blue-50 text-blue-700 font-medium'
+              : 'text-gray-700 hover:bg-gray-50'
+          }`}
           sx={{
             fontSize: '0.875rem',
             paddingLeft: `${16 + level * 16}px`,

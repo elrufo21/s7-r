@@ -1,14 +1,9 @@
-import { frmElementsProps, ActionTypeEnum } from '@/shared/shared.types'
-import React, { useState, useMemo, useEffect } from 'react'
-import { DndTable } from '@/shared/components/table/DndTable'
-import { ColumnDef, Row, Column } from '@tanstack/react-table'
-import { formatCurrency } from '@/shared/helpers/currency'
+import { frmElementsProps } from '@/shared/shared.types'
+import { useState } from 'react'
 import useAppStore from '@/store/app/appStore'
-import { InputTextTable } from '@/shared/ui/inputs/InputTextTable'
-import { ProductAutocompleteTable } from '@/shared/components/form/table/ProductAutocompleteTable'
-import { UnitAutocompleteTable } from '@/shared/components/form/table/UnitAutocompleteTable'
-import { DatepickerControlled } from '@/shared/ui'
-import { FaRegTrashAlt } from 'react-icons/fa'
+import { DatepickerControlled, MultiSelectObject, SelectControlled } from '@/shared/ui'
+import FormRow from '@/shared/components/form/base/FormRow'
+import { Chip } from '@mui/material'
 
 export function Subtitle({ control, errors, editConfig }: frmElementsProps) {
   return (
@@ -43,8 +38,57 @@ export function Subtitle({ control, errors, editConfig }: frmElementsProps) {
     </div>
   )
 }
+export function FrmMiddle({ control, errors, editConfig }: frmElementsProps) {
+  const { createOptions } = useAppStore()
+  const [pointsOfSale, setPointsOfSale] = useState([])
 
-export function FrmMiddle({ setValue }: frmElementsProps) {
+  const fnc_renderImps = (value: any, getProps: any) => {
+    return value.map((option: any, index: number) => (
+      <Chip
+        {...getProps({ index })}
+        key={index}
+        className="text-red-100"
+        label={option['label']}
+        size="small"
+      />
+    ))
+  }
+  const loadPOS = async () => {
+    const pos = await createOptions({ fnc_name: 'fnc_pos_point', action: 's2' })
+    setPointsOfSale(pos)
+  }
+  return (
+    <>
+      <FormRow label="Punto de venta" fieldName="pos_id" className="w-[500px]">
+        <MultiSelectObject
+          name="pos_id"
+          control={control}
+          options={pointsOfSale}
+          errors={errors}
+          placeholder={''}
+          fnc_loadOptions={() => loadPOS()}
+          renderTags={fnc_renderImps}
+          createOpt={true}
+          searchOpt={true}
+          editConfig={{ config: editConfig }}
+          className=""
+        />
+      </FormRow>
+      <FormRow label="Tipo" fieldName="type" className="w-[500px]">
+        <SelectControlled
+          control={control}
+          errors={errors}
+          name="type"
+          options={[
+            { label: 'Producto', value: 'P' },
+            { label: 'Clientes', value: 'C' },
+          ]}
+        />
+      </FormRow>
+    </>
+  )
+}
+/**export function FrmMiddle({ setValue }: frmElementsProps) {
   const { formItem } = useAppStore()
 
   const [orderLinesData, setOrderLinesData] = useState<any[]>([])
@@ -235,3 +279,4 @@ export function FrmMiddle({ setValue }: frmElementsProps) {
     </div>
   )
 }
+ */

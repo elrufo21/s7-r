@@ -53,7 +53,6 @@ export const FormView = ({ item }: { item?: any }) => {
     imagenFields,
     tabs,
   } = config.form_inputs
-
   const { fnc_name, fnc_valid, default_values } = config
   const idRow = config.grid.idRow
   const { filters } = useUserStore()
@@ -95,7 +94,6 @@ export const FormView = ({ item }: { item?: any }) => {
     reset,
     setValue,
     trigger,
-
     formState: { errors, isDirty },
   } = useForm<any>({ defaultValues: default_values })
 
@@ -457,7 +455,6 @@ export const FormView = ({ item }: { item?: any }) => {
   useEffect(() => {
     if (!id) setFrmIsChanged(true)
   }, [id, setFrmIsChanged])
-
   useEffect(() => {
     //setFrmConfigControls(config.configControls)
   }, [config.configControls, setFrmConfigControls])
@@ -488,7 +485,7 @@ export const FormView = ({ item }: { item?: any }) => {
                 <div className="o_form_bar_status">
                   <div className="bar_status">
                     {config.statusBarConfig ? (
-                      <FrmBarStatus config={config} />
+                      <FrmBarStatus config={config} control={control} watch={watch} />
                     ) : (
                       frm_bar_status?.({
                         watch,

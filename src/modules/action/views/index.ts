@@ -18,6 +18,19 @@ import Frm_156_config from '@/modules/action/views/inventory/warehouses/config'
 import Frm_180_config from '@/modules/action/views/inventory/products-category/config'
 import Frm_181_config from '@/modules/action/views/invoicing/products-category/config'
 import Frm_195_config from '@/modules/action/views/inventory/type-operations/config'
+import Frm_200_config from '@/modules/action/views/point-of-sale-meat/pos-session/config'
+import Frm_201_config from '@/modules/action/views/point-of-sale-meat/pos-order/config'
+import Frm_202_config from '@/modules/action/views/point-of-sale-meat/pos-payment/config'
+import Frm_203_config from '@/modules/action/views/point-of-sale-meat/pos-customers/config'
+import Frm_204_config from '@/modules/action/views/point-of-sale-meat/pos-products/config'
+import Frm_205_config from '@/modules/action/views/point-of-sale-meat/pos-variants-product/config'
+import Frm_206_config from '@/modules/action/views/point-of-sale-meat/pos-payment-method/config'
+import Frm_207_config from '@/modules/action/views/point-of-sale-meat/coins-and-bills/config'
+import Frm_208_config from '@/modules/action/views/point-of-sale-meat/weighing-scale/config'
+import Frm_209_config from '@/modules/action/views/point-of-sale-meat/pos-point/config'
+import Frm_210_config from '@/modules/action/views/point-of-sale-meat/product-pos-category/config'
+import Frm_211_config from '@/modules/action/views/point-of-sale-meat/pos-attributes/config'
+import Frm_212_config from '@/modules/action/views/point-of-sale-meat/containers/config'
 import Frm_301_config from '@/modules/action/views/inventory/products/config'
 import Frm_302_config from '@/modules/action/views/invoicing/products/config'
 import Frm_303_config from '@/modules/action/views/inventory/products_variant/config'
@@ -80,6 +93,19 @@ export const forms: FormConfigs = {
   Frm_181_config,
   Frm_187_config,
   Frm_195_config,
+  Frm_200_config,
+  Frm_201_config,
+  Frm_202_config,
+  Frm_203_config,
+  Frm_204_config,
+  Frm_205_config,
+  Frm_206_config,
+  Frm_207_config,
+  Frm_208_config,
+  Frm_209_config,
+  Frm_210_config,
+  Frm_211_config,
+  Frm_212_config,
   Frm_301_config,
   Frm_302_config,
   Frm_303_config,

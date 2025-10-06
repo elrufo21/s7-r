@@ -27,6 +27,7 @@ const createPos = (
   setPC_multipleSimilarProducts: (PC_multipleSimilarProducts) =>
     set({ PC_multipleSimilarProducts }),
   containers: [],
+  //Bluetooth
   bluetooth_config: {
     service_Uuid: '6e400001-b5a3-f393-e0a9-e50e24dcca9e',
     character_Uuid: '6e400003-b5a3-f393-e0a9-e50e24dcca9e',
@@ -39,6 +40,47 @@ const createPos = (
   weightValue: 0,
   setWeightValue: (weightValue) => set({ weightValue }),
   setBluetoothConfig: (bluetooth_config) => set({ bluetooth_config }),
+  characteristic: null,
+  setCharacteristic: (c: BluetoothRemoteGATTCharacteristic | null) => set({ characteristic: c }),
+  connectToDevice: async () => {
+    try {
+      const dev = await (navigator as any).bluetooth.requestDevice({
+        filters: [{ name: get().bluetooth_config.device_name }],
+        optionalServices: [get().bluetooth_config.service_Uuid],
+      })
+      set({ device: dev })
+
+      const server = await dev.gatt!.connect()
+      const service = await server.getPrimaryService(get().bluetooth_config.service_Uuid)
+      const characteristic = await service.getCharacteristic(get().bluetooth_config.character_Uuid)
+
+      set({ characteristic })
+
+      characteristic.addEventListener('characteristicvaluechanged', (event: any) => {
+        const value = event.target?.value as DataView
+        if (value) {
+          const weight = parseFloat(new TextDecoder('utf-8').decode(value))
+          if (!isNaN(weight)) set({ weight })
+        }
+      })
+
+      await characteristic.startNotifications()
+      set({ connected: true })
+
+      dev.addEventListener('gattserverdisconnected', () => set({ connected: false }))
+    } catch (err) {
+      console.error('❌ Error al conectar:', err)
+    }
+  },
+
+  disconnect: () => {
+    const dev = get().device
+    if (dev && dev.gatt?.connected) {
+      dev.gatt.disconnect()
+      set({ connected: false })
+    }
+  },
+  //Final config Buetooth
   setContainers: (containers) => set({ containers }),
   orderSelected: null,
   setOrderSelected: (orderSelected: { order_id: string; state: string } | null) =>
@@ -787,7 +829,7 @@ const createPos = (
     isOnline: boolean = true,
     session_id: string | null
   ) => {
-    const { refreshAllCache, initializePointOfSale } = get()
+    console.log(isOnline)
 
     await offlineCache.syncOfflineData(
       get().executeFnc,
