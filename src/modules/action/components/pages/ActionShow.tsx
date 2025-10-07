@@ -27,7 +27,7 @@ export const ActionShow = () => {
   } = useAppStore()
 
   const { data, isLoading } = useModuleList({
-    filters: [...filters, ...aditionalFilters],
+    filters: [...filters, ...(config?.aditionalFilters ? config.aditionalFilters : [])],
     fncName: config.fnc_name,
     module: config.module,
     id: idAction ?? '',

@@ -322,7 +322,7 @@ export const FormView = ({ item }: { item?: any }) => {
         }
       )
     } else {
-      toast.error('Error al validar el formulario')
+      // toast.error('Error al validar el formulario')
       setFrmLoading(false)
       setFrmAction(FormActionEnum.BASE)
       return null

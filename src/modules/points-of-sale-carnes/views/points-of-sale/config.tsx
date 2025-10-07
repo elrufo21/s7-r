@@ -1,11 +1,12 @@
+// POS2
 import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 import { FormConfig, ModulesEnum } from '@/shared/shared.types'
 import { ViewTypeEnum } from '@/shared/shared.types'
 
 const PosIndexConfig: FormConfig = {
   fnc_name: 'fnc_pos_point',
-  title: 'Puntos de venta 2',
-  dsc: 'Puntos de venta 2',
+  title: 'Puntos de venta',
+  dsc: 'Puntos de venta',
   module: ModulesEnum.POINTS_OF_SALE_MEAT,
   module_url: '/points-of-sale-meat',
   dsc_view: 'full_name',

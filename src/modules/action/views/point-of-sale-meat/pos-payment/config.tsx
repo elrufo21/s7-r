@@ -1,6 +1,7 @@
 import { ViewTypeEnum, FormConfig, ModulesEnum, ItemStatusTypeEnum } from '@/shared/shared.types'
 import { FrmMiddle } from '@/modules/action/views/point-of-sale/pos-payment/configView'
 import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
+import { formatPlain } from '@/shared/utils/dateUtils'
 
 const PosPaymentConfig: FormConfig = {
   fnc_name: 'fnc_pos_payment',
@@ -62,8 +63,9 @@ const PosPaymentConfig: FormConfig = {
       columns: [
         {
           header: 'Fecha',
-          accessorKey: 'date',
-          className: '!w-auto text-left',
+          cell: ({ row }) => {
+            return <div>{row.original?.date ? formatPlain(row.original?.date) : ''}</div>
+          },
         },
         {
           header: 'Método de pago',

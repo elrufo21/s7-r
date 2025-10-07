@@ -1,7 +1,6 @@
 import { ActionTypeEnum, FormActionEnum, frmElementsProps } from '@/shared/shared.types'
 import useAppStore from '@/store/app/appStore'
 import { UseFormWatch } from 'react-hook-form'
-import { ReactNode } from 'react'
 import { Enum_Payment_State, StatusInvoiceEnum } from '@/modules/invoicing/invoice.types'
 import { InvoicePdf } from '@/modules/invoicing/components/InvoicePdf'
 import { FrmBaseDialog } from '@/shared/components/core'
@@ -14,54 +13,74 @@ import { getRequiredFieldErrors } from '@/shared/helpers/validators'
 
 export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
   const setFrmAction = useAppStore((state) => state.setFrmAction)
-  const setAppDialog = useAppStore((state) => state.setAppDialog)
   const closeDialogWithData = useAppStore((state) => state.closeDialogWithData)
   const { openDialog, formItem, executeFnc } = useAppStore((state) => state)
 
-  const validateForm = (watch: UseFormWatch<any>): string[] => {
-    const errors: string[] = []
+  const validateForm = (watch: UseFormWatch<any>): Record<string, any> => {
+    const errors: Record<string, any> = {}
+
     if (!watch('partner_id')) {
-      errors.push(
-        'El campo "Cliente" es obligatorio, complételo para validar la factura del cliente.'
-      )
+      errors.partner_id = {
+        type: 'required',
+        message: 'El campo "Cliente" es obligatorio',
+      }
     }
     if (!watch('c51_id')) {
-      errors.push(
-        'El campo "Tipo de operacion" es obligatorio, complételo para validar la factura del cliente.'
-      )
+      errors.c51_id = {
+        type: 'required',
+        message: 'El campo "Tipo de operación" es obligatorio',
+      }
     }
     if (!watch('document_type_id')) {
-      errors.push(
-        'El campo "Tipo de documento" es obligatorio, complételo para validar la factura del cliente.'
-      )
+      errors.document_type_id = {
+        type: 'required',
+        message: 'El campo "Tipo de documento" es obligatorio',
+      }
+    }
+    if (!watch('move_lines')?.length) {
+      errors.move_lines = {
+        type: 'required',
+        message: 'Debe agregar líneas de factura',
+      }
     }
 
-    if (!watch('move_lines')?.length)
-      errors.push('Debe agregar "líneas de factura" antes de validar.')
     return errors
   }
 
-  const generateMessageDialog = (errors: string[]): ReactNode => (
-    <div className="w-full p-5">
-      {errors.map((err, index) => (
-        <p key={index}>{err}</p>
-      ))}
-    </div>
-  )
-
   const onConfirm = async () => {
     setFrmAction(FormActionEnum.PRE_SAVE)
-    const errors = validateForm(watch)
+    const errorsObj = validateForm(watch)
 
-    if (errors.length > 0) {
-      setAppDialog({
-        title: 'Operación no válida',
-        content: generateMessageDialog(errors),
-        open: true,
-        actions: false,
+    if (Object.keys(errorsObj).length > 0) {
+      const missingFields = getRequiredFieldErrors(errorsObj, {
+        partner_id: 'Cliente',
+        c51_id: 'Tipo de operación',
+        document_type_id: 'Tipo de documento',
+        move_lines: 'Líneas de factura',
       })
+
+      const missingFieldsItems = (
+        <ul className="space-y-2 my-2">
+          {missingFields.map((field, index) => (
+            <li key={index} className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+              <span className="text-sm text-white">
+                {index + 1}. {field}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )
+
+      CustomToast({
+        title: 'Campos obligatorios',
+        description: missingFieldsItems,
+        type: 'error',
+      })
+
       return
     }
+
     if (
       watch('journal_id') &&
       watch('currency_id') &&
@@ -72,15 +91,37 @@ export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
       setValue('state', StatusInvoiceEnum.REGISTERED)
     }
   }
+
   const onCancel = () => {
-    const errors = validateForm(watch)
-    if (errors.length > 0) {
-      setAppDialog({
-        title: 'Operación no válida',
-        content: generateMessageDialog(errors),
-        open: true,
-        actions: false,
+    const errorsObj = validateForm(watch)
+
+    if (Object.keys(errorsObj).length > 0) {
+      const missingFields = getRequiredFieldErrors(errorsObj, {
+        partner_id: 'Cliente',
+        c51_id: 'Tipo de operación',
+        document_type_id: 'Tipo de documento',
+        move_lines: 'Líneas de factura',
       })
+
+      const missingFieldsItems = (
+        <ul className="space-y-2 my-2">
+          {missingFields.map((field, index) => (
+            <li key={index} className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+              <span className="text-sm text-white">
+                {index + 1}. {field}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )
+
+      CustomToast({
+        title: 'Campos obligatorios',
+        description: missingFieldsItems,
+        type: 'error',
+      })
+
       return
     }
 
@@ -134,7 +175,6 @@ export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
               }
             }
 
-            // Obtiene los nombres de los campos faltantes usando tu helper
             const missingFields = getRequiredFieldErrors(errorsObj, {
               journal_id: 'Diario',
               payment_method_id: 'Método de pago',
@@ -184,6 +224,7 @@ export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
       ],
     })
   }
+
   const fnc_open_credit_note = async () => {
     const dialog = openDialog({
       title: 'Nota de crédito',
@@ -253,6 +294,7 @@ export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
       ],
     })
   }
+
   if (watch('state') === StatusInvoiceEnum.REGISTERED)
     return (
       <>

@@ -9,7 +9,8 @@ import {
   PaginationState,
 } from '@tanstack/react-table'
 import { BiLoader, BiSearch } from 'react-icons/bi'
-import { IoMdArrowDropleft, IoMdArrowDropright } from 'react-icons/io'
+import { IoMdArrowDropleft, IoMdArrowDropright, IoMdClose } from 'react-icons/io'
+import HierarchicalDropdown from '@/modules/pos/components/hierarchical-dropdown'
 
 export type FilterOption = {
   value: string
@@ -39,7 +40,7 @@ export type DataTableProps<TData extends object, TValue = any> = {
 }
 
 // Componente de Dropdown Jerárquico
-function HierarchicalDropdown({
+/**function HierarchicalDropdown({
   options,
   selectedValue,
   onSelect,
@@ -115,7 +116,7 @@ function HierarchicalDropdown({
     </div>
   )
 }
-
+ */
 export function DataTable<TData extends { isSelected?: boolean }, TValue = any>({
   columns,
   data,
@@ -215,6 +216,17 @@ export function DataTable<TData extends { isSelected?: boolean }, TValue = any>(
               className="pl-2 outline-none text-gray-500 text-xl w-96"
             />
 
+            {/* Botón para limpiar búsqueda */}
+            {globalFilter && (
+              <button
+                onClick={() => setGlobalFilter('')}
+                className="ml-2 p-1 hover:bg-gray-200 rounded-full transition-colors"
+                title="Limpiar búsqueda"
+              >
+                <IoMdClose className="text-gray-500 hover:text-gray-700" size={20} />
+              </button>
+            )}
+
             {statusOptions && statusOptions.length > 0 && (
               <div className="flex items-center">
                 <div className="relative inline-block">
@@ -266,8 +278,8 @@ export function DataTable<TData extends { isSelected?: boolean }, TValue = any>(
         </div>
       )}
 
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <div className="flex-1 overflow-y-auto overflow-x-auto">
+      <div className="flex flex-col flex-1 overflow-auto max-h-[400px]">
+        <div className="flex-1 overflow-y-auto ">
           <table className="w-full table-auto">
             {header && (
               <thead className="sticky top-0 bg-gray-50 z-10">

@@ -172,7 +172,7 @@ const Screens = () => {
 
     let getData = () => ({})
     const dialogId = openDialog({
-      title: 'Detalles de la ordenss',
+      title: 'Detalles de la orden',
       dialogContent: () => (
         <FrmBaseDialog
           config={orderConfig}

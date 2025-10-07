@@ -33,7 +33,6 @@ export function currentTime() {
   return now().toPlainTime().toString().slice(0, 5)
 }
 
-// Función segura para convertir a PlainDateTime
 function toPlainDateTime(date: Date | string) {
   if (!date) return null
   try {
@@ -66,6 +65,10 @@ export function formatShortDate(date: Date | string, useShortMonth: boolean = fa
   const d = toPlainDateTime(date)
   if (!d) return ''
 
+  if (isToday(date)) {
+    return 'Hoy'
+  }
+
   const day = String(d.day).padStart(2, '0')
 
   if (useShortMonth) {
@@ -92,4 +95,38 @@ export function formatShortDate(date: Date | string, useShortMonth: boolean = fa
   const month = String(d.month).padStart(2, '0')
   const year = String(d.year).slice(-2)
   return `${day}/${month}/${year}`
+}
+
+export function isToday(date: Date | string | Temporal.ZonedDateTime | Temporal.PlainDate) {
+  if (!date) return false
+
+  try {
+    const todayDate = now().toPlainDate()
+    let compareDate: Temporal.PlainDate
+
+    if (date instanceof Temporal.ZonedDateTime) {
+      compareDate = date.toPlainDate()
+    } else if (date instanceof Temporal.PlainDate) {
+      compareDate = date
+    } else {
+      const d = toPlainDateTime(date)
+      if (!d) return false
+      compareDate = d.toPlainDate()
+    }
+
+    return Temporal.PlainDate.compare(todayDate, compareDate) === 0
+  } catch (err) {
+    console.error('isToday: Invalid date', date, err)
+    return false
+  }
+}
+
+export function formatDateWithToday(date: Date | string, useShortMonth: boolean = false) {
+  if (!date) return ''
+
+  if (isToday(date)) {
+    return 'Hoy'
+  }
+
+  return formatShortDate(date, useShortMonth)
 }

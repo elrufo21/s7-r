@@ -53,6 +53,16 @@ export interface PosOrderData {
 }
 
 const PosOrderConfig: FormConfig = {
+  aditionalFilters: [
+    [
+      0,
+      'multi_filter_in',
+      [
+        { key_db: 'state', value: 'R' },
+        { key_db: 'state', value: 'C' },
+      ],
+    ],
+  ],
   fnc_name: 'fnc_pos_order',
   title: 'Órdenes',
   dsc: 'Órdenes',
@@ -95,6 +105,7 @@ const PosOrderConfig: FormConfig = {
     },
   },
   fnc_valid: (data: any) => {
+    // Recalcular líneas (tu código original)
     const newData = data.lines.map((item: any, index: number) => {
       if (item.action === ActionTypeEnum.INSERT) {
         return {
@@ -108,19 +119,38 @@ const PosOrderConfig: FormConfig = {
           amount_withtaxed_total: item?.price_unit * item?.quantity,
         }
       }
-
       return item
     })
-    data.lines = newData
-    data.lines = data?.lines.map((item: any, index: number) => ({
+
+    data.lines = newData.map((item: any, index: number) => ({
       ...item,
       position: index + 1,
     }))
+
+    const errors: { message: string }[] = []
+
+    ;(data.payments || []).forEach((p: any, i: number) => {
+      if (!p.payment_method_id || p.payment_method_id === 0) {
+        errors.push({ message: `Seleccione un método de pago.` })
+      }
+      if (!p.amount || Number(p.amount) === 0) {
+        errors.push({ message: `El importe no debe ser 0.` })
+      }
+    })
+
+    if (errors.length > 0) {
+      CustomToast({
+        title: 'Errores encontrados en los pagos',
+        items: errors,
+        type: 'error',
+      })
+      return null
+    }
+
     const totalPagos = (data.payments || []).reduce(
       (acc: number, p: any) => acc + (Number(p.amount) || 0),
       0
     )
-
     const totalPedido = Number(data.amount_withtaxed) || 0
 
     if (totalPagos > totalPedido) {
@@ -131,9 +161,9 @@ const PosOrderConfig: FormConfig = {
       })
       return null
     }
+
     return data
   },
-
   default_values: {},
   formButtons: [],
   grid: {

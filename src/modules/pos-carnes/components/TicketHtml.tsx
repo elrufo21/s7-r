@@ -47,28 +47,31 @@ const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
     return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`
   }
 
-  const getPaymentTotals = () => {
+  // Agrupar pagos por método de pago
+  const getPaymentsByMethod = () => {
     if (!info.payments || info.payments.length === 0) {
-      return { efectivo: 0, tarjeta: 0, yape: 0, plan: 0, transf: 0, credito: 0 }
+      return []
     }
 
-    const totals = { efectivo: 0, tarjeta: 0, yape: 0, plan: 0, transf: 0, credito: 0 }
+    // Agrupar por payment_method_name
+    const grouped = info.payments.reduce((acc: any, payment: any) => {
+      const methodName = payment.payment_method_name || 'Sin método'
+      if (!acc[methodName]) {
+        acc[methodName] = {
+          method: methodName,
+          total: 0,
+        }
+      }
+      acc[methodName].total += payment.amount || 0
+      return acc
+    }, {})
 
-    info.payments.forEach((payment: any) => {
-      const method = payment.payment_method_name?.toLowerCase() || ''
-      const amount = payment.amount || 0
-
-      if (method.includes('efectivo')) totals.efectivo += amount
-      else if (method.includes('tarjeta')) totals.tarjeta += amount
-      else if (method.includes('yape')) totals.yape += amount
-      else if (method.includes('plan')) totals.plan += amount
-      else if (method.includes('transf')) totals.transf += amount
-      else totals.credito += amount
-    })
-
-    return totals
+    // Convertir a array y ordenar alfabéticamente
+    return Object.values(grouped).sort((a: any, b: any) => a.method.localeCompare(b.method))
   }
-  const paymentTotals = getPaymentTotals()
+
+  const paymentsByMethod = getPaymentsByMethod()
+  const totalPayments = paymentsByMethod.reduce((sum: number, p: any) => sum + p.total, 0)
 
   return (
     <div
@@ -137,7 +140,6 @@ const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
       >
         <div style={{ width: '20%', textAlign: 'left', fontSize: '12px' }}>Producto</div>
         <div style={{ width: '15%', textAlign: 'center', fontSize: '12px' }}>Bruto</div>
-
         <div style={{ width: '15%', textAlign: 'center', fontSize: '12px' }}>Tara</div>
         <div style={{ width: '15%', textAlign: 'center', fontSize: '12px' }}>Neto</div>
         <div style={{ width: '15%', textAlign: 'center', fontSize: '12px' }}>Precio</div>
@@ -156,11 +158,15 @@ const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
             }}
           >
             <div style={{ width: '20%', textAlign: 'left', fontSize: '12px' }}>{item.name}</div>
-            <div style={{ width: '15%', textAlign: 'center', fontSize: '12px' }}>{item.base_quantity}</div>
+            <div style={{ width: '15%', textAlign: 'center', fontSize: '12px' }}>
+              {item.base_quantity}
+            </div>
             <div style={{ width: '15%', textAlign: 'center', fontSize: '12px' }}>
               {`${item.tara_quantity}/${(item.tara_total || 0).toFixed(1)}`}
             </div>
-            <div style={{ width: '15%', textAlign: 'center', fontSize: '12px' }}>{item.quantity}</div>
+            <div style={{ width: '15%', textAlign: 'center', fontSize: '12px' }}>
+              {item.quantity}
+            </div>
             <div style={{ width: '15%', textAlign: 'center', fontSize: '12px' }}>
               {(Number(item.price_unit) || 0).toFixed(2)}
             </div>
@@ -178,11 +184,14 @@ const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
           paddingTop: '6px',
         }}
       >
+        {/* Total general */}
         <div
           style={{
             display: 'flex',
             justifyContent: 'space-between',
-            marginBottom: '4px',
+            marginBottom: '8px',
+            borderBottom: '1px solid black',
+            paddingBottom: '4px',
           }}
         >
           <span style={{ fontSize: '12px', fontWeight: 'bold' }}>TOTAL:</span>
@@ -190,66 +199,39 @@ const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
             {adjustTotal(total).adjusted}
           </span>
         </div>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: '3px',
-          }}
-        >
-          <span style={{ fontSize: '11px', fontWeight: 'bold' }}>EFECTIVO:</span>
-          <span style={{ fontSize: '11px', fontWeight: 'bold' }}>
-            {paymentTotals.efectivo.toFixed(2)}
-          </span>
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: '3px',
-          }}
-        >
-          <span style={{ fontSize: '11px', fontWeight: 'bold' }}>TARJETA:</span>
-          <span style={{ fontSize: '11px', fontWeight: 'bold' }}>
-            {paymentTotals.tarjeta.toFixed(2)}
-          </span>
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: '3px',
-          }}
-        >
-          <span style={{ fontSize: '11px', fontWeight: 'bold' }}>YAPE:</span>
-          <span style={{ fontSize: '11px', fontWeight: 'bold' }}>
-            {paymentTotals.yape.toFixed(2)}
-          </span>
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: '3px',
-          }}
-        >
-          <span style={{ fontSize: '11px', fontWeight: 'bold' }}>TRANSF:</span>
-          <span style={{ fontSize: '11px', fontWeight: 'bold' }}>
-            {paymentTotals.transf.toFixed(2)}
-          </span>
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: '3px',
-          }}
-        >
-          <span style={{ fontSize: '11px', fontWeight: 'bold' }}>CREDITO:</span>
-          <span style={{ fontSize: '11px', fontWeight: 'bold' }}>
-            {paymentTotals.credito.toFixed(2)}
-          </span>
-        </div>
+
+        {/* Métodos de pago dinámicos */}
+        {paymentsByMethod.map((payment: any, index: number) => (
+          <div
+            key={index}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginBottom: '3px',
+            }}
+          >
+            <span style={{ fontSize: '11px', fontWeight: 'bold' }}>
+              {payment.method.toUpperCase()}:
+            </span>
+            <span style={{ fontSize: '11px', fontWeight: 'bold' }}>{payment.total.toFixed(2)}</span>
+          </div>
+        ))}
+
+        {/* Total de pagos (si hay más de un método) */}
+        {paymentsByMethod.length > 1 && (
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginTop: '6px',
+              paddingTop: '4px',
+              borderTop: '1px solid black',
+            }}
+          >
+            <span style={{ fontSize: '11px', fontWeight: 'bold' }}>TOTAL PAGADO:</span>
+            <span style={{ fontSize: '11px', fontWeight: 'bold' }}>{totalPayments.toFixed(2)}</span>
+          </div>
+        )}
       </div>
 
       {/* Footer */}

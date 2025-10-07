@@ -72,7 +72,6 @@ const InvoiceIndexConfig: FormConfig = {
     if (data.invoice_date) formatDateToDDMMYYYY(data.invoice_date)
     if (data.invoice_date_due) formatDateToDDMMYYYY(data.invoice_date_due)
     const { name, ...d } = data
-    console.log(name)
     //delete
     return { ...d, company_id: defaultCompany?.company_id || null }
   },

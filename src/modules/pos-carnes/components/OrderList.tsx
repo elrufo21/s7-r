@@ -95,10 +95,12 @@ export const OrderList = () => {
     I: 'En curso',
     Y: 'Pago',
     R: 'Registrado',
-    C: 'Cancelado',
+    // C: 'Cancelado',
+
     RPE: 'Pago pendiente',
     RPP: 'Pago parcial',
     RPF: 'Pagado',
+
     CPE: 'Cancelado',
     CPP: 'Cancelado',
     CPF: 'Cancelado',
@@ -137,10 +139,21 @@ export const OrderList = () => {
                 className="flex flex-col truncate pointer-events-none"
                 onDoubleClick={() => handleDobleClick(info.row.original)}
               >
-                <span className="font-medium pointer-events-none">
+                <span
+                  // className="font-medium pointer-events-none"
+                  /*className={`font-medium pointer-events-none ${info.row.original.state == 'C' ? 'text-red-600' : 'text-black'
+                    }`}*/
+                  className={`grid-col ${info.row.original.combined_states} font-medium pointer-events-none`}
+                >
                   {formatShortDate(info.row?.original?.order_date || '')}
                 </span>
-                <span className="text-gray-500 text-sm pointer-events-none">
+
+                <span
+                  // className="text-gray-500 text-sm pointer-events-none"
+                  /*className={`text-sm pointer-events-none ${info.row.original.state == 'C' ? 'text-red-600' : 'text-black'
+                    }`}*/
+                  className={`grid-col ${info.row.original.combined_states} text-sm pointer-events-none`}
+                >
                   {getHour(info.row.original.order_date || '')}
                 </span>
               </div>
@@ -155,12 +168,24 @@ export const OrderList = () => {
           columnHelper.accessor('order_name', {
             cell: (info) => (
               <div className="flex flex-col truncate pointer-events-none">
+
+                {/*
                 <span className="font-medium pointer-events-none">
                   {String(info.row.original.order_sequence).padStart(4, '0')}
                 </span>
                 <span className="text-gray-500 text-sm pointer-events-none">
                   {info.row.original.receipt_number}
                 </span>
+                */}
+
+                <span
+                  /*className={`font-medium pointer-events-none ${info.row.original.state == 'C' ? 'text-red-600' : 'text-black'
+                    }`}*/
+                  className={`grid-col ${info.row.original.combined_states} font-medium pointer-events-none`}
+                >
+                  {info.row.original.receipt_number}
+                </span>
+
               </div>
             ),
             header: 'Documento',
@@ -169,14 +194,24 @@ export const OrderList = () => {
       }),
       columnHelper.accessor('partner_name', {
         cell: (info) => (
-          <span className="font-medium truncate pointer-events-none">
+          <span
+            // className="font-medium truncate pointer-events-none"
+            /*className={`font-medium truncate pointer-events-none ${info.row.original.state == 'C' ? 'text-red-600' : 'text-black'
+              }`}*/
+            className={`grid-col ${info.row.original.combined_states} font-medium truncate pointer-events-none`}
+          >
             {info.row.original.partner_name || 'Sin cliente'}
           </span>
         ),
       }),
       columnHelper.accessor('amount_withtaxed_in_currency', {
         cell: (info) => (
-          <div className="font-medium text-right min-w-[100px] truncate pointer-events-none">
+          <div
+            // className="font-medium text-right min-w-[100px] truncate pointer-events-none"
+            /*className={`font-medium text-right min-w-[100px] truncate pointer-events-none ${info.row.original.state == 'C' ? 'text-red-600' : 'text-black'
+              }`}*/
+            className={`grid-col ${info.row.original.combined_states} font-medium text-right min-w-[100px] truncate pointer-events-none`}
+          >
             S/ {Number(getTotalPriceByOrder(info.row.original.order_id)).toFixed(2)}
           </div>
         ),
@@ -187,7 +222,12 @@ export const OrderList = () => {
           const value = info.getValue()
           return (
             <div className="flex justify-between items-center min-w-[80px] pointer-events-none">
-              <span className={`px-3 py-1 rounded-md text-sm bg-gray-200 text-gray-800`}>
+              <span
+                // className={`px-3 py-1 rounded-md text-sm bg-gray-200 text-gray-800`}
+                /*className={`px-3 py-1 rounded-md text-sm ${info.row.original.state == 'C' ? 'bg-red-400 text-white' : 'bg-gray-200 text-gray-800'
+                  }`}*/
+                className={`grid-col-chip ${info.row.original.combined_states} px-3 py-1 rounded-md text-sm`}
+              >
                 {stateLabels[value] || 'Desconocido'}
               </span>
             </div>

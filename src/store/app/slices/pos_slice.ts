@@ -86,7 +86,7 @@ const createPos = (
   setOrderSelected: (orderSelected: { order_id: string; state: string } | null) =>
     set({ orderSelected }),
   defaultPosSessionData: {
-    partner_id: 66135,
+    partner_id: 66735,
     name: 'Consumidor final',
     currency_id: 1,
   },

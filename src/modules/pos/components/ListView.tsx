@@ -255,7 +255,7 @@ export function DataTable<TData extends { isSelected?: boolean }, TValue = any>(
         </div>
       )}
 
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex flex-col flex-1 overflow-auto max-h-[400px]">
         <div className="overflow-x-auto">
           <table className="w-full table-auto">
             {header && (

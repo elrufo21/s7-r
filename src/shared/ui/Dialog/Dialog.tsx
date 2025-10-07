@@ -28,7 +28,7 @@ const Dialog = () => {
   }
 
   const handleClose = () => {
-    appDialog?.handleCancel()
+    //appDialog.handleCancel()
     setAppDialog({ ...appDialog, open: false })
   }
 

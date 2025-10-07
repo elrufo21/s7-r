@@ -30,7 +30,6 @@ export const PointOfSaleMeatIndex = () => {
     fncName: 'fnc_pos_point',
     module: ModulesEnum.POINTS_OF_SALE,
   })
-
   useEffect(() => {
     if (viewTypeFromConfig && config.module_url === location.pathname) {
       setViewType(config.view_default)

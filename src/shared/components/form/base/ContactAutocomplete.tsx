@@ -26,6 +26,7 @@ export const ContactAutocomplete = ({
   rulers = false,
   filters = [],
   enlace = '/contacts/',
+  nameFormToNavigate = 'name',
 }: {
   control: any
   errors: any
@@ -41,6 +42,7 @@ export const ContactAutocomplete = ({
   rulers?: boolean
   filters?: Array<{ column: string; value: any }>
   enlace?: string
+  nameFormToNavigate?: string
 }) => {
   const navigate = useNavigate()
   const { pathname } = useLocation()
@@ -70,7 +72,7 @@ export const ContactAutocomplete = ({
     setBreadcrumb([
       ...breadcrumb,
       {
-        title: formItem?.name,
+        title: formItem?.[nameFormToNavigate],
         url: pathname,
         viewType: ViewTypeEnum.FORM,
       },

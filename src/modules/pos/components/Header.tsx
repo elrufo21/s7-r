@@ -575,7 +575,6 @@ export default function Header({ pointId }: { pointId: string }) {
             aria-label="Buscar productos"
           />
 
-          {/* Ícono de lupa */}
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg
               className="h-5 w-5 text-gray-400"
@@ -594,7 +593,6 @@ export default function Header({ pointId }: { pointId: string }) {
             </svg>
           </div>
 
-          {/* Botón X para limpiar el input */}
           {searchProduct && (
             <button
               type="button"

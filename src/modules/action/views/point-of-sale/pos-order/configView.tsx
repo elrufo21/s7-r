@@ -1,7 +1,7 @@
 import BaseTextControlled from '@/shared/components/form/base/BaseTextControlled'
 import { frmElementsProps, ActionTypeEnum, TypeContactEnum } from '@/shared/shared.types'
 import PosOrderLines from './components/PosOrderLines'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
 import { DndTable } from '@/shared/components/table/DndTable'
 import { AutocompleteTable } from '@/shared/ui/inputs/AutocompleteTable'
@@ -16,6 +16,8 @@ import { DatepickerControlled, TextControlled } from '@/shared/ui'
 import { PosOrderStateEnum } from '../types'
 import { formatDateTimeToDDMMYYYYHHMM } from '@/shared/utils/utils'
 import { TypeStateOrder, TypeStatePayment } from '@/modules/pos/types'
+import { TypeOriginPaymen } from '@/modules/pos-carnes/types'
+import useUserStore from '@/store/persist/persistStore'
 
 // Tipos específicos para Pagos POS
 interface PosPayment {
@@ -170,6 +172,7 @@ export function FrmMiddle({ control, errors, editConfig, setValue, watch }: frmE
           nameField={'partner_name'}
           type={TypeContactEnum.INDIVIDUAL}
           enlace={'/action/895/detail/'}
+          nameFormToNavigate="receipt_number"
         />
       </FormRow>
     </>
@@ -190,23 +193,22 @@ export function FrmTab0({ watch, control, errors, setValue, editConfig }: frmEle
 
 export function FrmTab1({ watch, setValue }: frmElementsProps) {
   const { formItem, setFrmIsChangedItem, createOptions, frmAction } = useAppStore()
+  const { user } = useUserStore()
   const [data, setData] = useState<PosPayment[]>([])
-
-  // Estado para manejar modificaciones
   const [modifyData, setModifyData] = useState<boolean>(false)
 
-  // Estado para métodos de pago - usando el patrón estándar
   const [paymentMethodOptions, setPaymentMethodOptions] = useState<{ label: string; value: any }[]>(
     []
   )
 
-  // Función para cargar métodos de pago
+  const debounceAmountRef = useRef<any>(null)
+
   const loadPaymentMethodOptions = async () => {
     try {
       const options = await createOptions({
         fnc_name: 'fnc_pos_payment_method',
         action: 's2',
-        filters: [{ column: 'state', value: 'A' }], // Solo métodos activos
+        filters: [{ column: 'state', value: 'A' }],
       })
       setPaymentMethodOptions(options)
     } catch (error) {
@@ -226,10 +228,8 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
     }
 
     setData(normalizedPayments)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formItem, frmAction])
 
-  // Manejadores de cambios directos sobre el estado
   const handleUpdatePayment = (paymentId: number, newValues: Partial<PosPayment>) => {
     setData((prev) =>
       prev.map((payment) =>
@@ -244,8 +244,8 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
     setModifyData(true)
   }
 
-  const isReadOnly = watch('payment_state') === TypeStatePayment.PAYMENT
-  // Manejar cambio de método de pago
+  const isReadOnly = watch('payment_state') === TypeStatePayment.PAYMENT || watch('state') === 'C'
+
   const handleChangePaymentMethod = async (
     row: any,
     dataPaymentMethod: {
@@ -262,8 +262,23 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
     }
     handleUpdatePayment(row.original.payment_id, fieldUpdate)
   }
+  const handleAmountChange = useCallback(
+    (e: any, paymentId: number) => {
+      if (debounceAmountRef.current) {
+        clearTimeout(debounceAmountRef.current)
+      }
 
-  // Definir columnas de la tabla
+      debounceAmountRef.current = setTimeout(() => {
+        handleUpdatePayment(paymentId, {
+          amount: Number(e.target.value),
+        })
+      }, 100)
+
+      setFrmIsChangedItem(true)
+    },
+    [setFrmIsChangedItem]
+  )
+
   const columns = useMemo<ColumnDef<PosPayment>[]>(
     () => [
       {
@@ -305,12 +320,8 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
           <SwitchableTextField
             isReadOnly={isReadOnly}
             value={row.original.amount}
-            onBlur={(e) => {
-              handleUpdatePayment(row.original.payment_id, {
-                amount: Number(e.target.value),
-              })
-            }}
-            onChange={() => {}}
+            onBlur={() => {}} // Ya no necesitamos onBlur porque el debounce maneja la actualización
+            onChange={(e) => handleAmountChange(e, row.original.payment_id)}
             type="number"
           />
         ),
@@ -323,8 +334,9 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
         enableResizing: false,
         cell: ({ row }) => (
           <div className="flex justify-center items-center">
-            {watch('state') !== TypeStateOrder.REGISTERED ||
-            watch('payment_state') !== TypeStatePayment.PAYMENT ? (
+            {isReadOnly ? (
+              <></>
+            ) : (
               <button
                 type="button"
                 onClick={() => handleDeletePayment(row.original.payment_id)}
@@ -332,16 +344,14 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
               >
                 <GrTrash style={{ fontSize: '14px' }} className="hover:text-red-400" />
               </button>
-            ) : (
-              <></>
             )}
           </div>
         ),
       },
     ],
-    [paymentMethodOptions, isReadOnly]
+    [paymentMethodOptions, isReadOnly, handleAmountChange]
   )
-  // Función para agregar nueva fila
+
   const addRow = () => {
     const newId = Date.now()
     setData((prev) => [
@@ -351,18 +361,21 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
         payment_id: newId,
         _resetKey: Date.now(),
         amount: totals.difference,
+        company_id: watch('company_id'),
+        type: 'I',
+        state: 'R',
+        currency_id: watch('currency_id'),
+        origin: TypeOriginPaymen.DOCUMENT,
+        user_id: user.user_id,
       } as PosPayment,
     ])
     setModifyData(true)
   }
 
-  // Cargar opciones al montar el componente
   useEffect(() => {
     loadPaymentMethodOptions()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Manejar cambios en los datos
   useEffect(() => {
     if (modifyData) {
       setValue('payments', data)
@@ -386,6 +399,7 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
       difference: difference,
     }
   }, [data, watch])
+
   return (
     <div className="flex flex-col">
       <DndTable

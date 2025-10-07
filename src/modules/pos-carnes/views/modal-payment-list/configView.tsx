@@ -26,7 +26,11 @@ export function FrmMiddle() {
       setData((prev) => prev.filter((item: any) => item.payment_id !== row.payment_id))
 
       await executeFnc('fnc_pos_payment', 'd', [row.payment_id])
-      CustomToast({ title: 'Exito', description: 'Se elimino el pago correctamente', type: 'success' })
+      CustomToast({
+        title: 'Exito',
+        description: 'Se elimino el pago correctamente',
+        type: 'success',
+      })
     } catch (error) {
       console.error(error)
       await getPayments()
@@ -111,12 +115,9 @@ export function FrmMiddle() {
   )
 
   return (
-    <div className="w-[1000px] max-h-[500px] overflow-auto">
+    <div className="w-[1000px] max-h-[500px] overflow-hidden">
       {/*<DataTable columns={columns} data={data} header />*/}
-      <DataTable
-        columns={columns}
-        data={data}
-        searchPlaceholder="Buscar pago ..." />
+      <DataTable columns={columns} data={data} searchPlaceholder="Buscar pago ..." />
     </div>
   )
 }

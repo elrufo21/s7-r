@@ -279,7 +279,7 @@ export function FrmTab1() {
   )
 
   return (
-    <div className="w-[1000px] max-h-[500px] overflow-auto">
+    <div className="w-[1000px] max-h-[500px] overflow-hidden">
       <DataTable columns={columns} data={data} header />
     </div>
   )

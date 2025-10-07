@@ -411,7 +411,6 @@ const Payment = () => {
   }
 
   /*Clientes*/
-
   const fnc_create_customer = () => {
     let getData = () => ({})
     const dialogId = openDialog({

@@ -141,6 +141,7 @@ export type ListInputItem = {
 }
 
 export type FormConfig = {
+  aditionalFilters?: any[]
   fieldLabels?: Record<string, string>
   fnc_name: string
   type_config?: ConfigType

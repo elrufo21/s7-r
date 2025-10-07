@@ -4165,6 +4165,7 @@ input {
   font-weight: bold;
   color: #fff;
   z-index: 1;
+  text-align: center;
 }
 .ribbon-warning {
   font-size: 18px;
@@ -9341,6 +9342,10 @@ img, svg {
   /* --btn-bg: oklch(92.5% 0.084 155.995); */
   --btn-bg: #e6f2f3;
   --border-color: #017e84;
+
+  /* temporal */
+  border-color: #017e84;
+  background-color: #e6f2f3;
 }
 
 .lh-lg
@@ -10617,3 +10622,64 @@ modal-children - end
   -webkit-appearance: button;
   text-transform: none;
 }
+
+
+
+
+
+.grid-col
+{
+
+}
+/* cancelado */
+.grid-col.CPE,
+.grid-col.CPP,
+.grid-col.CPF
+{
+  /* color: rgb(220 38 38 / 1); */
+  color: #000;
+}
+.grid-col-chip.CPE,
+.grid-col-chip.CPP,
+.grid-col-chip.CPF
+{
+  color: #fff;
+  background-color: rgb(248 113 113 / 1);
+}
+/* progreso */
+.grid-col.I,
+.grid-col.Y
+{
+  color: #000;
+}
+.grid-col-chip.I,
+.grid-col-chip.Y
+{
+  color: rgb(31 41 55 / 1);
+  background-color: rgb(229 231 235 / 1);
+}
+/* PAGADO */
+.grid-col.RPF
+{
+  /* color: green; */
+  color: #000;
+}
+.grid-col-chip.RPF
+{
+  color: #FFF;
+  background-color: RGBA(40,167,69,1);
+}
+/* Pago Parcial - Pago Pendiente*/
+.grid-col.RPE,
+.grid-col.RPP
+{
+  /* color: oklch(55.4% 0.135 66.442); */
+  color: #000;
+}
+.grid-col-chip.RPE,
+.grid-col-chip.RPP
+{
+  color: #FFF;
+  background-color: RGBA(233,157,0,1);
+}
+

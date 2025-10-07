@@ -1,3 +1,4 @@
+// POS1
 import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 import { FormConfig, ModulesEnum } from '@/shared/shared.types'
 import { ViewTypeEnum } from '@/shared/shared.types'

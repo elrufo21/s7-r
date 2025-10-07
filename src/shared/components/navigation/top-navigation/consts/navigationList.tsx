@@ -933,7 +933,6 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
             },
           },
           */
-
         ],
       },
 
@@ -993,6 +992,7 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
                   onClick: async (id, close, fncExecute) => {
                     const { oj_data } = await fncExecute('fnc_pos_order ', 's', [
                       [2, 'list_select_all'],
+                      [0, 'fequal', 'state', 'R'],
                     ])
 
                     import(
