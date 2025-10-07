@@ -42,42 +42,74 @@ const createPos = (
   setBluetoothConfig: (bluetooth_config) => set({ bluetooth_config }),
   characteristic: null,
   setCharacteristic: (c: BluetoothRemoteGATTCharacteristic | null) => set({ characteristic: c }),
+
   connectToDevice: async () => {
     try {
+      console.log('🔍 Buscando BalanzaESP32...')
+
       const dev = await (navigator as any).bluetooth.requestDevice({
         filters: [{ name: get().bluetooth_config.device_name }],
         optionalServices: [get().bluetooth_config.service_Uuid],
       })
+
+      console.log('✅ Dispositivo encontrado:', dev.name)
       set({ device: dev })
 
+      console.log('🔌 Conectando...')
       const server = await dev.gatt!.connect()
       const service = await server.getPrimaryService(get().bluetooth_config.service_Uuid)
       const characteristic = await service.getCharacteristic(get().bluetooth_config.character_Uuid)
 
       set({ characteristic })
 
+      // CRÍTICO: Este es el listener que recibe el peso
       characteristic.addEventListener('characteristicvaluechanged', (event: any) => {
         const value = event.target?.value as DataView
         if (value) {
-          const weight = parseFloat(new TextDecoder('utf-8').decode(value))
-          if (!isNaN(weight)) set({ weight })
+          try {
+            // Decodificar exactamente como envía tu Arduino
+            const weightString = new TextDecoder('utf-8').decode(value).trim()
+            console.log('📥 Recibido:', weightString)
+
+            // Parsear a número (tu Arduino envía string limpio)
+            const weight = parseFloat(weightString)
+
+            if (!isNaN(weight)) {
+              console.log('✅ Peso:', weight, 'kg')
+              // AQUÍ está el fix: usar weightValue en lugar de weight
+              set({ weightValue: weight })
+            } else {
+              console.warn('⚠ No es número:', weightString)
+            }
+          } catch (error) {
+            console.error('❌ Error:', error)
+          }
         }
       })
 
+      // Iniciar notificaciones
       await characteristic.startNotifications()
       set({ connected: true })
+      console.log('✅ CONECTADO - Esperando peso...')
 
-      dev.addEventListener('gattserverdisconnected', () => set({ connected: false }))
+      // Manejar desconexión
+      dev.addEventListener('gattserverdisconnected', () => {
+        console.log('⚠ Desconectado')
+        set({ connected: false, weightValue: 0 })
+      })
     } catch (err) {
-      console.error('❌ Error al conectar:', err)
+      console.error('❌ Error:', err)
+      set({ connected: false })
+      alert('No se pudo conectar: ' + (err as Error).message)
     }
   },
 
   disconnect: () => {
     const dev = get().device
-    if (dev && dev.gatt?.connected) {
+    if (dev?.gatt?.connected) {
       dev.gatt.disconnect()
-      set({ connected: false })
+      set({ connected: false, weightValue: 0 })
+      console.log('🔌 Desconectado manualmente')
     }
   },
   //Final config Buetooth
