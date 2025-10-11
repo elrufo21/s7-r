@@ -3,16 +3,18 @@ import { FrmMiddle } from '@/modules/action/views/point-of-sale/weighing-scale/c
 import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 
 const PosWeighingScaleConfig: FormConfig = {
-  fnc_name: 'fnc_pos_weighing_scale',
-  title: 'Balanzas',
-  dsc: 'Balanzas',
+  fnc_name: 'fnc_device',
+  title: 'Dispositivos',
+  dsc: 'Dispositivos',
   dsc_view: 'name',
   module: ModulesEnum.POINTS_OF_SALE_MEAT,
   views: [ViewTypeEnum.LIST],
   view_default: ViewTypeEnum.LIST,
   module_url: '/action/208',
-  item_url: '/action/208/detail/',
+  item_url: '/action/208/detail',
   new_url: '/action/208/detail/new',
+  no_content_title: 'Crear un dispositivo para mejorar la gestión de sus procesos',
+  no_content_dsc: 'S7 le ayuda a llevar el control de sus dispositivos.',
   isFavoriteColumn: false,
   formTitle: '',
   ribbonList: {
@@ -34,12 +36,15 @@ const PosWeighingScaleConfig: FormConfig = {
   },
 
   default_values: {
+    type: 'ES',
     name: '',
+    code: '',
     description: '',
+    character_uuid: '',
     state: ItemStatusTypeEnum.ACTIVE,
   },
   grid: {
-    idRow: 'weighing_scale_id',
+    idRow: 'device_id',
     col_name: 'name',
     list: {
       columns: [
@@ -76,7 +81,7 @@ const PosWeighingScaleConfig: FormConfig = {
 
   filters_columns: [
     {
-      dsc: 'Balanzas',
+      dsc: 'Dispositivos',
       key: 'name',
       default: true,
     },

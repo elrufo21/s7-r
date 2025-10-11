@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import contactsConfig from '../views/contact-index/config'
 import CartItem from './CartItem'
 import clientConfig from '@/modules/contacts/views/contact-index/config'
-import { HiOutlineBackspace } from 'react-icons/hi2'
 import useAppStore from '@/store/app/appStore'
 import { ModalBase } from '@/shared/components/modals/ModalBase'
 import { CustomHeader } from './CustomHeader'
@@ -17,9 +16,9 @@ import productInfoConfig from '../views/product-info/config'
 import { usePWA } from '@/hooks/usePWA'
 import { offlineCache } from '@/lib/offlineCache'
 import { usePosActions } from '../hooks/usePosActions'
-import { toast } from 'sonner'
 import { adjustTotal } from '@/shared/helpers/helpers'
 import { CustomToast } from '@/components/toast/CustomToast'
+import CalculatorPanel from './modal/components/ModalCalculatorPanel'
 
 export default function CartPanel() {
   const {
@@ -29,14 +28,7 @@ export default function CartPanel() {
     modalData,
     updateOrderPartner,
     setModalData,
-    setProductPriceInOrder,
-    setProductQuantityInOrder,
-    setTaraQuantity,
-    setTaraValue,
-    toggleProductQuantitySign,
-    toggleProductPriceSign,
     orderData,
-    deleteProductInOrder,
     getTotalPriceByOrder,
     selectedOrder,
     selectedItem,
@@ -61,9 +53,6 @@ export default function CartPanel() {
   } = useAppStore()
   const { isOnline } = usePWA()
   const [cart, setCart] = useState<Product[]>([])
-  const [localPrice, setLocalPrice] = useState<string>('')
-  const [localTara, setLocalTara] = useState<string>('')
-  const [localTaraValue, setLocalTaraValue] = useState<string>('')
 
   const [total, setTotal] = useState<number | string>()
   const [is_change, setIsChange] = useState(false)
@@ -71,23 +60,12 @@ export default function CartPanel() {
   const finalCustomerRef = useRef(finalCustomer)
   useEffect(() => {
     setOperation(Operation.QUANTITY)
-    setDecimalCount(0)
-    setIsDecimalMode(false)
-    setShouldReplaceValue(false)
-    setLocalValue('')
-    setLocalTara('')
-    setLocalTaraValue('')
     setSelectedLine(selectedOrder, selectedItem)
   }, [selectedItem])
   useEffect(() => {
     if (!resetTrigger) return
 
     // 👇 Aquí limpias los estados locales del CartPanel
-    setLocalValue('')
-    setLocalPrice('')
-    setLocalTara('')
-    setLocalTaraValue('')
-    setShouldReplaceValue(true)
     clearDisplay()
   }, [resetTrigger])
   useEffect(() => {
@@ -220,72 +198,8 @@ export default function CartPanel() {
   useEffect(() => {
     setTotal(getTotalPriceByOrder(selectedOrder))
   }, [cart])
-  const [localValue, setLocalValue] = useState('')
-  const [shouldReplaceValue, setShouldReplaceValue] = useState(false)
-  const [isDecimalMode, setIsDecimalMode] = useState(false)
-  const [decimalCount, setDecimalCount] = useState(0)
   const MAX_DECIMALS = 2
 
-  const updateValue = (value: string) => {
-    if (!selectedItem) return
-
-    const isPrice = operation === Operation.PRICE
-    const isTara = operation === Operation.TARA_QUANTITY
-    const isTaraValue = operation === Operation.TARA_VALUE
-
-    let setter, updateStore
-    if (isPrice) {
-      setter = setLocalPrice
-      updateStore = setProductPriceInOrder
-    } else if (isTara) {
-      setter = setLocalTara
-      updateStore = setTaraQuantity
-    } else if (isTaraValue) {
-      setter = setLocalTaraValue
-      updateStore = setTaraValue
-    } else {
-      setter = setLocalValue
-      updateStore = setProductQuantityInOrder
-    }
-
-    const parser = parseFloat
-    setter(value)
-
-    clearDisplay()
-    for (const digit of value) {
-      addDigit(digit)
-    }
-
-    setHandleChange(true)
-    updateStore(selectedOrder, selectedItem, parser(value) || 0)
-  }
-
-  const handleDecimalClick = () => {
-    if (!selectedItem) return
-    const isPrice = operation === Operation.PRICE
-    const isTara = operation === Operation.TARA_QUANTITY
-    const isTaraValue = operation === Operation.TARA_VALUE
-
-    let currentValue
-    if (isPrice) {
-      currentValue = localPrice
-    } else if (isTara) {
-      currentValue = localTara
-    } else if (isTaraValue) {
-      currentValue = localTaraValue
-    } else {
-      currentValue = localValue
-    }
-
-    if (currentValue.includes('.')) return
-
-    const newValue = currentValue === '' ? '0.' : currentValue + '.'
-
-    updateValue(newValue)
-
-    setIsDecimalMode(true)
-    setDecimalCount(0)
-  }
   const fnc_create_customer = () => {
     let getData = () => ({})
     const dialogId = openDialog({
@@ -386,98 +300,6 @@ export default function CartPanel() {
     })
   }
 
-  const handleCalculatorClick = (number: number) => {
-    if (!selectedItem) return
-
-    const isPrice = operation === Operation.PRICE
-    const isTara = operation === Operation.TARA_QUANTITY
-    const isTaraValue = operation === Operation.TARA_VALUE
-
-    let currentValue
-    if (isPrice) {
-      currentValue = localPrice
-    } else if (isTara) {
-      currentValue = localTara
-    } else if (isTaraValue) {
-      currentValue = localTaraValue
-    } else {
-      currentValue = localValue
-    }
-
-    if (shouldReplaceValue) {
-      const newValue = number.toString()
-      updateValue(newValue)
-      setIsDecimalMode(false)
-      setDecimalCount(0)
-      setShouldReplaceValue(false)
-    } else {
-      if (isDecimalMode && decimalCount >= MAX_DECIMALS) {
-        return
-      }
-
-      const newValue = currentValue + number.toString()
-      updateValue(newValue)
-      if (isDecimalMode) {
-        setDecimalCount((prev) => prev + 1)
-      }
-    }
-  }
-
-  const deleteLastDigit = () => {
-    if (!selectedItem) return
-
-    const isPrice = operation === Operation.PRICE
-    const isTara = operation === Operation.TARA_QUANTITY
-    const isTaraValue = operation === Operation.TARA_VALUE
-
-    let currentValue, setter
-    if (isPrice) {
-      currentValue = localPrice
-      setter = setLocalPrice
-    } else if (isTara) {
-      currentValue = localTara
-      setter = setLocalTara
-    } else if (isTaraValue) {
-      currentValue = localTaraValue
-      setter = setLocalTaraValue
-    } else {
-      currentValue = localValue
-      setter = setLocalValue
-    }
-
-    if (currentValue === '0') {
-      if (isPrice || isTara || isTaraValue) {
-        setOperation(Operation.QUANTITY)
-      } else {
-        // Al borrar la cantidad '0', se elimina el producto del carrito.
-        // El useEffect que observa los cambios en `cart` se encargará de seleccionar el siguiente item.
-        deleteProductInOrder(selectedOrder, selectedItem)
-        setHandleChange(true)
-      }
-      return
-    }
-
-    let newValue = currentValue.slice(0, -1)
-
-    if (newValue === '' || newValue === '-') {
-      newValue = '0'
-    }
-
-    setter(newValue)
-
-    const pointIndex = newValue.indexOf('.')
-    if (pointIndex === -1) {
-      setIsDecimalMode(false)
-      setDecimalCount(0)
-    } else {
-      setIsDecimalMode(true)
-      setDecimalCount(newValue.length - pointIndex - 1)
-    }
-
-    updateValue(newValue)
-  }
-
-  // Efecto para manejar el scroll cuando se agrega un nuevo producto
   useEffect(() => {
     if (cart.length > 0) {
       const lastItem = cart[cart.length - 1]
@@ -508,14 +330,7 @@ export default function CartPanel() {
   // Función para manejar la selección de productos
   const handleSelectItem = (productId: string) => {
     if (productId !== selectedItem) {
-      setLocalValue('')
-      setLocalPrice('')
-      setLocalTara('')
-      setLocalTaraValue('')
-      setIsDecimalMode(false)
-      setDecimalCount(0)
       setSelectedItem(productId)
-      setShouldReplaceValue(true)
 
       const selectedProduct = cart.find((item) => item.line_id === productId)
       if (selectedProduct && selectedProduct.quantity !== undefined) {
@@ -525,10 +340,6 @@ export default function CartPanel() {
         const price = selectedProduct.sale_price.toString()
         const tara = selectedProduct.taraQuantity?.toString() || '0'
         const taraValue = selectedProduct.taraValue?.toString() || '0'
-        setLocalValue(quantity)
-        setLocalPrice(price)
-        setLocalTara(tara)
-        setLocalTaraValue(taraValue)
 
         clearDisplay()
         let valueToDisplay
@@ -547,58 +358,6 @@ export default function CartPanel() {
         setHandleChange(true)
       }
     }
-  }
-  const handleSymbolsClick = () => {
-    if (!selectedItem) return
-
-    const isPrice = operation === Operation.PRICE
-
-    if (isPrice) {
-      setHandleChange(true)
-      toggleProductPriceSign(selectedOrder, selectedItem)
-    } else {
-      setHandleChange(true)
-      toggleProductQuantitySign(selectedOrder, selectedItem)
-    }
-
-    const updatedCart =
-      orderData
-        ?.find((item) => item.order_id === selectedOrder)
-        ?.lines?.filter((item: any) => item.action !== ActionTypeEnum.DELETE) || []
-
-    const updatedProduct = updatedCart.find((item) => item.product_id === selectedItem)
-
-    if (updatedProduct) {
-      // Usar base_quantity para mostrar en la calculadora, no la cantidad efectiva
-      const baseQuantity = updatedProduct.base_quantity || updatedProduct.quantity || 0
-      const newQuantity = baseQuantity.toString()
-      const newPrice = updatedProduct.price_unit?.toString() || '0'
-      const newTara = updatedProduct.taraQuantity?.toString() || '0'
-      const newTaraValue = updatedProduct.taraValue?.toString() || '0'
-
-      setLocalValue(newQuantity)
-      setLocalPrice(newPrice)
-      setLocalTara(newTara)
-      setLocalTaraValue(newTaraValue)
-
-      clearDisplay()
-      let valueToDisplay
-      if (isPrice) {
-        valueToDisplay = newPrice
-      } else if (operation === Operation.TARA_QUANTITY) {
-        valueToDisplay = newTara
-      } else if (operation === Operation.TARA_VALUE) {
-        valueToDisplay = newTaraValue
-      } else {
-        valueToDisplay = newQuantity
-      }
-      for (const digit of valueToDisplay) {
-        addDigit(digit)
-      }
-    }
-
-    setHandleChange(true)
-    setShouldReplaceValue(false)
   }
 
   const fnc_customer_note = () => {
@@ -725,6 +484,41 @@ export default function CartPanel() {
 
   const itemRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
 
+  const openCalculatorModal = () => {
+    const dialogId = openDialog({
+      title: cart?.find((c) => c.line_id === selectedItem)?.name,
+      dialogContent: () => (
+        <CalculatorPanel
+          product={cart?.find((c) => c.line_id === selectedItem)}
+          dialogId={dialogId}
+          selectedField={Operation.QUANTITY}
+        />
+      ),
+      buttons: [
+        {
+          text: 'Cerrar',
+          type: 'cancel',
+          onClick: () => {
+            closeDialogWithData(dialogId, {})
+          },
+        },
+      ],
+    })
+  }
+  const lastTapTime = useRef({})
+
+  const handleDoubleTap = (itemId) => {
+    const now = Date.now()
+    const lastTap = lastTapTime.current[itemId] || 0
+    const timeSinceLastTap = now - lastTap
+
+    if (timeSinceLastTap < 300 && timeSinceLastTap > 0) {
+      openCalculatorModal(itemId)
+      lastTapTime.current[itemId] = 0
+    } else {
+      lastTapTime.current[itemId] = now
+    }
+  }
   return (
     <>
       <div className="order-container">
@@ -754,7 +548,11 @@ export default function CartPanel() {
         ) : (
           <div>
             {cart?.map((item) => (
-              <div key={item.line_id} ref={(el) => (itemRefs.current[item.line_id] = el)}>
+              <div
+                key={item.line_id}
+                ref={(el) => (itemRefs.current[item.line_id] = el)}
+                onClick={() => handleDoubleTap(item.line_id)}
+              >
                 <CartItem
                   item={{
                     ...item,
@@ -792,23 +590,21 @@ export default function CartPanel() {
           </div>
         )}
         <div className="pads">
-          <div className="control-buttons">
+          <div className="control-buttons !pb-0">
             <button
-              className="btn2 btn2-white lh-lg text-truncate w-auto text-action"
+              className="btn2 btn2-white lh-mlg text-truncate w-auto text-action"
               onClick={() => {
                 fnc_open_contact_modal()
               }}
             >
               {finalCustomer.name ? finalCustomer.name : defaultPosSessionData.name}
             </button>
-
-            <button className="btn2 btn2-white lh-lg w-auto" onClick={() => fnc_open_note_modal()}>
+            <button className="btn2 btn2-white lh-mlg w-auto" onClick={() => fnc_open_note_modal()}>
               Nota
             </button>
-
             <button
-              // className="btn2 btn2-white lh-lg text-truncate w-auto ml-auto"
-              className="btn2 btn2-white lh-lg text-truncate ml-auto w-[45.6px] min-w-[45.6px]"
+              // className="btn2 btn2-white lh-mlg text-truncate ml-auto w-[45.6px] min-w-[45.6px]"
+              className="btn2 btn2-white lh-mlg text-truncate ml-auto w-[55.6px] min-w-[55.6px]"
               onClick={() => {
                 fnc_open_more_options_modal()
               }}
@@ -826,141 +622,7 @@ export default function CartPanel() {
 
           {cart?.length > 0 && (
             <>
-              <div className="subpads">
-                <div className="numpad">
-                  <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg"
-                    onClick={() => handleCalculatorClick(1)}
-                  >
-                    1
-                  </button>
-                  <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg"
-                    onClick={() => handleCalculatorClick(2)}
-                  >
-                    2
-                  </button>
-                  <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg"
-                    onClick={() => handleCalculatorClick(3)}
-                  >
-                    3
-                  </button>
-
-                  <button
-                    className={`numpad-button btn2 btn2-white fs-3 lh-lg ${operation === Operation.QUANTITY ? 'active' : ''}`}
-                    onClick={() => {
-                      setOperation(Operation.QUANTITY)
-                      if (selectedItem) {
-                        setShouldReplaceValue(true)
-                        clearDisplay()
-                        for (const digit of localValue) {
-                          addDigit(digit)
-                        }
-                      }
-                    }}
-                  >
-                    Cant.
-                  </button>
-
-                  <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg"
-                    onClick={() => handleCalculatorClick(4)}
-                  >
-                    4
-                  </button>
-                  <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg"
-                    onClick={() => handleCalculatorClick(5)}
-                  >
-                    5
-                  </button>
-                  <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg"
-                    onClick={() => handleCalculatorClick(6)}
-                  >
-                    6
-                  </button>
-
-                  <button
-                    className={`numpad-button btn2 btn2-white fs-3 lh-lg ${operation === Operation.DISCOUNT ? 'active' : ''}`}
-                    onClick={() => {
-                      setOperation(Operation.DISCOUNT)
-                      setLocalValue('')
-                      setLocalPrice('')
-                      setLocalTara('')
-                      setLocalTaraValue('')
-                    }}
-                  >
-                    %
-                  </button>
-
-                  <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg"
-                    onClick={() => handleCalculatorClick(7)}
-                  >
-                    7
-                  </button>
-                  <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg"
-                    onClick={() => handleCalculatorClick(8)}
-                  >
-                    8
-                  </button>
-                  <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg"
-                    onClick={() => handleCalculatorClick(9)}
-                  >
-                    9
-                  </button>
-
-                  <button
-                    className={`numpad-button btn2 btn2-white fs-3 lh-lg ${operation === Operation.PRICE ? 'active' : ''}`}
-                    onClick={() => {
-                      setOperation(Operation.PRICE)
-                      if (selectedItem) {
-                        setShouldReplaceValue(true)
-                        clearDisplay()
-                        for (const digit of localPrice) {
-                          addDigit(digit)
-                        }
-                      }
-                    }}
-                  >
-                    Precio
-                  </button>
-
-                  <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg o_colorlist_item_numpad_color_3"
-                    onClick={() => handleSymbolsClick()}
-                  >
-                    +/-
-                  </button>
-
-                  <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg"
-                    onClick={() => handleCalculatorClick(0)}
-                  >
-                    0
-                  </button>
-
-                  <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg o_colorlist_item_numpad_color_2"
-                    onClick={() => {
-                      handleDecimalClick()
-                    }}
-                  >
-                    .
-                  </button>
-
-                  <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg justify-items-center o_colorlist_item_numpad_color_1"
-                    onClick={() => deleteLastDigit()}
-                  >
-                    <HiOutlineBackspace style={{ fontSize: '28px' }} />
-                  </button>
-                </div>
-
+              <div className="subpads pt-[8px]">
                 <div className="actionpad">
                   <button
                     className="btn btn-primary btn-lg flex-auto min-h-[70px]"
@@ -971,7 +633,6 @@ export default function CartPanel() {
                           title: 'Error al continuar a pago',
                           description: 'No se puede continuar: el monto debe ser distinto de 0.',
                           type: 'error',
-                          id: crypto.randomUUID(),
                         })
                         return
                       }

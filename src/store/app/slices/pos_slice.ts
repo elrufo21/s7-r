@@ -42,74 +42,64 @@ const createPos = (
   setBluetoothConfig: (bluetooth_config) => set({ bluetooth_config }),
   characteristic: null,
   setCharacteristic: (c: BluetoothRemoteGATTCharacteristic | null) => set({ characteristic: c }),
+  updateOrderLine: (updatedLine) => {
+    set((state) => {
+      const newOrderData = state.orderData.map((order) => {
+        if (order.order_id !== state.selectedOrder) return order
 
-  connectToDevice: async () => {
-    try {
-      console.log('🔍 Buscando BalanzaESP32...')
+        const updatedLines = order.lines.map((line) =>
+          line.line_id === updatedLine.line_id ? { ...line, ...updatedLine } : line
+        )
 
-      const dev = await (navigator as any).bluetooth.requestDevice({
-        filters: [{ name: get().bluetooth_config.device_name }],
-        optionalServices: [get().bluetooth_config.service_Uuid],
-      })
-
-      console.log('✅ Dispositivo encontrado:', dev.name)
-      set({ device: dev })
-
-      console.log('🔌 Conectando...')
-      const server = await dev.gatt!.connect()
-      const service = await server.getPrimaryService(get().bluetooth_config.service_Uuid)
-      const characteristic = await service.getCharacteristic(get().bluetooth_config.character_Uuid)
-
-      set({ characteristic })
-
-      // CRÍTICO: Este es el listener que recibe el peso
-      characteristic.addEventListener('characteristicvaluechanged', (event: any) => {
-        const value = event.target?.value as DataView
-        if (value) {
-          try {
-            // Decodificar exactamente como envía tu Arduino
-            const weightString = new TextDecoder('utf-8').decode(value).trim()
-            console.log('📥 Recibido:', weightString)
-
-            // Parsear a número (tu Arduino envía string limpio)
-            const weight = parseFloat(weightString)
-
-            if (!isNaN(weight)) {
-              console.log('✅ Peso:', weight, 'kg')
-              // AQUÍ está el fix: usar weightValue en lugar de weight
-              set({ weightValue: weight })
-            } else {
-              console.warn('⚠ No es número:', weightString)
-            }
-          } catch (error) {
-            console.error('❌ Error:', error)
-          }
+        return {
+          ...order,
+          lines: updatedLines,
+          lines_change: true,
         }
       })
 
-      // Iniciar notificaciones
-      await characteristic.startNotifications()
-      set({ connected: true })
-      console.log('✅ CONECTADO - Esperando peso...')
-
-      // Manejar desconexión
-      dev.addEventListener('gattserverdisconnected', () => {
-        console.log('⚠ Desconectado')
-        set({ connected: false, weightValue: 0 })
-      })
-    } catch (err) {
-      console.error('❌ Error:', err)
-      set({ connected: false })
-      alert('No se pudo conectar: ' + (err as Error).message)
-    }
+      return { orderData: newOrderData }
+    })
   },
+connectToDevice: async () => {
+  try {
+    const dev = await (navigator as any).bluetooth.requestDevice({
+      filters: [{ name: get().bluetooth_config.device_name }],
+      optionalServices: [get().bluetooth_config.service_Uuid],
+    })
+    set({ device: dev })
+
+    const server = await dev.gatt!.connect()
+    const service = await server.getPrimaryService(get().bluetooth_config.service_Uuid)
+    const characteristic = await service.getCharacteristic(get().bluetooth_config.character_Uuid)
+
+    set({ characteristic })
+
+    characteristic.addEventListener('characteristicvaluechanged', (event: any) => {
+      const value = event.target?.value as DataView
+      if (value) {
+        const weightStr = new TextDecoder('utf-8').decode(value)
+        const weight = parseFloat(weightStr)
+        if (!isNaN(weight)) {
+          set({ weightValue: weight }) 
+        }
+      }
+    })
+
+    await characteristic.startNotifications()
+    set({ connected: true })
+
+    dev.addEventListener('gattserverdisconnected', () => set({ connected: false }))
+  } catch (err) {
+    console.error('❌ Error al conectar:', err)
+  }
+},
 
   disconnect: () => {
     const dev = get().device
-    if (dev?.gatt?.connected) {
+    if (dev && dev.gatt?.connected) {
       dev.gatt.disconnect()
-      set({ connected: false, weightValue: 0 })
-      console.log('🔌 Desconectado manualmente')
+      set({ connected: false })
     }
   },
   //Final config Buetooth
@@ -570,6 +560,7 @@ const createPos = (
       return {
         orderData: newOrderData.filter((order) => order.state !== 'P'),
         selectedItem: lastProductId,
+        handleChange: true,
       }
     })
   },
@@ -856,11 +847,7 @@ const createPos = (
     }
   },
 
-  forceReloadPosData: async (
-    pointId: string,
-    isOnline: boolean = true,
-    session_id: string | null
-  ) => {
+  forceReloadPosData: async (pointId, isOnline = true, session_id) => {
     console.log(isOnline)
 
     await offlineCache.syncOfflineData(

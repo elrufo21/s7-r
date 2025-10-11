@@ -7,6 +7,8 @@ export const createAppSlice = (
   set: SetState<AppSliceState>,
   get: () => AppStoreProps
 ): AppSliceState => ({
+  selectedViewType: null,
+  setSelectedViewType: (selectedViewType) => set({ selectedViewType }),
   dinamicModule: ModulesEnum.SETTINGS,
   setDinamicModule: (dinamicModule) => set({ dinamicModule }),
   previousDataBeforeMenu: {

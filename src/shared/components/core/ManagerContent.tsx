@@ -126,8 +126,6 @@ export const ManagerContent = () => {
   }, [
     pathname, // Ejecutar cuando cambie la ruta
     formItem, // Ejecutar cuando se cargue el formItem
-
-    // NO incluir breadcrumb para evitar loops
   ])
 
   /*console.log('settingsBreadcrumb', settingsBreadcrumb)
@@ -146,7 +144,6 @@ export const ManagerContent = () => {
       //
     }
   }, [viewType])*/
-
   useEffect(() => {
     if (viewType === ViewTypeEnum.KANBAN || viewType === ViewTypeEnum.LIST) {
       setListCurrentPage(listCurrentPage)

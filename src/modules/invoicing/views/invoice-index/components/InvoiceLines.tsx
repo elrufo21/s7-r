@@ -1284,6 +1284,16 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
           )
         },
       },
+      {
+        id: 'settings',
+        header: () => null,
+        cell: () => null,
+        size: 40,
+        minSize: 40,
+        maxSize: 40,
+        enableResizing: false,
+        enableSorting: false,
+      },
     ],
     [productOptions, taxOptions, uomOptions, isReadOnly]
   )

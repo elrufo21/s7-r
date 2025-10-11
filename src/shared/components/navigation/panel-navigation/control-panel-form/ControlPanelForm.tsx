@@ -10,7 +10,12 @@ import { GrTrash } from 'react-icons/gr'
 import MenuItem from '@mui/material/MenuItem'
 import ListItemText from '@mui/material/ListItemText'
 import ListItemIcon from '@mui/material/ListItemIcon'
-import { FormActionEnum, ViewTypeEnum, FormConfig } from '@/shared/shared.types'
+import {
+  FormActionEnum,
+  ViewTypeEnum,
+  FormConfig,
+  TypePermitionAction,
+} from '@/shared/shared.types'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { StyledMenu } from '@/shared/components/extras/StyledMenu'
 import { PageCounterForm } from './PageCounterForm'
@@ -36,6 +41,7 @@ import { WiCloudUp } from 'react-icons/wi' // bien +++
 //import { WiCloudRefresh } from 'react-icons/wi'
 //import { MdOutlineCloudOff } from 'react-icons/md'
 import { MdCloudOff } from 'react-icons/md'
+import { offlineCache } from '@/lib/offlineCache'
 //import { MdCloudQueue } from 'react-icons/md'
 //import { useForm } from 'react-hook-form'
 //import { StatusInvoiceEnum } from '@/modules/invoicing/invoice.types'
@@ -66,6 +72,7 @@ const ControlPanelForm = ({ config }: ControlPanelFormProps) => {
     breadcrumb,
     setStats,
   } = useAppStore((state) => state)
+
   const { setAditionalFilters, aditionalFilters, filters, setFilters } = useUserStore()
   const {
     grid: { idRow },
@@ -73,7 +80,28 @@ const ControlPanelForm = ({ config }: ControlPanelFormProps) => {
   const store = useAppStore()
   // Estado local para mantener la última versión válida del formItem
   const [lastValidFormItem, setLastValidFormItem] = useState(formItem)
-
+  const [canDelete, setCanDelete] = useState(false)
+  const [canCreate, setCanCreate] = useState(false)
+  useEffect(() => {
+    const loadPermission = async (action: TypePermitionAction) => {
+      const rs = await offlineCache.getPermissionById(`${config.form_id}-${action}`)
+      switch (action) {
+        case TypePermitionAction.DELETE:
+          if (!rs) return setCanDelete(false)
+          setCanDelete(!rs?.value || false)
+          break
+        case TypePermitionAction.CREATE:
+          if (!rs) return setCanCreate(false)
+          setCanCreate(!rs?.value || false)
+          break
+        default:
+          break
+      }
+    }
+    loadPermission(TypePermitionAction.DELETE)
+    loadPermission(TypePermitionAction.CREATE)
+  }, [config.form_id])
+  console.log('canDelete', canDelete)
   // Actualizar el estado local cuando formItem cambia y tiene un ID válido
   useEffect(() => {
     if (formItem && formItem[idRow]) {
@@ -187,7 +215,11 @@ const ControlPanelForm = ({ config }: ControlPanelFormProps) => {
     ])
     navigate('/action/742/detail/new')
   }*/
-
+  console.log('canCreate', canCreate)
+  const hasMenuActions =
+    (!pathname.includes('/new') && !canCreate) ||
+    displayItem?.state === 'A' ||
+    displayItem?.state === 'I'
   return (
     // <div className="o_control_panel_main d-flex flex-wrap flex-lg-nowrap justify-content-between align-items-lg-start gap-2 gap-lg-3 flex-grow-1">
     <div className="o_control_panel_main d-flex flex-wrap flex-lg-nowrap justify-content-between gap-2 gap-lg-3 flex-grow-1">
@@ -223,18 +255,20 @@ const ControlPanelForm = ({ config }: ControlPanelFormProps) => {
                 <div className="lh-1">
                   <Stack className="grow" direction="row">
                     <>
-                      <Tooltip arrow title="Acciones">
-                        <IconButton
-                          className="button_action actions"
-                          disableRipple={true}
-                          disabled={frmLoading}
-                          onClick={(event) => {
-                            setAnchorEl(event.currentTarget)
-                          }}
-                        >
-                          <TbSettings style={{ fontSize: '19.5px' }} />
-                        </IconButton>
-                      </Tooltip>
+                      {hasMenuActions && (
+                        <Tooltip arrow title="Acciones">
+                          <IconButton
+                            className="button_action actions"
+                            disableRipple={true}
+                            disabled={frmLoading}
+                            onClick={(event) => {
+                              setAnchorEl(event.currentTarget)
+                            }}
+                          >
+                            <TbSettings style={{ fontSize: '19.5px' }} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
 
                       <StyledMenu
                         className="menuEx"
@@ -265,7 +299,7 @@ const ControlPanelForm = ({ config }: ControlPanelFormProps) => {
                             </MenuItem>
                           )}
                         </div>
-                        {!pathname.includes('/new') && (
+                        {!pathname.includes('/new') && !canCreate && (
                           <MenuItem onClick={handleDuplicate}>
                             <ListItemIcon>
                               <HiOutlineDuplicate style={{ fontSize: '16px' }} />
@@ -276,7 +310,7 @@ const ControlPanelForm = ({ config }: ControlPanelFormProps) => {
                       </StyledMenu>
                     </>
 
-                    {!pathname.includes('/new') && displayItem?.[idRow] && (
+                    {!pathname.includes('/new') && displayItem?.[idRow] && !canDelete && (
                       <Tooltip arrow title="Eliminar registro">
                         <IconButton
                           className="hover:text-red-400 button_action delete"

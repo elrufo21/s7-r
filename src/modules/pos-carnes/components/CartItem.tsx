@@ -21,24 +21,24 @@ export default function CartItem({
   const { selectedOrder, deleteProductInOrder, setHandleChange } = useAppStore()
   return (
     <div
-      className={`py-2 px-2 flex items-center justify-between hover:bg-gray-50 cursor-pointer  ${
-        isSelected ? 'bg-blue-50' : ''
-      }`}
+      className={`py-2 px-2 flex items-center justify-between hover:bg-gray-50 cursor-pointer  ${isSelected ? 'bg-blue-50' : ''
+        }`}
       onClick={onSelect}
     >
       <div className="flex items-center">
-        {/* <div className="font-medium w-6 text-center"> */}
-        <div className="w-6 text-center c1">
+
+        {/* <div className="w-6 text-center c1"> */}
+        <div className="w-auto min-w-[24px] text-center c1">
           {
             /*Number.parseFloat(item.quantity).toFixed(maxDecimals)*/ formatNumberDisplay(
-              item.quantity
-            )
+            item.quantity
+          )
           }
         </div>
 
         <div className="ml-4">
           {/* <div className="font-medium text-gray-900">{item.name}</div> */}
-          <div className="text-gray-900">{item.name}</div>
+          <div className="text-gray-900 font-bold">{item.name}</div>
           {/* <div className="text-gray-500 text-sm">- Verde, L</div> */}
           <div>{`S/ ${item?.price_unit} por ${item?.uom_name}`}</div>
 
@@ -50,7 +50,7 @@ export default function CartItem({
               </div>
               <div>
                 Tara:
-                <span className="font-bold">{` ${item.tara_value ? item.tara_value : '0.00'} kg x ${item.tara_quantity || 0} und = ${formatNumber(item.tara_value * (item.tara_quantity || 0))} kg`}</span>
+                <span className="font-bold">{` ${item.tara_quantity || 0} und x ${item.tara_value ? item.tara_value : '0.00'} kg = ${formatNumber(item.tara_value * (item.tara_quantity || 0))} kg`}</span>
               </div>
             </>
           ) : (

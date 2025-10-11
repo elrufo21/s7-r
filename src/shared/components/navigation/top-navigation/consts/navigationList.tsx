@@ -847,9 +847,9 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
             key: 'monedas-billetes',
             path: '/action/896',
           },
-          { title: 'Balanzas', key: 'weighing-scale', path: '/action/901' },
           { title: 'Punto de venta', key: 'punto-venta', path: '/action/892' },
           { title: 'Modelos de nota', key: 'modelos-nota', path: '/configuracion/modelos-nota' },
+          { title: 'Dispositivos', key: 'weighing-scale', path: '/action/901' },
           /*
           {
             title: 'Pricer',
@@ -1086,9 +1086,9 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
             key: 'monedas-billetes',
             path: '/action/207',
           },
-          { title: 'Balanzas', key: 'weighing-scale', path: '/action/208' },
           { title: 'Punto de venta', key: 'punto-venta', path: '/action/209' },
           { title: 'Modelos de nota', key: 'modelos-nota', path: '/configuracion/modelos-nota' },
+          { title: 'Dispositivos', key: 'weighing-scale', path: '/action/208' },
           /*
           {
             title: 'Pricer',

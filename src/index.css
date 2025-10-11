@@ -8460,28 +8460,32 @@ fa-users:before {
 .o_form_view .o_form_renderer {
   max-width: 2600px;
 }
-
-/*  Table details - start */
+/*Actualizacion ruben datatable*/
 .table-details table tbody tr:last-child {
   border-bottom-width: 0 !important;
 }
-.table-details .MenuButtonEx.table-details-conf
-{
-  position: absolute;
+.table-details .MenuButtonEx.table-details-conf {
+  position: relative; /* Cambiado de absolute a relative */
   text-align: center;
   place-content: center;
   padding-top: 7px !important;
   padding-bottom: 3px !important;
   z-index: 20;
-  top: 0;
-  right: -1px;
   width: 40px;
   height: 43px;
 }
-.table-details .MenuButtonEx.table-details-conf .MuiListItemIcon-root
-{
+
+.table-details thead th.right-sticky {
+  position: sticky;
+  right: 0;
+  z-index: 10;
+}
+
+.table-details .MenuButtonEx.table-details-conf .MuiListItemIcon-root {
   min-width: 0;
 }
+/*Actualizacion ruben datatable fin*/
+
 .table-details tr
 {
   height: 44px;
@@ -9352,7 +9356,10 @@ img, svg {
 {
   line-height: 2 !important;
 }
-
+.lh-mlg
+{
+  line-height: 2.5 !important;
+}
 .lh-xlg
 {
   line-height: 3 !important;
@@ -9376,6 +9383,12 @@ img, svg {
   grid-template-columns: repeat(4, 1fr);
   display: grid;
 }
+/*
+.numpad.ft2
+{
+  grid-template-columns: repeat(3, 1fr) !important;
+}
+*/
 
 .numpad-button
 {
@@ -10681,5 +10694,142 @@ modal-children - end
 {
   color: #FFF;
   background-color: RGBA(233,157,0,1);
+}
+
+
+
+
+
+
+
+
+
+
+/* --------------------------------------------------- */
+/*
+body {
+  font-family: sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  background-color: #f0f0f0;
+}
+*/
+
+.grid-container2 {
+  display: grid;
+  /* grid-template-columns: repeat(1, 1fr) 1.5fr; */
+  grid-template-rows: repeat(5, 1fr);
+  height: 100%;
+  gap: 15px;
+}
+.grid-item2 {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5em;
+  border-radius: 8px;
+  background-color: #f7f7f7;
+  color: #333;
+
+  width: 150px;
+  /* height: 80px; */
+}
+
+
+.grid-container {
+  display: grid;
+  /* Definir 4 columnas de igual ancho */
+  grid-template-columns: repeat(3, 1fr) 1.5fr;
+  /* Definir 4 filas de igual altura */
+  grid-template-rows: repeat(4, 1fr);
+  /* Asignar nombres a las celdas para posicionar los elementos */
+  grid-template-areas:
+    "one two three backspace"
+    "four five six ok"
+    "seven eight nine ok"
+    "plus-minus zero dot ok";
+  gap: 10px;
+  /* width: 300px; */
+  
+  /* height: 300px; */
+  height: 100%;
+
+  padding: 0px;
+  background-color: #fff;
+  /* border-radius: 15px; */
+  /* box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); */
+
+  width: min-content;
+}
+
+.grid-item {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5em;
+  border-radius: 8px;
+  background-color: #f7f7f7;
+  color: #333;
+
+  width: 110px;
+  /* height: auto; */
+  height: 80px;
+}
+
+/* Colocar los elementos en las áreas de la cuadrícula */
+.grid-container > div:nth-child(1) { grid-area: one; }
+.grid-container > div:nth-child(2) { grid-area: two; }
+.grid-container > div:nth-child(3) { grid-area: three; }
+.grid-container > div:nth-child(4) { grid-area: backspace; }
+.grid-container > div:nth-child(5) { grid-area: four; }
+.grid-container > div:nth-child(6) { grid-area: five; }
+.grid-container > div:nth-child(7) { grid-area: six; }
+.grid-container > div:nth-child(8) { grid-area: seven; }
+.grid-container > div:nth-child(9) { grid-area: eight; }
+.grid-container > div:nth-child(10) { grid-area: nine; }
+.grid-container > div:nth-child(11) { grid-area: plus-minus; }
+.grid-container > div:nth-child(12) { grid-area: zero; }
+.grid-container > div:nth-child(13) { grid-area: dot; }
+.grid-container > div:nth-child(14) { grid-area: ok; }
+
+
+/* Estilos específicos para los botones de la imagen */
+.ok-button {
+  /* background-color: oklch(60% 0.118 184.704); */
+  background-color: #61a0b3;
+  color: #fff;
+  font-weight: bold;
+}
+.ok-button:hover {
+  /* background-color: oklch(51.1% 0.096 186.391); */
+  background-color: #5499ad;
+}
+
+.special-bg {
+  background-color: #ffdeb4;
+}
+
+.yellow-bg {
+  background-color: #fff9e6;
+}
+
+.pink-bg {
+  background-color: #ffedf0;
+}
+
+/*
+.pink-bg svg {
+  width: 30px;
+  height: 30px;
+}
+*/
+
+.abc
+{
+  border: 1px solid #017e84;
+  background-color: #e6f2f3 !important;
 }
 

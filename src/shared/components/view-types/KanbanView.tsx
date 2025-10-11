@@ -11,12 +11,11 @@ type KanbanViewProps = {
 export const KanbanView = ({ config }: KanbanViewProps) => {
   const navigate = useNavigate()
 
-  const { setSessionId, setSyncData } = useAppStore()
+  const { setSessionId, setSyncData, frmLoading } = useAppStore()
   const {
     dataKanbanShow: { dataShow },
     setDataFormShow,
   } = useAppStore((state) => state)
-
   const fnc_name = config.fnc_name
   const idRow = config.grid.idRow as keyof any
   const viewItem = async (item: any) => {
@@ -268,7 +267,7 @@ export const KanbanView = ({ config }: KanbanViewProps) => {
       )
     }
   }
-  if (!dataShow.length && fnc_name !== ' fnc_point_of_sale')
+  if (!dataShow.length && fnc_name !== ' fnc_point_of_sale' && !frmLoading)
     return (
       <div className="o_view_nocontent">
         <div className="w-full h-full flex flex-col justify-center items-center gap-3">

@@ -67,8 +67,9 @@ export function Frm_bar_buttons({ watch, setValue }: frmElementsProps) {
   }
   const returnRegistered = () => {
     if (watch('dialogId')) {
-      setValue('state', TypeStateOrder.REGISTERED)
       setFrmDialogAction('u')
+
+      setValue('state', TypeStateOrder.REGISTERED)
     } else {
       setValue('state', TypeStateOrder.REGISTERED)
       setFrmAction(FormActionEnum.PRE_SAVE)

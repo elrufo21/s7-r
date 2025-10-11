@@ -794,21 +794,19 @@ export default function CartPanel() {
         <div className="pads">
           <div className="control-buttons">
             <button
-              className="btn2 btn2-white lh-lg text-truncate w-auto text-action"
+              className="btn2 btn2-white lh-mlg text-truncate w-auto text-action"
               onClick={() => {
                 fnc_open_contact_modal()
               }}
             >
               {finalCustomer.name ? finalCustomer.name : defaultPosSessionData.name}
             </button>
-
-            <button className="btn2 btn2-white lh-lg w-auto" onClick={() => fnc_open_note_modal()}>
+            <button className="btn2 btn2-white lh-mlg w-auto" onClick={() => fnc_open_note_modal()}>
               Nota
             </button>
-
             <button
-              // className="btn2 btn2-white lh-lg text-truncate w-auto ml-auto"
-              className="btn2 btn2-white lh-lg text-truncate ml-auto w-[45.6px] min-w-[45.6px]"
+              // className="btn2 btn2-white lh-mlg text-truncate ml-auto w-[45.6px] min-w-[45.6px]"
+              className="btn2 btn2-white lh-mlg text-truncate ml-auto w-[55.6px] min-w-[55.6px]"
               onClick={() => {
                 fnc_open_more_options_modal()
               }}

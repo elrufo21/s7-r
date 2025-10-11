@@ -75,7 +75,7 @@ const actionModule = async ({ fnc_name, action, filters = [] }: actionContactTyp
     caccion: action,
     form: filters,
   })
-
+  console.log('Filters', filters)
   return res.data[0].oj_data
 }
 export const useActionModule = ({
@@ -115,9 +115,11 @@ const getModuleList = async ({
     caccion: 's',
     form: filters,
   })
+  console.log('Filters', JSON.stringify(filters))
   return res.data[0]
 }
 export const useModuleList = ({ filters = [], fncName, module, id = '' }: ModuleListType) => {
+  console.log('Filters', JSON.stringify(filters))
   return useQuery({
     queryKey: [`${module}-index`, id, fncName, JSON.stringify(filters)],
     queryFn: () => getModuleList({ filters, fncName }),

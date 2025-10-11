@@ -41,6 +41,8 @@ export interface PreviousDataBeforeMenu {
 }
 
 export interface AppSliceState {
+  selectedViewType: ViewTypeEnum | null
+  setSelectedViewType: (selectedViewType: ViewTypeEnum) => void
   dinamicModule: ModulesEnum
   setDinamicModule: (dinamicModule: ModulesEnum) => void
   changeFavoriteId: number | null
@@ -365,6 +367,7 @@ export interface BluetoothConfig {
   device_name: string
 }
 export interface PointsOfSaleSliceState {
+  updateOrderLine: (updatedLine: Product) => void
   characteristic: BluetoothRemoteGATTCharacteristic | null
   setCharacteristic: (c: BluetoothRemoteGATTCharacteristic | null) => void
 
@@ -525,7 +528,11 @@ export interface PointsOfSaleSliceState {
   getOrSetLocalStorage: <T>(key: string, fetchFn: () => Promise<T>) => Promise<T>
   clearPosCache: () => void
   getPosCacheInfo: () => Promise<Record<string, string>>
-  forceReloadPosData: (pointId: string, isOnline: boolean) => Promise<void>
+  forceReloadPosData: (
+    pointId: string | number,
+    isOnline: boolean,
+    session_id: string | number
+  ) => Promise<void>
   refreshAllCache: () => Promise<void>
   setTaraValue: (order_id: string, product_id: string | number, taraValue: number) => void
   setTaraQuantity: (order_id: string, product_id: string | number, taraQuantity: number) => void

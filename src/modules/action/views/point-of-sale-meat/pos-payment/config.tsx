@@ -4,6 +4,7 @@ import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.type
 import { formatPlain } from '@/shared/utils/dateUtils'
 
 const PosPaymentConfig: FormConfig = {
+  form_id: 202,
   fnc_name: 'fnc_pos_payment',
   title: 'Pagos',
   dsc: 'Pagos',

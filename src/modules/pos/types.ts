@@ -62,5 +62,7 @@ export enum TypeStatePayment {
 export enum Operation {
   QUANTITY = 'quantity',
   PRICE = 'price',
-  DISCOUNT = 'discount',
+  //DISCOUNT = 'discount',
+  TARA_VALUE = 'tara_value',
+  TARA_QUANTITY = 'tara_quantity',
 }

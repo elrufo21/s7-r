@@ -21,7 +21,6 @@ export const ContactIndex = () => {
     setTabForm,
   } = useAppStore()
   const { filters } = useUserStore()
-
   const { data, isLoading } = useModuleFilterList({
     filters,
     fncName: 'fnc_partner',

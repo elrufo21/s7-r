@@ -14,12 +14,13 @@ import ListItemIcon from '@mui/material/ListItemIcon'
 import { useState } from 'react'
 import { HiMiniXMark } from 'react-icons/hi2'
 import { downloadExcel } from '@/shared/utils/utils'
-import { FormConfig } from '@/shared/shared.types'
+import { FormConfig, TypePermitionAction } from '@/shared/shared.types'
 import { ActionTypeEnum } from '@/shared/shared.types'
 import { useActionModule } from '@/shared/hooks/useModule'
 import useUserStore from '@/store/persist/persistStore'
 import { useParams } from 'react-router-dom'
 import { SearchFiltersEnum } from '@/shared/components/navigation/navigation.types'
+import { offlineCache } from '@/lib/offlineCache'
 
 interface StyledMenuProps extends MenuProps {
   children?: ReactNode
@@ -67,6 +68,28 @@ interface SelectRowsOptionsProps {
 
 export const SelectRowsOptions = ({ config }: SelectRowsOptionsProps) => {
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null)
+  const [canDelete, setCanDelete] = useState(false)
+  const [canCreate, setCanCreate] = useState(false)
+
+  useEffect(() => {
+    const checkPermission = async (action: TypePermitionAction) => {
+      const rs = await offlineCache.getPermissionById(`${config.form_id}-${action}`)
+      switch (action) {
+        case TypePermitionAction.DELETE:
+          if (!rs) return setCanDelete(true)
+          setCanDelete(rs?.value === true)
+          break
+        case TypePermitionAction.CREATE:
+          if (!rs) return setCanCreate(true)
+          setCanCreate(rs?.value === true)
+          break
+        default:
+          break
+      }
+    }
+    checkPermission(TypePermitionAction.DELETE)
+    checkPermission(TypePermitionAction.CREATE)
+  }, [config.form_id])
   const {
     rowSelection,
     setRowSelection,
@@ -76,10 +99,12 @@ export const SelectRowsOptions = ({ config }: SelectRowsOptionsProps) => {
     setSelectAllRows,
     selectAllRows,
   } = useAppStore((state) => state)
-  const { filters } = useUserStore()
+  const { filters, user } = useUserStore()
   const fnc_name = config.fnc_name
   const id_action = useParams()
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    permision(TypePermitionAction.DELETE)
+
     setAnchorEl(event.currentTarget)
   }
   const handleClose = () => {
@@ -128,7 +153,7 @@ export const SelectRowsOptions = ({ config }: SelectRowsOptionsProps) => {
   }
 
   const { mutate: actionModule, isPending } = useActionModule({
-    filters,
+    filters: [...filters, ...(config?.aditionalFilters ? config.aditionalFilters : [])],
     module: config.module,
     fncName: fnc_name,
     id: id_action['*'] ?? '',
@@ -151,13 +176,20 @@ export const SelectRowsOptions = ({ config }: SelectRowsOptionsProps) => {
       {
         onSuccess() {
           setRowSelection(() => ({}))
-          console.log('logrado')
         },
         onError() {},
       }
     )
   }
 
+  const permision = async (action: TypePermitionAction) => {
+    const rs = await offlineCache.getPermissionById(`${config.form_id}-${action}`)
+    if (rs.value) {
+      return true
+    } else {
+      return false
+    }
+  }
   const options = [
     {
       title: 'Exportar',
@@ -184,7 +216,11 @@ export const SelectRowsOptions = ({ config }: SelectRowsOptionsProps) => {
       action: ActionTypeEnum.DELETE,
       icon: <GrTrash style={{ fontSize: '14px' }} />,
     },
-  ]
+  ].filter((opt) => {
+    if (opt.action === ActionTypeEnum.DELETE) return canDelete
+    if (opt.action === ActionTypeEnum.DUPLICATE) return canCreate
+    return true
+  })
 
   return (
     <div className="w-full flex mx-5 gap-3 justify-center">

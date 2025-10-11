@@ -25,6 +25,7 @@ export interface Product {
   tara_value?: number
   tara_quantity?: number
   tara_total?: number
+  line_id: number | string
 }
 
 export interface CartItem extends Product {

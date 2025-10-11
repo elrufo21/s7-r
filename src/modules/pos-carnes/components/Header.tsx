@@ -494,7 +494,6 @@ export default function Header({ pointId }: { pointId: string }) {
   useEffect(() => {
     saveCurrentOrder()
   }, [orderData])
-  console.log('orderFiltered', orderFiltered)
   return (
     <header className="pos-header">
       <div className="pos-header-left">

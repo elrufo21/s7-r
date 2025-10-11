@@ -141,6 +141,7 @@ export type ListInputItem = {
 }
 
 export type FormConfig = {
+  form_id?: number | string
   aditionalFilters?: any[]
   fieldLabels?: Record<string, string>
   fnc_name: string
@@ -278,4 +279,14 @@ export enum ButtonTextEnum {
   DELETE = 'Eliminar',
   NEW = 'Nuevo',
   SELECT = 'Seleccionar',
+}
+
+export enum TypePermitionAction {
+  CREATE = 'create',
+  VIEW = 'view',
+  NEW = 'new',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  COPY = 'copy',
+  ARCHIVATE = 'archivate',
 }

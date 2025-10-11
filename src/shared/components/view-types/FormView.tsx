@@ -36,8 +36,20 @@ export const FormView = ({ item }: { item?: any }) => {
     setViewType,
     breadcrumb,
     setBreadcrumb,
+    selectedViewType,
   } = useAppStore((state) => state)
-
+  /*const initialViewType = useRef<string | null>(null)
+  useEffect(() => {
+    if (!initialViewType.current && viewType) {
+      initialViewType.current = viewType
+    }
+  }, [viewType])
+ */
+  useEffect(() => {
+    return () => {
+      setViewType(selectedViewType ?? config.view_default)
+    }
+  }, [])
   const {
     frm_bar_buttons,
     frm_bar_status,
@@ -316,7 +328,7 @@ export const FormView = ({ item }: { item?: any }) => {
           },
           onError(err) {
             console.log(err)
-            toast.error('Error al guardar registro.')
+            // toast.error('Error al guardar registro.')
             setFrmAction(FormActionEnum.BASE)
           },
         }

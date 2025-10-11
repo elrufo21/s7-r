@@ -16,12 +16,13 @@ import { ViewTypeIcons } from './components/ViewTypeIcons'
 import { PageCounterList } from './components/PageCounterList'
 import { PageCounterKanban } from './components/PageCounterKanban'
 import { SearchInput } from './components/SearchInput'
-import { ViewTypeEnum } from '@/shared/shared.types'
-import { MouseEvent, ReactNode, useState } from 'react'
+import { TypePermitionAction, ViewTypeEnum } from '@/shared/shared.types'
+import { MouseEvent, ReactNode, useEffect, useState } from 'react'
 import { FormConfig } from '@/shared/shared.types'
 import { useNavigate } from 'react-router-dom'
 import useUserStore from '@/store/persist/persistStore'
 import { Breadcrumb } from '@/shared/ui/Breadcrumb/Breadcrumb'
+import { offlineCache } from '@/lib/offlineCache'
 
 interface StyledMenuProps extends MenuProps {
   children?: ReactNode
@@ -98,11 +99,14 @@ const ControlPanel = ({ config, viewType }: FrmWebOptionsProps) => {
     setListViewData,
     dataListShow: { counterPage, totalPages },
     breadcrumb,
+    setSelectedViewType,
   } = useAppStore()
+  const [isCreate, setIsCreate] = useState(true)
   const views = config.views
   const changeView = (view: ViewTypeEnum) => {
     if (view) {
       setViewType(view)
+      setSelectedViewType(view)
     }
   }
 
@@ -113,6 +117,15 @@ const ControlPanel = ({ config, viewType }: FrmWebOptionsProps) => {
   }
 
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
+  useEffect(() => {
+    const loadPermission = async () => {
+      const rs = await offlineCache.getPermissionById(
+        `${config.form_id}-${TypePermitionAction.CREATE}`
+      )
+      setIsCreate(!!rs?.value || true)
+    }
+    loadPermission()
+  }, [config.form_id])
   const open = Boolean(anchorEl)
 
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
@@ -128,7 +141,7 @@ const ControlPanel = ({ config, viewType }: FrmWebOptionsProps) => {
         {!!config.new_url && (
           <div className="o_control_panel_main_buttons d-flex gap-1 d-empty-none d-print-none">
             <div className="d-xl-inline-flex gap-1">
-              {config.item_url !== null && (
+              {isCreate && (
                 <div className="flex items-center">
                   <button className="btn btn-primary" onClick={handleBtnNew}>
                     Nuevo

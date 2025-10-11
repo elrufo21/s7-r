@@ -53,6 +53,7 @@ export interface PosOrderData {
 }
 
 const PosOrderConfig: FormConfig = {
+  form_id: 201,
   aditionalFilters: [
     [
       0,

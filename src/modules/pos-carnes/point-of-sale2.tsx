@@ -30,6 +30,8 @@ const PointOfSale = () => {
     setSyncData,
     setSessionId,
     setPointId,
+    connected,
+    connectToDevice
   } = useAppStore()
   const sessions = JSON.parse(localStorage.getItem('sessions') || '[]')
   const session = sessions.find((s: any) => s.point_id === Number(pointId))
@@ -57,6 +59,11 @@ const PointOfSale = () => {
       console.error('Fallo la inicialización de datos del POS:', error)
     }
   }
+  useEffect(()=>{
+    if(!connected){
+      connectToDevice()
+    }
+  },[connected])
   useEffect(() => {
     isOnlineRef.current = isOnline
   }, [isOnline])

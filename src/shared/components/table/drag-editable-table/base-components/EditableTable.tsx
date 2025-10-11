@@ -56,18 +56,15 @@ export const DragEditableTable = <T extends Record<string, any>>({
     [data]
   )
 
-  // Función de actualización genérica incorporada al componente
   const updateLineData = useCallback(
     (id: number | string, updates: Partial<T>) => {
       if (isUpdatingRef.current) return
 
       setData((prev) =>
         prev.map((row) => {
-          // Busca el registro por ID (asume que tiene una propiedad line_id o id)
           const rowId = (row as any).line_id !== undefined ? (row as any).line_id : (row as any).id
 
           if (rowId === id) {
-            // Maneja el campo action si existe
             const action = (row as any).action
             let newAction = action
 
@@ -89,14 +86,11 @@ export const DragEditableTable = <T extends Record<string, any>>({
     [setData]
   )
 
-  // Función para el manejo de la eliminación
   const handleDelete = useCallback(
     (lineId: number) => {
       if (onDeleteRow && !isUpdatingRef.current) {
         isUpdatingRef.current = true
         onDeleteRow(lineId)
-        // Usamos un setTimeout para asegurar que esta actualización
-        // ocurra en el siguiente ciclo de renderizado
         setTimeout(() => {
           setModifyData(true)
           isUpdatingRef.current = false
@@ -106,11 +100,9 @@ export const DragEditableTable = <T extends Record<string, any>>({
     [onDeleteRow]
   )
 
-  // Implementación de useDebounce dentro del componente
   const useTableDebounce = (callback: any, delay: number) => {
     const timeoutRef = useRef<any>(null)
 
-    // Limpieza al desmontar
     useEffect(() => {
       return () => {
         if (timeoutRef.current) {
@@ -133,10 +125,8 @@ export const DragEditableTable = <T extends Record<string, any>>({
     )
   }
 
-  // Creamos la versión con debounce de updateLineData
   const debouncedUpdateLineData = useTableDebounce(updateLineData, 300)
 
-  //drag
   useEffect(() => {
     if (tableRef.current) {
       if (sortableRef.current) {
@@ -160,12 +150,9 @@ export const DragEditableTable = <T extends Record<string, any>>({
                 (item: any) => item.action === ActionTypeEnum.DELETE
               )
 
-              // Remover el ítem movido
               const [movedItem] = visibleData.splice(oldIndex, 1)
-              // Insertarlo en la nueva posición
               visibleData.splice(newIndex, 0, movedItem)
 
-              // Actualizar TODOS los visibles con action: UPDATE (sin importar su estado original)
               const updatedVisibleData = visibleData.map((item: any) => ({
                 ...item,
                 action:
@@ -183,6 +170,7 @@ export const DragEditableTable = <T extends Record<string, any>>({
       })
     }
   }, [filteredData])
+
   useEffect(() => {
     if (modifyData) {
       const timeoutId = setTimeout(() => {
@@ -207,9 +195,9 @@ export const DragEditableTable = <T extends Record<string, any>>({
     },
     onSortingChange: setSorting,
     meta: {
-      updateRow: updateLineData, // Función de actualización inmediata
-      debouncedUpdateRow: debouncedUpdateLineData, // Función de actualización con debounce
-      deleteRow: handleDelete, // Agregar la función de eliminación
+      updateRow: updateLineData,
+      debouncedUpdateRow: debouncedUpdateLineData,
+      deleteRow: handleDelete,
     },
   })
 
@@ -229,43 +217,53 @@ export const DragEditableTable = <T extends Record<string, any>>({
                       }}
                       className={`text-right font-bold justify-end px-[10px] relative ${
                         header.column.getCanSort() ? 'cursor-pointer select-none' : ''
-                      }`}
-                      onClick={header.column.getToggleSortingHandler()}
+                      } ${header.id === 'settings' ? 'right-sticky bg-white' : ''}`}
+                      onClick={
+                        header.id !== 'settings'
+                          ? header.column.getToggleSortingHandler()
+                          : undefined
+                      }
                     >
-                      <div className="w-full box-border flex">
-                        <div className="flex items-center w-full">
-                          <div
-                            className={clsx(
-                              'flex items-center gap-2 flex-grow',
-                              {
-                                'justify-end text-right':
-                                  (header.column.columnDef.meta as any)?.align === 'right',
-                                'justify-center text-center':
-                                  (header.column.columnDef.meta as any)?.align === 'center',
-                                'justify-start text-left':
-                                  !(header.column.columnDef.meta as any)?.align ||
-                                  (header.column.columnDef.meta as any)?.align === 'left',
-                              },
-                              header.column.getIsSorted() && 'gap-2'
-                            )}
-                          >
-                            {flexRender(header.column.columnDef.header, header.getContext())}
-                            {{
-                              asc: <FaChevronUp />,
-                              desc: <FaChevronDown />,
-                            }[header.column.getIsSorted() as string] ?? null}
-                          </div>
-                          <div
-                            {...{
-                              onDoubleClick: () => header.column.resetSize(),
-                              onMouseDown: header.getResizeHandler(),
-                              onTouchStart: header.getResizeHandler(),
-                              className: `box-border active:bg-primary resizer ${table.options.columnResizeDirection} 
+                      {/* SI ES LA COLUMNA SETTINGS, RENDERIZA EL TableConfig */}
+                      {header.id === 'settings' ? (
+                        <TableConfig table={table as Table<T>} />
+                      ) : (
+                        /* SINO, RENDERIZA EL HEADER NORMAL */
+                        <div className="w-full box-border flex">
+                          <div className="flex items-center w-full">
+                            <div
+                              className={clsx(
+                                'flex items-center gap-2 flex-grow',
+                                {
+                                  'justify-end text-right':
+                                    (header.column.columnDef.meta as any)?.align === 'right',
+                                  'justify-center text-center':
+                                    (header.column.columnDef.meta as any)?.align === 'center',
+                                  'justify-start text-left':
+                                    !(header.column.columnDef.meta as any)?.align ||
+                                    (header.column.columnDef.meta as any)?.align === 'left',
+                                },
+                                header.column.getIsSorted() && 'gap-2'
+                              )}
+                            >
+                              {flexRender(header.column.columnDef.header, header.getContext())}
+                              {{
+                                asc: <FaChevronUp />,
+                                desc: <FaChevronDown />,
+                              }[header.column.getIsSorted() as string] ?? null}
+                            </div>
+                            <div
+                              {...{
+                                onDoubleClick: () => header.column.resetSize(),
+                                onMouseDown: header.getResizeHandler(),
+                                onTouchStart: header.getResizeHandler(),
+                                className: `box-border active:bg-primary resizer ${table.options.columnResizeDirection} 
                                     ${header.column.getIsResizing() ? 'isResizing' : ''}`,
-                            }}
-                          />
+                              }}
+                            />
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </th>
                   ))}
                 </tr>
@@ -280,7 +278,6 @@ export const DragEditableTable = <T extends Record<string, any>>({
               ))}
             </tbody>
           </table>
-          <TableConfig table={table as Table<T>} />
         </div>
       </div>
       {typeof children === 'function' && children(setModifyData)}
@@ -291,7 +288,7 @@ export const DragEditableTable = <T extends Record<string, any>>({
 const TableConfig = <T extends Record<string, any>>({ table }: { table: Table<T> }) => {
   return (
     <Suspense>
-      <NavMenuList menu={''} icon={<LuSettings2 />} className="table-details-conf ">
+      <NavMenuList menu={''} icon={<LuSettings2 />} className="table-details-conf">
         {table.getAllLeafColumns().map((column, i) => {
           if (column.id === 'drag-handle' || column.id === 'settings') return null
           if (!column.columnDef.header) return null

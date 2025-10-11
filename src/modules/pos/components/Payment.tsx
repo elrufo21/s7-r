@@ -63,7 +63,7 @@ export const PaymentMethodCard = ({
   }, [method.payment_method_id, method?.files])
 
   return (
-    <div key={method.payment_method_id} className="btn2 btn2-white fs-3 lh-lg">
+    <div key={method.payment_method_id} className="btn2 btn2-white fs-3 lh-mlg">
       <div
         className="flex items-center gap-2 text-left cursor-pointer"
         onClick={() => onClick(method.name, method.payment_method_id)}
@@ -630,7 +630,7 @@ const Payment = () => {
             <div className="pads">
               <div className="control-buttons">
                 <button
-                  className="btn2 btn2-white lh-lg text-truncate w-auto text-action"
+                  className="btn2 btn2-white lh-mlg text-truncate w-auto text-action"
                   onClick={() => {
                     fnc_open_contact_modal()
                   }}
@@ -644,85 +644,85 @@ const Payment = () => {
               <div className="subpads">
                 <div className="numpad">
                   <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg"
+                    className="numpad-button btn2 btn2-white fs-3 lh-mlg"
                     onClick={() => handleNumpadClick('1')}
                   >
                     1
                   </button>
                   <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg"
+                    className="numpad-button btn2 btn2-white fs-3 lh-mlg"
                     onClick={() => handleNumpadClick('2')}
                   >
                     2
                   </button>
                   <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg"
+                    className="numpad-button btn2 btn2-white fs-3 lh-mlg"
                     onClick={() => handleNumpadClick('3')}
                   >
                     3
                   </button>
 
                   <button
-                    className={`numpad-button btn2 btn2-white fs-3 lh-lg`}
+                    className={`numpad-button btn2 btn2-white fs-3 lh-mlg`}
                     onClick={() => handleNumpadClick('+10')}
                   >
                     +10
                   </button>
 
                   <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg"
+                    className="numpad-button btn2 btn2-white fs-3 lh-mlg"
                     onClick={() => handleNumpadClick('4')}
                   >
                     4
                   </button>
                   <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg"
+                    className="numpad-button btn2 btn2-white fs-3 lh-mlg"
                     onClick={() => handleNumpadClick('5')}
                   >
                     5
                   </button>
                   <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg"
+                    className="numpad-button btn2 btn2-white fs-3 lh-mlg"
                     onClick={() => handleNumpadClick('6')}
                   >
                     6
                   </button>
 
                   <button
-                    className={`numpad-button btn2 btn2-white fs-3 lh-lg `}
+                    className={`numpad-button btn2 btn2-white fs-3 lh-mlg `}
                     onClick={() => handleNumpadClick('+20')}
                   >
                     +20
                   </button>
 
                   <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg"
+                    className="numpad-button btn2 btn2-white fs-3 lh-mlg"
                     onClick={() => handleNumpadClick('7')}
                   >
                     7
                   </button>
                   <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg"
+                    className="numpad-button btn2 btn2-white fs-3 lh-mlg"
                     onClick={() => handleNumpadClick('8')}
                   >
                     8
                   </button>
                   <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg"
+                    className="numpad-button btn2 btn2-white fs-3 lh-mlg"
                     onClick={() => handleNumpadClick('9')}
                   >
                     9
                   </button>
 
                   <button
-                    className={`numpad-button btn2 btn2-white fs-3 lh-lg`}
+                    className={`numpad-button btn2 btn2-white fs-3 lh-mlg`}
                     onClick={() => handleNumpadClick('+50')}
                   >
                     +50
                   </button>
 
                   <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg o_colorlist_item_numpad_color_3"
+                    className="numpad-button btn2 btn2-white fs-3 lh-mlg o_colorlist_item_numpad_color_3"
                     onClick={() => {
                       handleSymbolsClick()
                     }}
@@ -731,21 +731,21 @@ const Payment = () => {
                   </button>
 
                   <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg"
+                    className="numpad-button btn2 btn2-white fs-3 lh-mlg"
                     onClick={() => handleNumpadClick('0')}
                   >
                     0
                   </button>
 
                   <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg o_colorlist_item_numpad_color_2"
+                    className="numpad-button btn2 btn2-white fs-3 lh-mlg o_colorlist_item_numpad_color_2"
                     onClick={() => handleNumpadClick('.')}
                   >
                     .
                   </button>
 
                   <button
-                    className="numpad-button btn2 btn2-white fs-3 lh-lg justify-items-center o_colorlist_item_numpad_color_1"
+                    className="numpad-button btn2 btn2-white fs-3 lh-mlg justify-items-center o_colorlist_item_numpad_color_1"
                     onClick={() => handleNumpadClick('backspace')}
                   >
                     <HiOutlineBackspace style={{ fontSize: '28px' }} />

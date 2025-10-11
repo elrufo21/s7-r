@@ -9,11 +9,11 @@ export type PaymentMethod = { payment_method_id: number; [key: string]: any }
 export type PosOrder = { order_id: number | string; [key: string]: any }
 export type PosPoint = { point_id: number; [key: string]: any }
 export type PosSession = { session_id: number; [key: string]: any }
-export type Contact = { partner_id: number; [key: string]: any }
+export type Contact = { partner_id: number | string; [key: string]: any }
 export type Container = { container_id: number; [key: string]: any }
 export type PosOrderQueue = { order_id: number; [key: string]: any }
 export type PosPointCache = { point_id: number; oj_data: PosPoint[] }
-
+export type Permisions = { permision_id: number; [key: string]: any }
 export type EntityName =
   | 'products'
   | 'categories'
@@ -42,7 +42,7 @@ export class OfflineCache {
 
   constructor(options?: OfflineCacheOptions) {
     this.dbName = options?.dbName || 's7-offline-cache'
-    this.version = options?.version || 3 // Subimos la versión a 3
+    this.version = options?.version || 4 // Subimos la versión a 3
   }
 
   /** Inicializa la base de datos y los object stores necesarios. */
@@ -74,6 +74,11 @@ export class OfflineCache {
         if (!db.objectStoreNames.contains('payment_method_images')) {
           db.createObjectStore('payment_method_images', { keyPath: 'payment_method_id' })
         }
+        if (oldVersion < 4) {
+          if (!db.objectStoreNames.contains('permissions')) {
+            db.createObjectStore('permissions', { keyPath: 'permission_id' })
+          }
+        }
       },
     })
   }
@@ -96,6 +101,106 @@ export class OfflineCache {
       await store.put(entity)
     }
     await tx.done
+  }
+  ensureDefaultDeletePermissions = async (
+    user_id: number | string,
+    formIds: Array<string | number>
+  ) => {
+    for (const form_id of formIds) {
+      const permission_id = `${form_id}-delete`
+      const exists = await offlineCache.getPermissionById(permission_id)
+
+      if (!exists) {
+        await offlineCache.savePermission({
+          permission_id,
+          user_id,
+          form_id,
+          action: 'delete',
+          value: false,
+        })
+      }
+    }
+  }
+  ensureDefaultCreatePermissions = async (
+    user_id: number | string,
+    formIds: Array<string | number>
+  ) => {
+    for (const form_id of formIds) {
+      const permission_id = `${form_id}-create`
+      const exists = await offlineCache.getPermissionById(permission_id)
+
+      if (!exists) {
+        await offlineCache.savePermission({
+          permission_id,
+          user_id,
+          form_id,
+          action: 'create',
+          value: false,
+        })
+      }
+    }
+  }
+  async savePermission(permission: {
+    user_id: number | string
+    form_id: string | number
+    action: string
+    value: boolean
+  }) {
+    const db = await this.getDB()
+
+    if (!db.objectStoreNames.contains('permissions')) {
+      console.error('Error: permissions store NO existe!')
+      return
+    }
+
+    const tx = db.transaction('permissions', 'readwrite')
+    const store = tx.objectStore('permissions')
+
+    const permissionId =
+      permission['permission_id'] ??
+      `${permission.user_id}_${permission.form_id}_${permission.action}`
+
+    const finalPermission = {
+      permission_id: permissionId,
+      created_at: new Date().toISOString(),
+      ...permission,
+    }
+
+    await store.put(finalPermission)
+    await tx.done
+
+    return finalPermission
+  }
+  async createDeletePermission() {
+    const permission = {
+      permission_id: '201-delete',
+      user_id: 1,
+      form_id: 201,
+      action: 'delete',
+      value: false,
+    }
+
+    await offlineCache.init()
+
+    const savedPermission = await offlineCache.savePermission(permission)
+
+    return savedPermission
+  }
+  async getPermissionById(permission_id: string | number) {
+    const db = await this.getDB()
+    const tx = db.transaction('permissions', 'readonly')
+    const store = tx.objectStore('permissions')
+
+    const permission = await store.get(permission_id)
+    return permission ?? null
+  }
+  async getPermissionsByForm(user_id: string | number, form_id: string | number) {
+    const db = await this.getDB()
+    const tx = db.transaction('permissions', 'readonly')
+    const store = tx.objectStore('permissions')
+    const all = await store.getAll()
+
+    return all.filter((perm: any) => perm.user_id == user_id && perm.form_id == form_id)
   }
 
   /** Obtiene todas las entidades de un store. */

@@ -170,7 +170,7 @@ export const FrmBaseDialog = ({
         const { oj_data: data } = await executeFnc(config.fnc_name, 's1', [
           oj_data[config.grid.idRow],
         ])
-        reset(data[0])
+        reset({ ...data[0], dialogId: watch('dialogId') })
         setFrmDialogAction(null)
         break
       }

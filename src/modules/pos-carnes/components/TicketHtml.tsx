@@ -23,7 +23,7 @@ const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
     }
 
     return info.lines
-      .reduce((total: number, item: any) => total + (item.amount_untaxed_total || 0), 0)
+      .reduce((total: number, item: any) => total + (item.amount_withtaxed_total || 0), 0)
       .toFixed(2)
   }
 
@@ -89,42 +89,49 @@ const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
       }}
     >
       {/* Encabezado */}
-      <div style={{ textAlign: 'center', marginBottom: '12px' }}>
+      <div style={{ textAlign: 'center', marginBottom: '2px' }}>
         <div
           style={{
             fontSize: '16px',
             fontWeight: 'bold',
-            marginBottom: '4px',
+            marginBottom: '-2px',
           }}
         >
-          Avícola "Pie Grande"
+          AVICOLA "PIE GRANDE"
         </div>
-        <div style={{ fontSize: '11px', marginBottom: '3px', fontWeight: 'bold' }}>
-          JR. HUANCAS 20 - HUANCAYO
+        <div style={{ fontSize: '11px', marginBottom: '-2px', fontWeight: 'bold' }}>
+          JR. HUANCAS 1048 - HUANCAYO
         </div>
-        <div style={{ fontSize: '11px', marginBottom: '3px', fontWeight: 'bold' }}>
-          PEDIDOS 964-612067
+        <div style={{ fontSize: '11px', marginBottom: '-2px', fontWeight: 'bold' }}>
+          PEDIDOS 964642087
         </div>
       </div>
 
       {/* Control Section */}
-      <div style={{ marginBottom: '12px', textAlign: 'center' }}>
+      <div style={{ marginBottom: '2px', textAlign: 'center' }}>
         <div
           style={{
-            fontSize: '14px',
+            fontSize: '13px',
             fontWeight: 'bold',
-            marginBottom: '6px',
+            marginBottom: '0px',
           }}
         >
-          CONTROL DE PESO
+          CONTROL DE PESO {info.receipt_number}
         </div>
-        <div style={{ fontSize: '11px', marginBottom: '3px', fontWeight: 'bold' }}>
-          Nº {info.receipt_number || info.name}
+        <div style={{ fontSize: '8px', marginBottom: '3px', fontWeight: 'bold' }}>
+          CAMBIAR ESTE TICKET POR BOLETA O FACTURA EN CAJA
         </div>
+        {/*
         <div style={{ fontSize: '11px', marginBottom: '3px', fontWeight: 'bold' }}>
+          {info.receipt_number}
+        </div>
+        */}
+
+        <div style={{ fontSize: '11px', marginBottom: '3px', fontWeight: 'bold', textAlign: 'center' }}>
           FECHA {formatDateToDDMMYYYY(info.order_date || new Date())}
         </div>
-        <div style={{ fontSize: '11px', fontWeight: 'bold' }}>{session?.session_name}</div>
+        {/* <div style={{ fontSize: '11px', fontWeight: 'bold' }}>{session?.session_name}</div> */}
+        <div style={{ fontSize: '14px', fontWeight: 'bold' }}>TIENDA MADRUGADA</div>
       </div>
 
       {/* Table Header */}
@@ -138,12 +145,12 @@ const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
           fontWeight: 'bold',
         }}
       >
-        <div style={{ width: '20%', textAlign: 'left', fontSize: '12px' }}>Producto</div>
-        <div style={{ width: '15%', textAlign: 'center', fontSize: '12px' }}>Bruto</div>
-        <div style={{ width: '15%', textAlign: 'center', fontSize: '12px' }}>Tara</div>
-        <div style={{ width: '15%', textAlign: 'center', fontSize: '12px' }}>Neto</div>
-        <div style={{ width: '15%', textAlign: 'center', fontSize: '12px' }}>Precio</div>
-        <div style={{ width: '20%', textAlign: 'center', fontSize: '12px' }}>Total</div>
+        <div style={{ width: '25%', textAlign: 'left', fontSize: '12px' }}>PRODUCTO</div>
+        <div style={{ width: '15%', textAlign: 'right', fontSize: '12px' }}>BRUTO</div>
+        <div style={{ width: '20%', textAlign: 'right', fontSize: '12px' }}>TARA</div>
+        <div style={{ width: '15%', textAlign: 'right', fontSize: '12px' }}>NETO</div>
+        <div style={{ width: '20%', textAlign: 'right', fontSize: '12px' }}>PRECIO</div>
+        <div style={{ width: '20%', textAlign: 'right', fontSize: '12px' }}>TOTAL</div>
       </div>
 
       {info.lines &&
@@ -157,40 +164,51 @@ const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
               fontWeight: 'bold',
             }}
           >
-            <div style={{ width: '20%', textAlign: 'left', fontSize: '12px' }}>{item.name}</div>
-            <div style={{ width: '15%', textAlign: 'center', fontSize: '12px' }}>
+            <div style={{ width: '25%', textAlign: 'left', fontSize: '12px' }}>{item.name.toUpperCase()}</div>
+            <div style={{ width: '15%', textAlign: 'right', fontSize: '12px' }}>
               {item.base_quantity}
             </div>
-            <div style={{ width: '15%', textAlign: 'center', fontSize: '12px' }}>
-              {`${item.tara_quantity}/${(item.tara_total || 0).toFixed(1)}`}
+            <div style={{ width: '20%', textAlign: 'right', fontSize: '12px' }}>
+              {/* {`${item.tara_quantity}/${(item.tara_total || 0).toFixed(1)}`} */}
+              {/* {`${item.tara_quantity}/${(item.tara_total || 0)}`} */}
+              {item.tara_quantity > 0 &&
+                <>
+                  {`${item.tara_quantity}/${(item.tara_total || 0)}`}
+                </>
+              }
             </div>
-            <div style={{ width: '15%', textAlign: 'center', fontSize: '12px' }}>
+            <div style={{ width: '15%', textAlign: 'right', fontSize: '12px' }}>
               {item.quantity}
             </div>
-            <div style={{ width: '15%', textAlign: 'center', fontSize: '12px' }}>
-              {(Number(item.price_unit) || 0).toFixed(2)}
+            <div style={{ width: '20%', textAlign: 'right', fontSize: '12px' }}>
+              {/* {(Number(item.price_unit) || 0).toFixed(2)} */}
+              {(Number(item.price_unit) || 0)}
             </div>
-            <div style={{ width: '20%', textAlign: 'center', fontSize: '12px' }}>
-              {(item.amount_untaxed_total || 0).toFixed(2)}
+            <div style={{ width: '20%', textAlign: 'right', fontSize: '12px' }}>
+              {/* {(item.amount_withtaxed_total || 0).toFixed(2)} */}
+              {(item.amount_withtaxed_total || 0)}
             </div>
           </div>
-        ))}
+        ))
+      }
 
       {/* Totales */}
       <div
         style={{
-          marginTop: '12px',
+          marginTop: '3px',
           borderTop: '1px solid black',
           paddingTop: '6px',
         }}
       >
         {/* Total general */}
+        {/*
+        <div style={{ fontSize: '12px', fontWeight: 'bold', textAlign: 'right' }}>DEUDA: {adjustTotal(total).adjusted}</div>
         <div
           style={{
             display: 'flex',
             justifyContent: 'space-between',
             marginBottom: '8px',
-            borderBottom: '1px solid black',
+            // borderBottom: '1px solid black',
             paddingBottom: '4px',
           }}
         >
@@ -199,39 +217,60 @@ const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
             {adjustTotal(total).adjusted}
           </span>
         </div>
+        */}
+        <div style={{ fontSize: '12px', fontWeight: 'bold', textAlign: 'right' }}>
+          TOTAL: {adjustTotal(total).adjusted.toFixed(2)}
+        </div>
 
         {/* Métodos de pago dinámicos */}
         {paymentsByMethod.map((payment: any, index: number) => (
-          <div
-            key={index}
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginBottom: '3px',
-            }}
-          >
-            <span style={{ fontSize: '11px', fontWeight: 'bold' }}>
-              {payment.method.toUpperCase()}:
-            </span>
-            <span style={{ fontSize: '11px', fontWeight: 'bold' }}>{payment.total.toFixed(2)}</span>
+
+          // <div
+          //   key={index}
+          //   style={{
+          //     display: 'flex',
+          //     justifyContent: 'space-between',
+          //     marginBottom: '3px',
+          //   }}
+          // >
+          //   <span style={{ fontSize: '11px', fontWeight: 'bold' }}>
+          //     {payment.method.toUpperCase()}:
+          //   </span>
+          //   <span style={{ fontSize: '11px', fontWeight: 'bold' }}>{payment.total.toFixed(2)}</span>
+          // </div>
+
+          <div style={{ fontSize: '12px', fontWeight: 'bold', textAlign: 'right' }}>
+            {payment.method.toUpperCase()}{': '}{payment.total.toFixed(2)}
           </div>
+
         ))}
 
         {/* Total de pagos (si hay más de un método) */}
         {paymentsByMethod.length > 1 && (
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginTop: '6px',
-              paddingTop: '4px',
-              borderTop: '1px solid black',
-            }}
-          >
-            <span style={{ fontSize: '11px', fontWeight: 'bold' }}>TOTAL PAGADO:</span>
-            <span style={{ fontSize: '11px', fontWeight: 'bold' }}>{totalPayments.toFixed(2)}</span>
+
+          // <div
+          //   style={{
+          //     display: 'flex',
+          //     justifyContent: 'space-between',
+          //     marginTop: '6px',
+          //     paddingTop: '4px',
+          //     borderTop: '1px solid black',
+          //   }}
+          // >
+          //   <span style={{ fontSize: '11px', fontWeight: 'bold' }}>TOTAL PAGADO:</span>
+          //   <span style={{ fontSize: '11px', fontWeight: 'bold' }}>{totalPayments.toFixed(2)}</span>
+          // </div>
+
+          <div style={{ fontSize: '12px', fontWeight: 'bold', textAlign: 'right' }}>
+            TOTAL PAGADO: {totalPayments.toFixed(2)}
           </div>
         )}
+
+        {/* Diferencia */}
+        <div style={{ fontSize: '12px', fontWeight: 'bold', textAlign: 'right' }}>
+          DEUDA: {totalPayments.toFixed(2)}
+        </div>
+
       </div>
 
       {/* Footer */}

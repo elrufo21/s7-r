@@ -5,11 +5,11 @@ import useUserStore from '@/store/persist/persistStore'
 import { useActionStateManager } from '@/store/helpers/useActionStateManager'
 import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
+import { offlineCache } from '@/lib/offlineCache'
 
 export const ActionShow = () => {
   const { idAction } = useParams()
-  const { filters, aditionalFilters } = useUserStore()
-
+  const { filters, user } = useUserStore()
   // Usar el hook personalizado para manejar la limpieza del estado
   useActionStateManager(idAction)
 
@@ -32,7 +32,10 @@ export const ActionShow = () => {
     module: config.module,
     id: idAction ?? '',
   })
-
+  useEffect(() => {
+    offlineCache.ensureDefaultDeletePermissions(1, [201, 202])
+    offlineCache.ensureDefaultCreatePermissions(1, [201, 202])
+  }, [])
   useEffect(() => {
     setFrmLoading(isLoading)
   }, [isLoading, setFrmLoading])

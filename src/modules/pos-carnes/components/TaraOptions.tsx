@@ -3,6 +3,9 @@ import { Divider } from '@mui/material'
 import { useEffect, useState } from 'react'
 import { Operation } from '../context/CalculatorContext'
 import { IoArrowUndoSharp } from 'react-icons/io5'
+import CalculatorPanel from './modal/components/ModalCalculatorPanel'
+import { Product } from '@/lib/offlineCache'
+import { ActionTypeEnum } from '@/shared/shared.types'
 
 const TaraOptions = () => {
   const {
@@ -22,20 +25,25 @@ const TaraOptions = () => {
     setHandleChange,
     connected,
     connectToDevice,
+    orderData,
+    backToProducts,
+    setScreen,
+    openDialog,
+    closeDialogWithData,
   } = useAppStore()
+  const [cart, setCart] = useState<Product[]>([])
+  useEffect(() => {
+    const pos_Status = orderData?.find((item) => item?.order_id === selectedOrder)?.pos_status
+    if (pos_Status === 'P' && backToProducts === false) setScreen('payment')
 
-  const [isManualMode, setIsManualMode] = useState(false)
-  const [isQuantityMode, setIsQuantityMode] = useState(false)
+    setCart(
+      orderData
+        ?.find((item) => item.order_id === selectedOrder)
+        ?.lines?.filter((item: any) => item.action !== ActionTypeEnum.DELETE) || []
+    )
+  }, [orderData, selectedOrder])
 
   useEffect(() => {
-    if (operation === Operation.QUANTITY || operation === Operation.PRICE) {
-      setIsQuantityMode(false)
-      setIsManualMode(false)
-    }
-  }, [operation])
-
-  useEffect(() => {
-    setIsManualMode(false)
     setOperation(Operation.QUANTITY)
 
     if (selectedItem && selectedOrder) {
@@ -49,7 +57,6 @@ const TaraOptions = () => {
   }, [selectedItem])
 
   const handleTaraSelect = (weight: number) => {
-    setIsManualMode(false)
     setTaraValue(selectedOrder, selectedItem || 0, weight)
 
     const currentTaraQuantity = getProductTaraQuantity(selectedOrder, selectedItem || 0)
@@ -57,67 +64,103 @@ const TaraOptions = () => {
       setTaraQuantity(selectedOrder, selectedItem || 0, 1)
     }
   }
-
-  const handleManualMode = () => {
-    if (isManualMode) {
-      setOperation(Operation.QUANTITY)
-    } else {
-      setOperation(Operation.TARA_VALUE)
-      const currentTaraQuantity = getProductTaraQuantity(selectedOrder, selectedItem || 0)
-      if (currentTaraQuantity === 0) {
-        setTaraQuantity(selectedOrder, selectedItem || 0, 1)
-      }
-    }
-    setIsQuantityMode(false)
-    setIsManualMode(!isManualMode)
-  }
-
-  const handleQuantityMode = () => {
-    if (isQuantityMode) {
-      setOperation(Operation.QUANTITY)
-    } else {
-      setOperation(Operation.TARA_QUANTITY)
-    }
-    setIsManualMode(false)
-    setIsQuantityMode(!isQuantityMode)
-  }
-
   const resetItem = () => {
     resetSelectedItem()
     setHandleChange(true)
   }
 
+  const openCalculatorModal = ({ operation }: { operation: Operation }) => {
+    const dialogId = openDialog({
+      title: cart.find((c) => c.line_id === selectedItem)?.name,
+      dialogContent: () => (
+        <CalculatorPanel
+          product={cart.find((c) => c.line_id === selectedItem)}
+          selectedField={operation}
+          dialogId={dialogId}
+        />
+      ),
+      buttons: [
+        {
+          text: 'Cerrar',
+          type: 'cancel',
+          onClick: () => {
+            closeDialogWithData(dialogId, {})
+          },
+        },
+      ],
+    })
+  }
+
   return (
-    <div className="d-flex gap-3 py-2 w-100 align-items-start">
+    <div className="d-flex gap-3 py-2 pr-2 w-100 align-items-start">
       <div className="flex-fill max-w-[400px]">
+
+        {/*
         <div className="d-flex gap-2 align-items-center numpad">
+        </div>
+        */}
+
+        {/* <div className="d-flex gap-2 align-items-center numpad"> */}
+        <div className="grid grid-cols-2 gap-2 numpad">
+
           <button
-            className={`numpad-button btn2 btn2-white fs-3 lh-lg  ${isManualMode ? 'active' : ''}`}
-            onClick={handleManualMode}
-            style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
+            className={`numpad-button btn2 btn2-white fs-3 lh-xlg ${operation === Operation.QUANTITY ? 'active' : ''}`}
+            onClick={() => {
+              setOperation(Operation.QUANTITY)
+              openCalculatorModal({ operation: Operation.QUANTITY })
+            }}
+            // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
           >
-            <span>TARA peso</span>
+            <span>Cantidad</span>
           </button>
+
           <button
-            className={`numpad-button btn2 btn2-white fs-3 lh-lg ${isQuantityMode ? 'active' : ''}`}
-            onClick={handleQuantityMode}
-            style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
+            className={`numpad-button btn2 btn2-white fs-3 lh-xlg ${operation === Operation.PRICE ? 'active' : ''}`}
+            onClick={() => {
+              setOperation(Operation.PRICE)
+              openCalculatorModal({ operation: Operation.PRICE })
+            }}
+            // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
+          >
+            <span>Precio</span>
+          </button>
+
+          <button
+            className={`numpad-button btn2 btn2-white fs-3 lh-xlg ${operation === Operation.TARA_QUANTITY ? 'active' : ''}`}
+            onClick={() => {
+              setOperation(Operation.TARA_QUANTITY)
+              openCalculatorModal({ operation: Operation.TARA_QUANTITY })
+            }}
+            // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
           >
             <span>TARA cantidad</span>
           </button>
+          
+          <button
+            className={`numpad-button btn2 btn2-white fs-3 lh-xlg ${operation === Operation.TARA_VALUE ? 'active' : ''}`}
+            onClick={() => {
+              setOperation(Operation.TARA_VALUE)
+              openCalculatorModal({ operation: Operation.TARA_VALUE })
+            }}
+            // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
+          >
+            <span>TARA peso</span>
+          </button>
+
         </div>
 
         <div className="mt-2 d-flex flex-wrap gap-2 numpad">
           {containers.map((value: { weight: number; name: string }) => (
             <button
               key={value.weight}
-              className="numpad-button btn2 btn2-white fs-3 lh-lg"
+              className="numpad-button btn2 btn2-white fs-3 lh-mlg"
               onClick={() => {
                 handleTaraSelect(value.weight)
                 setHandleChange(true)
                 setTaraValue(selectedOrder, selectedItem || 0, value.weight)
               }}
-              style={{ minWidth: '60px', flex: '1 0 60px', height: '48px', fontSize: '14px' }}
+              // style={{ minWidth: '60px', flex: '1 0 60px', height: '48px', fontSize: '14px' }}
+              style={{ minWidth: '60px' }}
             >
               {value.name}
             </button>
@@ -152,11 +195,12 @@ const TaraOptions = () => {
       </div>
 
       <div className="d-flex flex-column gap-2" style={{ minWidth: '120px' }}>
-        <button
+       {!connected&&(
+         <button
           className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white"
           style={{
-            backgroundColor: connected ? '#059669' : '#10b981',
-            borderColor: connected ? '#059669' : '#10b981',
+            backgroundColor: connected ? '#059669' : '#D63515',
+            borderColor: connected ? '#059669' : '#D63515',
             flex: '1',
             height: '48px',
             fontSize: '13px',
@@ -166,6 +210,7 @@ const TaraOptions = () => {
         >
           <span>{connected ? 'CONECTADO' : 'CONECTAR BALANZA'}</span>
         </button>
+       )}
         <button
           className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white"
           style={{
