@@ -25,6 +25,7 @@ interface AutocompleteTableProps {
   addOption?: boolean | undefined
   searchOpt?: ((value?: string) => void) | undefined
   fnc_create?: ((data: string) => Promise<void>) | undefined
+  preventKeyboard?: boolean
 }
 
 export const AutocompleteTable = ({
@@ -39,6 +40,7 @@ export const AutocompleteTable = ({
   editOpt,
   searchOpt,
   fnc_create,
+  preventKeyboard,
 }: AutocompleteTableProps) => {
   const [isEditing, setIsEditing] = useState<boolean>(false)
   const [currentValue, setCurrentValue] = useState(row.original[column.id] || null)
@@ -187,6 +189,10 @@ export const AutocompleteTable = ({
               className="w-full"
               placeholder={placeholder}
               autoFocus
+              inputProps={{
+                ...params.inputProps,
+                ...(preventKeyboard ? { inputMode: 'none' } : {}),
+              }}
             />
             {currentValue && navFunction ? (
               <Tooltip title="Ver producto" placement="bottom">

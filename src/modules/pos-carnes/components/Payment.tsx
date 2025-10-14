@@ -17,6 +17,9 @@ import { TypeOriginPaymen, TypePayment, TypeStateOrder, TypeStatePayment } from 
 import { adjustTotal } from '@/shared/helpers/helpers'
 import { now } from '@/shared/utils/dateUtils'
 
+import IconButton from '@mui/material/IconButton'
+import { IoClose } from 'react-icons/io5'
+
 // Definición de la interfaz para los pagos
 interface PaymentItem {
   payment_id: string
@@ -581,7 +584,7 @@ const Payment = () => {
                 <PaymentMethodCard
                   key={method.payment_method_id}
                   method={method}
-                  onClick={!frmLoading ? handlePaymentMethodClick : () => {}}
+                  onClick={!frmLoading ? handlePaymentMethodClick : () => { }}
                 />
               ))}
             </div>
@@ -636,7 +639,7 @@ const Payment = () => {
             <div className="pads">
               <div className="control-buttons">
                 <button
-                  className="btn2 btn2-white lh-mlg text-truncate w-auto text-action"
+                  className="btn2 btn2-white touch-lh-m text-truncate w-auto text-action"
                   onClick={() => {
                     fnc_open_contact_modal()
                   }}
@@ -761,7 +764,7 @@ const Payment = () => {
 
                 <div className="actionpad d-flex flex-row gap-2">
                   <button
-                    // className="btn btn-secondary btn-lg flex-grow py-4"
+                    // className="btn2 btn2-white btn-lg flex-auto touch-lh-l"
                     className="btn2 btn2-white btn-lg flex-auto min-h-[70px]"
                     onClick={() => {
                       setScreen('products')
@@ -771,7 +774,7 @@ const Payment = () => {
                     Regresar
                   </button>
                   <button
-                    // className="btn btn-primary btn-lg flex-grow py-4"
+                    // className="btn btn-primary btn-lg flex-auto touch-lh-l"
                     className="btn btn-primary btn-lg flex-auto min-h-[70px]"
                     onClick={() => modalValidateMethod()}
                     disabled={frmLoading}
@@ -786,8 +789,6 @@ const Payment = () => {
           {/* ------------------------------------------------ fin */}
         </div>
         {/* ---------------------------------------- derecho ini */}
-        {/* <div className="rightpanel"> */}
-        {/* <div className="rightpanel-sub-1"> */}
 
         {/* Panel central con resumen de pagos */}
         <div className="center-content flex flex-col flex-grow-1 gap-4 p-4">
@@ -802,17 +803,13 @@ const Payment = () => {
           </section>
 
           <div className="payment-summary d-flex flex-grow-1 flex-column gap-1 overflow-y-auto py-3">
-            <div className="paymentlines d-flex flex-column overflow-y-auto gap-2 mb-4">
-              {/* --------------------------------- */}
-
+            <div className="paymentlines d-flex flex-column overflow-y-auto gap-4 mb-4">
               {payments.length > 0 ? (
                 payments.map((payment) => (
                   <div
                     key={payment.payment_id}
-                    // className={`payment-line ${selectedPaymentId === payment.payment_id ? 'bg-blue-50 border-blue-300' : ''
-                    className={`payment-line ${
-                      selectedPaymentId === payment.payment_id ? 'select' : ''
-                    }`}
+                    className={`payment-line ${selectedPaymentId === payment.payment_id ? 'select' : ''
+                      }`}
                     onClick={() => handleSelectPayment(payment.payment_id)}
                   >
                     <div className="payment-info">
@@ -820,13 +817,20 @@ const Payment = () => {
                       <div className="payment-amount px-3">S/ {payment.amount.toFixed(2)}</div>
                     </div>
 
-                    <button
-                      // className="ml-3 text-gray-500 hover:text-red-500"
-                      className="ml-3 text-red-500 text-[26px]"
+                    <IconButton
                       onClick={(e) => handleRemovePayment(payment.payment_id, e)}
+                      aria-label="close"
+                      className='!ml-3 !bg-red-100 hover:!bg-red-200'
+                    // sx={{
+                    //   position: 'absolute',
+                    //   right: 6,
+                    //   top: 6.5,
+                    //   color: (theme) => theme.palette.grey[500],
+                    // }}
                     >
-                      ×
-                    </button>
+                      <IoClose style={{ fontSize: '30px' }} className="" />
+                    </IconButton>
+
                   </div>
                 ))
               ) : (
@@ -834,7 +838,6 @@ const Payment = () => {
                   Seleccione un método de pago
                 </div>
               )}
-              {/* --------------------------------- */}
             </div>
 
             {/* Saldo restante y cambio */}
@@ -843,8 +846,8 @@ const Payment = () => {
                 {getRemainingAmount() > 0 ? (
                   <div className="payment-status-container flex justify-between text-xl">
                     <div className="payment-status-remaining flex justify-between w-full">
-                      <span className="label pr-2">Restantes</span>
-                      <span className="amount self-end mr-5 pr-5 text-danger">
+                      <span className="label pr-2 text-danger">Restante</span>
+                      <span className="amount self-end text-danger text-2xl">
                         S/ {getRemainingAmount().toFixed(2)}
                       </span>
                     </div>
@@ -853,7 +856,7 @@ const Payment = () => {
                   <div className="payment-status-container flex justify-between text-xl">
                     <div className="payment-status-change flex justify-between w-full">
                       <span className="label pr-2 text-success">Cambio</span>
-                      <span className="amount self-end mr-5 pr-5 text-success">
+                      <span className="amount self-end text-success text-2xl">
                         S/ {getChange().toFixed(2)}
                       </span>
                     </div>
@@ -861,8 +864,8 @@ const Payment = () => {
                 ) : (
                   <div className="payment-status-container flex justify-between text-xl">
                     <div className="payment-status-exact flex justify-between w-full">
-                      <span className="label pr-2">Restantes</span>
-                      <span className="amount self-end mr-5 pr-5 text-success">
+                      <span className="label pr-2 text-success">Restante</span>
+                      <span className="amount self-end text-success text-2xl">
                         S/ {getRemainingAmount().toFixed(2)}
                       </span>
                     </div>
@@ -873,8 +876,6 @@ const Payment = () => {
           </div>
         </div>
 
-        {/* </div> */}
-        {/* </div> */}
         {/* ---------------------------------------- derecho fin */}
       </div>
     </>

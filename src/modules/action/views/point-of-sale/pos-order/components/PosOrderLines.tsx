@@ -1051,7 +1051,7 @@ const PosOrderLines = ({ watch, setValue, control, errors, editConfig }: frmElem
         },
         cell: ({ row }) => (
           <div className="text-right">
-            {row.original.tara_total !== 0 && `${row.original.tara_total} Kg`}
+            {row.original.tara_total !== 0 && ` ${row.original.tara_quantity} / ${row.original.tara_total} Kg`}
           </div>
         ),
       },

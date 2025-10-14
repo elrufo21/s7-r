@@ -12,7 +12,7 @@ import useAppStore from '@/store/app/appStore'
 import FormRow from '@/shared/components/form/base/FormRow'
 import { ContactAutocomplete } from '@/shared/components/form/base/ContactAutocomplete'
 import CompanyField from '@/shared/components/extras/CompanyField'
-import { DatepickerControlled, TextControlled } from '@/shared/ui'
+import { DatepickerControlled, SelectTable, TextControlled } from '@/shared/ui'
 import { PosOrderStateEnum } from '../types'
 import { formatDateTimeToDDMMYYYYHHMM } from '@/shared/utils/utils'
 import { TypeStateOrder, TypeStatePayment } from '@/modules/pos/types'
@@ -299,12 +299,15 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
           return isReadOnly ? (
             <div className="text-sm">{row.original.payment_method_name}</div>
           ) : (
-            <AutocompleteTable
-              row={row}
-              column={column}
-              options={paymentMethodOptions}
-              onChange={(data) => handleChangePaymentMethod(row, data)}
-            />
+            <>
+              <AutocompleteTable
+                row={row}
+                column={column}
+                options={paymentMethodOptions}
+                onChange={(data) => handleChangePaymentMethod(row, data)}
+                preventKeyboard={true}
+              />
+            </>
           )
         },
       },
@@ -334,7 +337,7 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
         enableResizing: false,
         cell: ({ row }) => (
           <div className="flex justify-center items-center">
-            {isReadOnly ? (
+            {isReadOnly || watch('payment_state') == 'PP' ? (
               <></>
             ) : (
               <button
@@ -399,7 +402,6 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
       difference: difference,
     }
   }, [data, watch])
-
   return (
     <div className="flex flex-col">
       <DndTable

@@ -33,8 +33,8 @@ export const ActionShow = () => {
     id: idAction ?? '',
   })
   useEffect(() => {
-    offlineCache.ensureDefaultDeletePermissions(1, [201, 202])
-    offlineCache.ensureDefaultCreatePermissions(1, [201, 202])
+    offlineCache.ensureDefaultDeletePermissions(1, [201, 202, 888])
+    offlineCache.ensureDefaultCreatePermissions(1, [201, 202, 888])
   }, [])
   useEffect(() => {
     setFrmLoading(isLoading)

@@ -101,7 +101,6 @@ const ControlPanelForm = ({ config }: ControlPanelFormProps) => {
     loadPermission(TypePermitionAction.DELETE)
     loadPermission(TypePermitionAction.CREATE)
   }, [config.form_id])
-  console.log('canDelete', canDelete)
   // Actualizar el estado local cuando formItem cambia y tiene un ID válido
   useEffect(() => {
     if (formItem && formItem[idRow]) {
@@ -215,180 +214,206 @@ const ControlPanelForm = ({ config }: ControlPanelFormProps) => {
     ])
     navigate('/action/742/detail/new')
   }*/
-  console.log('canCreate', canCreate)
   const hasMenuActions =
     (!pathname.includes('/new') && !canCreate) ||
     displayItem?.state === 'A' ||
     displayItem?.state === 'I'
   return (
-    // <div className="o_control_panel_main d-flex flex-wrap flex-lg-nowrap justify-content-between align-items-lg-start gap-2 gap-lg-3 flex-grow-1">
-    <div className="o_control_panel_main d-flex flex-wrap flex-lg-nowrap justify-content-between gap-2 gap-lg-3 flex-grow-1">
-      <div className="o_control_panel_breadcrumbs d-flex align-items-center gap-1 order-0 h-lg-100">
-        <div className="o_control_panel_main_buttons d-flex gap-1 d-empty-none d-print-none">
-          <div className="d-inline-flex gap-1">
-            {config.new_url && (
-              <button className="btn btn-primary mr-[5px]" onClick={handleBtnNew}>
-                Nuevo
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="ls_breadcrumb">
-          <Breadcrumb />
-
-          <div className="d-flex gap-1 text-truncate pt-[5px]">
-            <div className="o_last_breadcrumb_item active d-flex gap-2 align-items-center min-w-0 lh-sm">
-              <span className="min-w-0 mr-[2px] text-truncate">
-                {pathname.includes('/new') ? (
-                  'Nuevo'
-                ) : displayItem?.[config.dsc_view] !== '' ? (
-                  displayItem?.[config.dsc_view]
-                ) : (
-                  <span className="italic pr-px text-amber-700">Sin nombre</span>
-                )}
-              </span>
+    <>
+      {/* <div className="o_control_panel_main d-flex flex-wrap flex-lg-nowrap justify-content-between align-items-lg-start gap-2 gap-lg-3 flex-grow-1"> */}
+      <div className="o_control_panel_main d-flex flex-wrap flex-lg-nowrap justify-content-between gap-2 gap-lg-3 flex-grow-1">
+        <div className="o_control_panel_breadcrumbs d-flex align-items-center gap-1 order-0 h-lg-100">
+          <div className="o_control_panel_main_buttons d-flex gap-1 d-empty-none d-print-none">
+            <div className="d-inline-flex gap-1">
+              {config.new_url && (
+                <button className="btn btn-primary mr-[5px]" onClick={handleBtnNew}>
+                  Nuevo
+                </button>
+              )}
             </div>
+          </div>
 
-            <div className="o_control_panel_breadcrumbs_actions d-inline-flex d-print-none">
-              <div className="o_cp_action_menus d-flex align-items-center gap-1">
-                <div className="lh-1">
-                  <Stack className="grow" direction="row">
-                    <>
-                      {hasMenuActions && (
-                        <Tooltip arrow title="Acciones">
+          <div className="ls_breadcrumb">
+            <Breadcrumb />
+
+            <div className="d-flex gap-1 text-truncate pt-[5px]">
+              <div className="o_last_breadcrumb_item active d-flex gap-2 align-items-center min-w-0 lh-sm">
+                <span className="min-w-0 mr-[2px] text-truncate">
+                  {pathname.includes('/new') ? (
+                    'Nuevo'
+                  ) : displayItem?.[config.dsc_view] !== '' ? (
+                    displayItem?.[config.dsc_view]
+                  ) : (
+                    <span className="italic pr-px text-amber-700">Sin nombre</span>
+                  )}
+                </span>
+              </div>
+
+              <div className="o_control_panel_breadcrumbs_actions d-inline-flex d-print-none">
+                <div className="o_cp_action_menus d-flex align-items-center gap-1">
+                  <div className="lh-1">
+                    <Stack className="grow" direction="row">
+                      <>
+                        {hasMenuActions && (
+                          <Tooltip arrow title="Acciones">
+                            <IconButton
+                              className="button_action actions"
+                              disableRipple={true}
+                              disabled={frmLoading}
+                              onClick={(event) => {
+                                setAnchorEl(event.currentTarget)
+                              }}
+                            >
+                              <TbSettings style={{ fontSize: '19.5px' }} />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+
+                        <StyledMenu
+                          className="menuEx"
+                          anchorEl={anchorEl}
+                          open={open}
+                          onClose={handleClose}
+                        >
+                          <div>
+                            {displayItem?.state === 'A' && (
+                              <MenuItem
+                                onClick={() => {
+                                  handleChangeStatus()
+                                }}
+                              >
+                                <ListItemIcon>
+                                  <RiInboxArchiveLine style={{ fontSize: '16px' }} />
+                                </ListItemIcon>
+                                <ListItemText>Archivar</ListItemText>
+                              </MenuItem>
+                            )}
+
+                            {displayItem?.state === 'I' && (
+                              <MenuItem onClick={() => handleChangeStatus()}>
+                                <ListItemIcon>
+                                  <RiInboxUnarchiveLine style={{ fontSize: '16px' }} />
+                                </ListItemIcon>
+                                <ListItemText>Desarchivar</ListItemText>
+                              </MenuItem>
+                            )}
+                          </div>
+                          {!pathname.includes('/new') && !canCreate && (
+                            <MenuItem onClick={handleDuplicate}>
+                              <ListItemIcon>
+                                <HiOutlineDuplicate style={{ fontSize: '16px' }} />
+                              </ListItemIcon>
+                              <ListItemText>Duplicar</ListItemText>
+                            </MenuItem>
+                          )}
+                        </StyledMenu>
+                      </>
+
+                      {!pathname.includes('/new') && displayItem?.[idRow] && !canDelete && (
+                        <Tooltip arrow title="Eliminar registro">
                           <IconButton
-                            className="button_action actions"
+                            className="hover:text-red-400 button_action delete"
                             disableRipple={true}
                             disabled={frmLoading}
-                            onClick={(event) => {
-                              setAnchorEl(event.currentTarget)
-                            }}
+                            onClick={handleDelete}
                           >
-                            <TbSettings style={{ fontSize: '19.5px' }} />
+                            <div style={{ paddingTop: '2.5px' }}>
+                              <GrTrash style={{ fontSize: '16px' }} />
+                            </div>
                           </IconButton>
                         </Tooltip>
                       )}
-
-                      <StyledMenu
-                        className="menuEx"
-                        anchorEl={anchorEl}
-                        open={open}
-                        onClose={handleClose}
-                      >
-                        <div>
-                          {displayItem?.state === 'A' && (
-                            <MenuItem
-                              onClick={() => {
-                                handleChangeStatus()
-                              }}
-                            >
-                              <ListItemIcon>
-                                <RiInboxArchiveLine style={{ fontSize: '16px' }} />
-                              </ListItemIcon>
-                              <ListItemText>Archivar</ListItemText>
-                            </MenuItem>
-                          )}
-
-                          {displayItem?.state === 'I' && (
-                            <MenuItem onClick={() => handleChangeStatus()}>
-                              <ListItemIcon>
-                                <RiInboxUnarchiveLine style={{ fontSize: '16px' }} />
-                              </ListItemIcon>
-                              <ListItemText>Desarchivar</ListItemText>
-                            </MenuItem>
-                          )}
-                        </div>
-                        {!pathname.includes('/new') && !canCreate && (
-                          <MenuItem onClick={handleDuplicate}>
-                            <ListItemIcon>
-                              <HiOutlineDuplicate style={{ fontSize: '16px' }} />
-                            </ListItemIcon>
-                            <ListItemText>Duplicar</ListItemText>
-                          </MenuItem>
-                        )}
-                      </StyledMenu>
-                    </>
-
-                    {!pathname.includes('/new') && displayItem?.[idRow] && !canDelete && (
-                      <Tooltip arrow title="Eliminar registro">
-                        <IconButton
-                          className="hover:text-red-400 button_action delete"
-                          disableRipple={true}
-                          disabled={frmLoading}
-                          onClick={handleDelete}
-                        >
-                          <div style={{ paddingTop: '2.5px' }}>
-                            <GrTrash style={{ fontSize: '16px' }} />
-                          </div>
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                  </Stack>
+                    </Stack>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+
+          <div className="ls_form_status_indicator">
+            <div className="ls_form_status_indicator_buttons">
+              <Stack className="grow" direction="row">
+                {/*((frmState === "n" && permissions.opt_2) || (frmState === "e" && permissions.opt_3)) && (*/}
+                <>
+                  {(frmIsChanged || frmIsChangedItem) && (
+                    <>
+                      <Tooltip arrow title="Guardar cambios">
+                        <IconButton
+                          className="button_action save"
+                          disableRipple={true}
+                          disabled={frmLoading}
+                          onClick={handleBtnSave}
+                        >
+                          <div style={{ paddingTop: '1px' }}>
+                            {/* <MdCloudQueue style={{ fontSize: '22px' }} /> */}
+                            <WiCloudUp style={{ fontSize: '32px' }} />
+                            {/* <LiaCloudUploadAltSolid style={{ fontSize: '28px' }} /> */}
+                          </div>
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip arrow title="Descartar cambios">
+                        <IconButton
+                          className="button_action undo"
+                          disableRipple={true}
+                          disabled={frmLoading}
+                          onClick={handleBtnUndo}
+                        >
+                          <div style={{ paddingTop: '1px' }}>
+                            <MdCloudOff style={{ fontSize: '23px' }} />
+                          </div>
+                        </IconButton>
+                      </Tooltip>
+                    </>
+                  )}
+                </>
+              </Stack>
+            </div>
+          </div>
+
+          <div className="me-auto"></div>
         </div>
 
-        <div className="ls_form_status_indicator">
-          <div className="ls_form_status_indicator_buttons">
-            <Stack className="grow" direction="row">
-              {/*((frmState === "n" && permissions.opt_2) || (frmState === "e" && permissions.opt_3)) && (*/}
-              <>
-                {(frmIsChanged || frmIsChangedItem) && (
-                  <>
-                    <Tooltip arrow title="Guardar cambios">
-                      <IconButton
-                        className="button_action save"
-                        disableRipple={true}
-                        disabled={frmLoading}
-                        onClick={handleBtnSave}
-                      >
-                        <div style={{ paddingTop: '1px' }}>
-                          {/* <MdCloudQueue style={{ fontSize: '22px' }} /> */}
-                          <WiCloudUp style={{ fontSize: '32px' }} />
-                          {/* <LiaCloudUploadAltSolid style={{ fontSize: '28px' }} /> */}
-                        </div>
-                      </IconButton>
-                    </Tooltip>
+        {config?.formButtons?.length > 0 && (
+          <div className="o_control_panel_actions d-flex align-items-center justify-content-start justify-content-lg-around order-2 order-lg-1 w-100 mw-100 w-lg-auto">
+            <div className="ls-form-buttonbox d-print-none position-relative d-flex w-md-auto o_full w-100">
+              <StatsButtonBox
+                formItem={displayItem}
+                statsData={enrichButtons(config.formButtons)}
+              />
+            </div>
+          </div>
+        )}
 
-                    <Tooltip arrow title="Descartar cambios">
-                      <IconButton
-                        className="button_action undo"
-                        disableRipple={true}
-                        disabled={frmLoading}
-                        onClick={handleBtnUndo}
-                      >
-                        <div style={{ paddingTop: '1px' }}>
-                          <MdCloudOff style={{ fontSize: '23px' }} />
-                        </div>
-                      </IconButton>
-                    </Tooltip>
-                  </>
-                )}
-              </>
-            </Stack>
+        <div className="o_control_panel_navigation order-1 order-lg-2">
+          <div className="o_cp_pager text-nowrap d-flex">
+            <PageCounterForm />
           </div>
         </div>
-
-        <div className="me-auto"></div>
       </div>
 
-      {config?.formButtons?.length > 0 && (
-        <div className="o_control_panel_actions d-flex align-items-center justify-content-start justify-content-lg-around order-2 order-lg-1 w-100 mw-100 w-lg-auto">
-          <div className="ls-form-buttonbox d-print-none position-relative d-flex w-md-auto o_full w-100">
-            <StatsButtonBox formItem={displayItem} statsData={enrichButtons(config.formButtons)} />
-          </div>
+      {(frmIsChanged || frmIsChangedItem) && (
+        <div className="c-equivalent pt-2">
+          <button
+            // key={index}
+            className="c-equivalent-son btn btn-lg lh-lg btn-primary"
+            disabled={frmLoading}
+            onClick={handleBtnSave}
+          >
+            Guardar cambios
+          </button>
+
+          <button
+            // key={index}
+            className="c-equivalent-son btn btn-lg lh-lg btn-secondary"
+            disabled={frmLoading}
+            onClick={handleBtnUndo}
+          >
+            Descartar cambios
+          </button>
         </div>
       )}
-
-      <div className="o_control_panel_navigation order-1 order-lg-2">
-        <div className="o_cp_pager text-nowrap d-flex">
-          <PageCounterForm />
-        </div>
-      </div>
-    </div>
+    </>
   )
 }
 

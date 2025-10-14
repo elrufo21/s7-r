@@ -642,6 +642,7 @@ export const ListView = ({
           setGroupedList={setGroupedList}
           config={config}
         />
+        <TableFooter table={table!} config={config} dataShow={dataShow} />
       </table>
     </DndContext>
   )
@@ -704,6 +705,78 @@ const TableHeader = ({ table }: { table: Table<any> }) => (
     ))}
   </thead>
 )
+
+const TableFooter = ({ table, config, dataShow }: { table: Table<any>; config: any; dataShow: any[] }) => {
+  // Obtener las columnas que deben mostrar totales desde config.grid.totalColumns
+  const totalColumns = config.grid?.totalColumns || []
+  
+  if (!totalColumns.length || !dataShow.length) return null
+
+  // Función para extraer valor numérico de strings formateados
+  const extractNumericValue = (value: any): number => {
+    if (typeof value === 'number') return value
+    if (typeof value === 'string') {
+      // Remover símbolos de moneda, espacios, y convertir comas a puntos
+      const cleaned = value.replace(/[S/\s]/g, '').replace(/,/g, '')
+      return parseFloat(cleaned) || 0
+    }
+    return 0
+  }
+
+  // Calcular totales
+  const totals: Record<string, number> = {}
+  const totalFormats: Record<string, string> = {}
+  
+  totalColumns.forEach((columnId: string) => {
+    totals[columnId] = dataShow.reduce((sum, row) => {
+      const value = extractNumericValue(row[columnId])
+      return sum + value
+    }, 0)
+    
+    // Detectar si la columna tiene formato de moneda basado en el primer valor
+    const firstValue = dataShow[0]?.[columnId]
+    if (typeof firstValue === 'string' && firstValue.includes('S/')) {
+      totalFormats[columnId] = 'currency'
+    }
+  })
+
+  return (
+    <tfoot className="bg-[#F9FAFB] border-t-2 border-gray-300">
+      {table?.getHeaderGroups()?.map((headerGroup) => (
+        <tr key={`footer-${headerGroup.id}`} style={{ height: '44px' }}>
+          {headerGroup.headers.map((header, index) => {
+            const columnId = header.column.id
+            const showTotal = totalColumns.includes(columnId)
+            const isFirstDataColumn = index === 1 || (index === 0 && columnId !== 'select' && columnId !== 'drag-handle')
+            
+            
+            return (
+              <td
+                key={`footer-${header.id}`}
+                style={{ width: header.getSize() }}
+                className={`px-2 py-3 font-semibold ${header.id === 'select' && ' left-sticky bg-[#F9FAFB]'}
+                  ${header.id === 'settings' && ' right-sticky bg-[#F9FAFB]'}
+                  ${(header.column.columnDef.meta as { textAlign?: string })?.textAlign ?? 'text-left'}`}
+              >
+                {showTotal ? (
+                  <span>
+                    {totalFormats[columnId] === 'currency' 
+                      ? `S/ ${totals[columnId]?.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      : `S/ ${totals[columnId]?.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                    }
+                  </span>
+                ) : isFirstDataColumn ? (
+                  <span></span>
+                ) : null}
+              </td>
+            )
+          })}
+        </tr>
+      ))}
+    </tfoot>
+  )
+}
+
 interface TableBodyProps {
   table: Table<any>
   isDragable: boolean
@@ -943,7 +1016,7 @@ const StandardRow = ({
                 cell.column.id === 'select' &&
                 ` left-sticky ${
                   row.getIsSelected()
-                    ? 'bg-[#d1ecf1]' // Fondo azul claro para filas seleccionadas
+                    ? 'bg-[#d1ecf1]'
                     : 'group-odd:bg-white group-even:bg-[#f9fafbf6] group-hover:bg-gray-200'
                 }`
               }

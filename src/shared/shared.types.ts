@@ -177,9 +177,13 @@ export type FormConfig = {
       columns: any
     }
     kanban?: any
+    totalColumns?: string[]
   }
 
   filters: Array<{
+    group?: string
+    title?: string
+    collapsible?: boolean
     list: Array<ListFilterItem>
   }>
 

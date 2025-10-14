@@ -113,7 +113,7 @@ export function FrmMiddle({ control, errors, setValue, watch }: frmElementsProps
       <div className="flex flex-row gap-4">
         <div className="basis-1/2">
           <button
-            className={`w-full btn btn-lg lh-lg ${selected === buttonType.CASH_IN ? 'btn-success' : 'btn-secondary'}`}
+            className={`w-full btn btn-lg lh-mlg ${selected === buttonType.CASH_IN ? 'btn-success' : 'btn-secondary'}`}
             onClick={(e) => {
               e.stopPropagation()
               e.preventDefault()
@@ -127,7 +127,7 @@ export function FrmMiddle({ control, errors, setValue, watch }: frmElementsProps
 
         <div className="basis-1/2">
           <button
-            className={`w-full btn btn-lg lh-lg ${selected === buttonType.CASH_OUT ? 'btn-danger' : 'btn-secondary'}`}
+            className={`w-full btn btn-lg lh-mlg ${selected === buttonType.CASH_OUT ? 'btn-danger' : 'btn-secondary'}`}
             onClick={(e) => {
               e.stopPropagation()
               e.preventDefault()

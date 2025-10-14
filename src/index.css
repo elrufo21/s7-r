@@ -24,6 +24,9 @@
   --border-width: 1px;
 
   --breadcrumb-divider-color: rgba(55, 65, 81, 0.76);
+
+  --touch-lh-l: 3.5;
+  --touch-lh-m: 2.5;
 }
 
 .nav-main {
@@ -9364,6 +9367,27 @@ img, svg {
 {
   line-height: 3 !important;
 }
+/*
+.lh-xxlg
+{
+  line-height: 3.5 !important;
+}
+*/
+/*
+.lh-xxxlg
+{
+  line-height: 4 !important;
+}
+*/
+
+.touch-lh-l
+{
+  line-height: var(--touch-lh-l) !important;
+}
+.touch-lh-m
+{
+  line-height: var(--touch-lh-m) !important;
+}
 
 .subpads
 {
@@ -10204,15 +10228,14 @@ img, svg {
   width: 100%;
   display: flex;
   font-size: 1.25rem;
-  /*
-  padding-top: 1.05rem;
-  padding-bottom: 1.05rem;
-  padding-right: 0;
-  padding-left: 1rem;
-  */
   align-items: center;
   cursor: pointer;
   justify-content: space-between;
+}
+
+.pos-content .payment-line .payment-info .payment-amount
+{
+  font-size: 1.5rem;
 }
 
 .pos-content .product-screen .center-content
@@ -10585,25 +10608,15 @@ modal-children - end
 **********************************************************************************
 */
 
-
-
-
-.grid111
+.c-equivalent
 {
   display: flex;
-  justify-content: space-evenly; /* O space-between o space-around */
-  width: 100%; /* Ajusta según sea necesario */
+  justify-content: space-evenly;
+  width: 100%;
   gap: 15px;
 }
-
-
-.hijo11 {
-  /* Estilos para tus divs, como un borde o color */
-  /* background-color: lightblue; */
-  /* padding: 20px; */
-  /* border: 1px solid blue; */
-  /* text-align: center; */
-  flex: 1; /* Para que los hijos tomen espacio igual en el eje principal */
+.c-equivalent-son {
+  flex: 1;
 }
 
 .btn2-carnes

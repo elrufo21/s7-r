@@ -72,7 +72,6 @@ const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
 
   const paymentsByMethod = getPaymentsByMethod()
   const totalPayments = paymentsByMethod.reduce((sum: number, p: any) => sum + p.total, 0)
-
   return (
     <div
       style={{
@@ -127,7 +126,9 @@ const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
         </div>
         */}
 
-        <div style={{ fontSize: '11px', marginBottom: '3px', fontWeight: 'bold', textAlign: 'center' }}>
+        <div
+          style={{ fontSize: '11px', marginBottom: '3px', fontWeight: 'bold', textAlign: 'center' }}
+        >
           FECHA {formatDateToDDMMYYYY(info.order_date || new Date())}
         </div>
         {/* <div style={{ fontSize: '11px', fontWeight: 'bold' }}>{session?.session_name}</div> */}
@@ -164,33 +165,30 @@ const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
               fontWeight: 'bold',
             }}
           >
-            <div style={{ width: '25%', textAlign: 'left', fontSize: '12px' }}>{item.name.toUpperCase()}</div>
+            <div style={{ width: '25%', textAlign: 'left', fontSize: '12px' }}>
+              {item.name.toUpperCase()}
+            </div>
             <div style={{ width: '15%', textAlign: 'right', fontSize: '12px' }}>
               {item.base_quantity}
             </div>
             <div style={{ width: '20%', textAlign: 'right', fontSize: '12px' }}>
               {/* {`${item.tara_quantity}/${(item.tara_total || 0).toFixed(1)}`} */}
               {/* {`${item.tara_quantity}/${(item.tara_total || 0)}`} */}
-              {item.tara_quantity > 0 &&
-                <>
-                  {`${item.tara_quantity}/${(item.tara_total || 0)}`}
-                </>
-              }
+              {item.tara_quantity > 0 && <>{`${item.tara_quantity}/${item.tara_total || 0}`}</>}
             </div>
             <div style={{ width: '15%', textAlign: 'right', fontSize: '12px' }}>
               {item.quantity}
             </div>
             <div style={{ width: '20%', textAlign: 'right', fontSize: '12px' }}>
               {/* {(Number(item.price_unit) || 0).toFixed(2)} */}
-              {(Number(item.price_unit) || 0)}
+              {Number(item.price_unit) || 0}
             </div>
             <div style={{ width: '20%', textAlign: 'right', fontSize: '12px' }}>
               {/* {(item.amount_withtaxed_total || 0).toFixed(2)} */}
-              {(item.amount_withtaxed_total || 0)}
+              {item.amount_withtaxed_total.toFixed(2) || 0}
             </div>
           </div>
-        ))
-      }
+        ))}
 
       {/* Totales */}
       <div
@@ -219,12 +217,11 @@ const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
         </div>
         */}
         <div style={{ fontSize: '12px', fontWeight: 'bold', textAlign: 'right' }}>
-          TOTAL: {adjustTotal(total).adjusted.toFixed(2)}
+          TOTAL: {info?.amount_total}
         </div>
 
         {/* Métodos de pago dinámicos */}
         {paymentsByMethod.map((payment: any, index: number) => (
-
           // <div
           //   key={index}
           //   style={{
@@ -240,14 +237,14 @@ const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
           // </div>
 
           <div style={{ fontSize: '12px', fontWeight: 'bold', textAlign: 'right' }}>
-            {payment.method.toUpperCase()}{': '}{payment.total.toFixed(2)}
+            {payment.method.toUpperCase()}
+            {': '}
+            {payment.total.toFixed(2)}
           </div>
-
         ))}
 
         {/* Total de pagos (si hay más de un método) */}
         {paymentsByMethod.length > 1 && (
-
           // <div
           //   style={{
           //     display: 'flex',
@@ -267,10 +264,14 @@ const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
         )}
 
         {/* Diferencia */}
-        <div style={{ fontSize: '12px', fontWeight: 'bold', textAlign: 'right' }}>
-          DEUDA: {totalPayments.toFixed(2)}
-        </div>
-
+        {parseFloat(info?.amount_residual) !== 0 && (
+          <div style={{ fontSize: '12px', fontWeight: 'bold', textAlign: 'right' }}>
+            DEUDA:
+            {Number(info?.amount_residual) % 1 === 0
+              ? Number(info?.amount_residual).toString()
+              : Number(info?.amount_residual).toFixed(2)}
+          </div>
+        )}
       </div>
 
       {/* Footer */}

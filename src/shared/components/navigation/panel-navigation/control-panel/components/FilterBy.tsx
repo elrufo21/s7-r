@@ -1,9 +1,10 @@
+import { useState } from 'react'
 import { FormConfig, ListFilterItem } from '@/shared/shared.types'
 import { SearchFiltersEnum } from '@/shared/components/navigation/navigation.types'
 import { Divider, Grid2, MenuItem } from '@mui/material'
 import { Fragment } from 'react'
 import { GrFormCheckmark } from 'react-icons/gr'
-import { VscFilterFilled } from 'react-icons/vsc'
+import { VscChevronDown, VscChevronUp, VscFilterFilled } from 'react-icons/vsc'
 
 type FilterByProps = {
   config: FormConfig
@@ -13,6 +14,8 @@ type FilterByProps = {
 }
 
 export const FilterBy = ({ config, addFilter, listFilterBy, setListFilterBy }: FilterByProps) => {
+  const [openGroup, setOpenGroup] = useState<string | null>(null)
+
   const handleFilterBy = (item: any) => {
     const isSelected = listFilterBy.find((f: ListFilterItem) => f.key === item.key)
     if (isSelected) {
@@ -31,7 +34,6 @@ export const FilterBy = ({ config, addFilter, listFilterBy, setListFilterBy }: F
           {isSelected && <GrFormCheckmark className="text-cyan-600" style={{ fontSize: '18px' }} />}
         </span>
         <label>
-          <span />
           <span className={`MenuItemText ${isSelected ? 'font-medium' : ''}`}>{subItem.title}</span>
         </label>
       </MenuItem>
@@ -46,15 +48,29 @@ export const FilterBy = ({ config, addFilter, listFilterBy, setListFilterBy }: F
         </div>
         <div className="MenuText">Filtros</div>
       </div>
-      {config?.filters?.map(
-        (item, i) =>
-          item?.list && (
-            <Fragment key={i}>
-              {item.list.map(renderMenuItem)}
-              {i < config.filters.length - 1 && <Divider orientation="horizontal" flexItem />}
-            </Fragment>
-          )
-      )}
+
+      {config?.filters?.map((item, i) => (
+        <Fragment key={i}>
+          {item.collapsible ? (
+            <>
+              <MenuItem onClick={() => setOpenGroup(openGroup === item.title ? null : item.title)}>
+                <span className="MenuItemText" style={{ flex: 1 }}>
+                  {item.title}
+                </span>
+                {openGroup === item.title ? <VscChevronUp /> : <VscChevronDown />}
+              </MenuItem>
+
+              {openGroup === item.title && (
+                <div style={{ paddingLeft: '20px' }}>{item.list.map(renderMenuItem)}</div>
+              )}
+            </>
+          ) : (
+            item.list.map(renderMenuItem)
+          )}
+
+          {i < config.filters.length - 1 && <Divider orientation="horizontal" flexItem />}
+        </Fragment>
+      ))}
     </Grid2>
   )
 }

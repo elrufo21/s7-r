@@ -8,7 +8,27 @@ interface Props {
   selectedField?: Operation
   dialogId: string
 }
+const sanitizeInputString = (raw: string) => {
+  if (raw === '' || raw === '-' || raw === '.' || raw === '-.') return raw
+  let s = raw
 
+  s = s.replace(/\s+/g, '')
+
+  if (s.includes('-')) {
+    s = s.replace(/-/g, '')
+    s = '-' + s
+  }
+
+  const firstDotIdx = s.indexOf('.')
+  if (firstDotIdx >= 0) {
+    const intPart = s.slice(0, firstDotIdx)
+    let decPart = s.slice(firstDotIdx + 1).replace(/\./g, '')
+    decPart = decPart.slice(0, 2)
+    return intPart + '.' + decPart
+  }
+
+  return s
+}
 const to2 = (v: any) => Number(Number(v || 0).toFixed(2))
 
 const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
@@ -68,43 +88,92 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
       amount_tax_total: 0,
     }
   }
-
   const applyInput = (raw: string) => {
-    let v = raw
+    const sanitized = sanitizeInputString(raw)
+
+    // actualizar visual: si sanitized termina en '.' dejamos así (ej: "0."), si es "-" igualmente
+    setInputValue(sanitized)
+
+    // calcular número para la lógica (si termina en '.' o es '-' tratamos como 0)
     let parsed = 0
-    if (v === '' || v === '-' || v === '.' || v === '-.') {
+    if (sanitized === '' || sanitized === '-' || sanitized === '.' || sanitized === '-.') {
       parsed = 0
     } else {
-      parsed = parseFloat(v)
+      parsed = parseFloat(sanitized)
       if (!Number.isFinite(parsed)) parsed = 0
     }
     parsed = to2(parsed)
+
     setLocalProduct((prev) => recalc({ ...prev, [currentFieldKey]: parsed }))
   }
 
   const handleNumberClick = (digit: string) => {
     let next = replaceOnNextDigit ? digit : inputValue + digit
-    setInputValue(next)
+
+    // ✅ Permitir 0 al inicio sin borrarlo
+    if (replaceOnNextDigit && digit === '0') {
+      next = '0' // Se queda visible
+    }
+
+    // ⚠ Control de máximo 2 decimales
+    if (next.includes('.')) {
+      const [intPart, decimalPart = ''] = next.split('.')
+      if (decimalPart.length > 2) {
+        return // No más de 2 decimales
+      }
+    }
+
     setReplaceOnNextDigit(false)
-    applyInput(next)
+
+    // ✅ Actualizar primero el inputValue para preservar el formato visual
+    setInputValue(next)
+
+    // ⚠ Solo aplicar cálculo con número limpio (pero sin modificar inputValue)
+    const sanitized = sanitizeInputString(next)
+    let parsed = 0
+    if (sanitized === '' || sanitized === '-' || sanitized === '.' || sanitized === '-.') {
+      parsed = 0
+    } else {
+      parsed = parseFloat(sanitized)
+      if (!Number.isFinite(parsed)) parsed = 0
+    }
+    parsed = to2(parsed)
+
+    setLocalProduct((prev) => recalc({ ...prev, [currentFieldKey]: parsed }))
   }
 
   const handleBackspace = () => {
-    let next = inputValue.slice(0, -1)
+    if (!inputValue || inputValue.length === 0) {
+      setReplaceOnNextDigit(true)
+      setInputValue('')
+      applyInput('')
+      return
+    }
+    const next = inputValue.slice(0, -1)
     setInputValue(next)
-    if (next === '') setReplaceOnNextDigit(true)
+    if (next === '' || next === '-') {
+      setReplaceOnNextDigit(true)
+    } else {
+      setReplaceOnNextDigit(false)
+    }
     applyInput(next)
   }
 
   const handleDot = () => {
+    if (inputValue.includes('.')) return
+
     if (replaceOnNextDigit) {
-      setInputValue('0.')
+      const next = '0.'
+      setInputValue(next)
       setReplaceOnNextDigit(false)
+      applyInput(next)
       return
     }
-    if (inputValue.includes('.')) return
-    const next = inputValue + '.'
+
+    const next = inputValue === '' || inputValue === '-' ? '0.' : inputValue + '.'
     setInputValue(next)
+    setReplaceOnNextDigit(false)
+    applyInput(next)
   }
 
   const toggleSign = () => {
@@ -130,8 +199,9 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
           <div className="grid-item2">
             <button
               className={`btn-style-1 flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 
-        rounded-lg text-gray-700 font-medium text-center h-full ${activeField === Operation.QUANTITY ? 'abc' : ''
-                }`}
+        rounded-lg text-gray-700 font-medium text-center h-full ${
+          activeField === Operation.QUANTITY ? 'abc' : ''
+        }`}
               onClick={() => setActiveField(Operation.QUANTITY)}
             >
               <div className="pt-1">
@@ -142,8 +212,9 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
           <div className="grid-item2">
             <button
               className={`btn-style-1 flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 
-        rounded-lg text-gray-700 font-medium text-center h-full ${activeField === Operation.PRICE ? 'abc' : ''
-                }`}
+        rounded-lg text-gray-700 font-medium text-center h-full ${
+          activeField === Operation.PRICE ? 'abc' : ''
+        }`}
               onClick={() => setActiveField(Operation.PRICE)}
             >
               <div className="pt-1">
@@ -157,8 +228,9 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
           <div className="grid-item2">
             <button
               className={`btn-style-1 flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 
-        rounded-lg text-gray-700 font-medium text-center h-full ${activeField === Operation.TARA_QUANTITY ? 'abc' : ''
-                }`}
+        rounded-lg text-gray-700 font-medium text-center h-full ${
+          activeField === Operation.TARA_QUANTITY ? 'abc' : ''
+        }`}
               onClick={() => setActiveField(Operation.TARA_QUANTITY)}
             >
               <div className="pt-1">
@@ -169,8 +241,9 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
           <div className="grid-item2">
             <button
               className={`btn-style-1 flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 
-        rounded-lg text-gray-700 font-medium text-center h-full ${activeField === Operation.TARA_VALUE ? 'abc' : ''
-                }`}
+        rounded-lg text-gray-700 font-medium text-center h-full ${
+          activeField === Operation.TARA_VALUE ? 'abc' : ''
+        }`}
               onClick={() => setActiveField(Operation.TARA_VALUE)}
             >
               <div className="pt-1">
@@ -198,13 +271,9 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
                     stroke="currentColor"
                     xmlns="http://www.w3.org/2000/svg"
                   >
-                    {/* linea horizontal superior */}
                     <path d="M 24 15 V 8" stroke-width="2.5" />
-                    {/* linea horizontal superior */}
                     <path d="M 8 15 H 40" stroke-width="2.5" />
-                    {/* cuadrado */}
                     <path d="M 35 16 V 38 H 13 V 16" stroke-width="2.5" />
-                    {/* lineas medias verticales */}
                     <path d="M 21 21 V 32" stroke-width="2.5" />
                     <path d="M 27 21 V 32" stroke-width="2.5" />
                   </svg>
@@ -229,7 +298,7 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
                 <span
                   className={`${activeField === Operation.QUANTITY ? 'text-red-500 font-bold' : ''}`}
                 >
-                  {to2(localProduct.base_quantity)} {localProduct.uom_name}
+                  {to2(localProduct.price_unit).toFixed(2)} {localProduct.uom_name}
                 </span>
               </div>
               <div className="flex justify-between text-gray-700 text-xl">

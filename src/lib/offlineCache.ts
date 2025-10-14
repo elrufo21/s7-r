@@ -253,6 +253,7 @@ export class OfflineCache {
   // Métodos para cachear y obtener cada entidad
 
   async cacheProducts(executeFnc: any) {
+    const { setProducts } = useAppStore.getState()
     const existing = await this.getAll<Product>('products')
     if (existing.length > 0) {
       return
@@ -280,6 +281,7 @@ export class OfflineCache {
           }
         }
       }
+      setProducts(result.oj_data)
     }
   }
 

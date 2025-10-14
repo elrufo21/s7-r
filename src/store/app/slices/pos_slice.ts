@@ -61,39 +61,39 @@ const createPos = (
       return { orderData: newOrderData }
     })
   },
-connectToDevice: async () => {
-  try {
-    const dev = await (navigator as any).bluetooth.requestDevice({
-      filters: [{ name: get().bluetooth_config.device_name }],
-      optionalServices: [get().bluetooth_config.service_Uuid],
-    })
-    set({ device: dev })
+  connectToDevice: async () => {
+    try {
+      const dev = await (navigator as any).bluetooth.requestDevice({
+        filters: [{ name: get().bluetooth_config.device_name }],
+        optionalServices: [get().bluetooth_config.service_Uuid],
+      })
+      set({ device: dev })
 
-    const server = await dev.gatt!.connect()
-    const service = await server.getPrimaryService(get().bluetooth_config.service_Uuid)
-    const characteristic = await service.getCharacteristic(get().bluetooth_config.character_Uuid)
+      const server = await dev.gatt!.connect()
+      const service = await server.getPrimaryService(get().bluetooth_config.service_Uuid)
+      const characteristic = await service.getCharacteristic(get().bluetooth_config.character_Uuid)
 
-    set({ characteristic })
+      set({ characteristic })
 
-    characteristic.addEventListener('characteristicvaluechanged', (event: any) => {
-      const value = event.target?.value as DataView
-      if (value) {
-        const weightStr = new TextDecoder('utf-8').decode(value)
-        const weight = parseFloat(weightStr)
-        if (!isNaN(weight)) {
-          set({ weightValue: weight }) 
+      characteristic.addEventListener('characteristicvaluechanged', (event: any) => {
+        const value = event.target?.value as DataView
+        if (value) {
+          const weightStr = new TextDecoder('utf-8').decode(value)
+          const weight = parseFloat(weightStr)
+          if (!isNaN(weight)) {
+            set({ weightValue: weight })
+          }
         }
-      }
-    })
+      })
 
-    await characteristic.startNotifications()
-    set({ connected: true })
+      await characteristic.startNotifications()
+      set({ connected: true })
 
-    dev.addEventListener('gattserverdisconnected', () => set({ connected: false }))
-  } catch (err) {
-    console.error('❌ Error al conectar:', err)
-  }
-},
+      dev.addEventListener('gattserverdisconnected', () => set({ connected: false }))
+    } catch (err) {
+      console.error('❌ Error al conectar:', err)
+    }
+  },
 
   disconnect: () => {
     const dev = get().device

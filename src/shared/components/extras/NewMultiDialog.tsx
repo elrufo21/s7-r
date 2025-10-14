@@ -82,17 +82,14 @@ export const NewMultiDialog = () => {
               {dialog.content(() => handleCloseDialog(dialog.id))}
             </DialogContent>
 
-{/* className={`w-full btn btn-lg lh-xlg ${selected === buttonType.CASH_OUT ? 'btn-danger' : 'btn-secondary'}`} */}
-{/* 'py-[5px] px-[10px] text-white border-[1.5px] border-[#e7e9ed]/50 rounded-[4px] font-semibold', */}
-
             <DialogActions className="modal-footer !p-[15px]">
               {/* <div className="o_form_buttons_edit d-flex"> */}
-              <div className="grid111 ">
+              <div className="c-equivalent">
                 {dialog.buttons.map((button, index) => (
                   <button
                     key={index}
                     className={clsx(
-                      'hijo11 btn btn-lg lh-lg',
+                      'c-equivalent-son btn btn-lg lh-lg',
                       button.type === 'confirm'
                         ? 'btn-primary'
                         : 'btn-secondary',
@@ -102,7 +99,6 @@ export const NewMultiDialog = () => {
                   >
                     {button.text}
                   </button>
-
 
                   // <button
                   //   key={index}

@@ -46,6 +46,7 @@ export interface PosOrderData {
 }
 
 const PosOrderConfig: FormConfig = {
+  form_id: '888',
   fnc_name: 'fnc_pos_order',
   title: 'Órdenes',
   dsc: 'Órdenes',
@@ -175,6 +176,36 @@ const PosOrderConfig: FormConfig = {
           header: 'Cajero',
           size: 150,
           cell: ({ row }: { row: Row<PosOrderData> }) => <div>{row.original.user_name}</div>,
+        },
+        {
+          header: 'Pagado',
+          size: 120,
+          meta: {
+            textAlign: 'text-right',
+            headerAlign: 'text-right',
+          },
+          cell: ({ row }: { row: Row<PosOrderData> }) => (
+            <div>
+              {row.original.amount_payment_in_currency
+                ? row.original.amount_payment_in_currency
+                : '0.00'}
+            </div>
+          ),
+        },
+        {
+          header: 'Deuda',
+          size: 120,
+          meta: {
+            textAlign: 'text-right',
+            headerAlign: 'text-right',
+          },
+          cell: ({ row }: { row: Row<PosOrderData> }) => (
+            <div>
+              {row.original.amount_residual_in_currency
+                ? row.original.amount_residual_in_currency
+                : '0.00'}
+            </div>
+          ),
         },
         {
           header: 'Total',

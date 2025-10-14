@@ -14,6 +14,7 @@ import { TypeStateOrder, TypeStatePayment } from '@/modules/pos/types'
 import { formatPlain } from '@/shared/utils/dateUtils'
 import { StatusChip } from '@/shared/components/table/components/StatusChip'
 import { CustomToast } from '@/components/toast/CustomToast'
+import { getLastMonths } from '@/shared/helpers/helpers'
 
 export interface PosOrderData {
   order_id: number
@@ -225,7 +226,40 @@ const PosOrderConfig: FormConfig = {
           cell: ({ row }: { row: Row<PosOrderData> }) => <div>{row.original.user_name}</div>,
         },
         {
+          header: 'Pagado',
+          id: 'amount_payment',
+          size: 120,
+          meta: {
+            textAlign: 'text-right',
+            headerAlign: 'text-right',
+          },
+          cell: ({ row }: { row: Row<PosOrderData> }) => (
+            <div>
+              {row.original.amount_payment_in_currency
+                ? row.original.amount_payment_in_currency
+                : '0.00'}
+            </div>
+          ),
+        },
+        {
+          header: 'Deuda',
+          id: 'amount_residual',
+          size: 120,
+          meta: {
+            textAlign: 'text-right',
+            headerAlign: 'text-right',
+          },
+          cell: ({ row }: { row: Row<PosOrderData> }) => (
+            <div>
+              {row.original.amount_residual_in_currency
+                ? row.original.amount_residual_in_currency
+                : '0.00'}
+            </div>
+          ),
+        },
+        {
           header: 'Total',
+          id: 'amount_withtaxed',
           size: 120,
           meta: {
             textAlign: 'text-right',
@@ -313,6 +347,7 @@ const PosOrderConfig: FormConfig = {
         */
       ],
     },
+    totalColumns: ['amount_withtaxed', 'amount_payment', 'amount_residual'],
   },
 
   filters: [
@@ -374,6 +409,22 @@ const PosOrderConfig: FormConfig = {
           value: 'PF',
           type: 'check',
         },
+      ],
+    },
+    {
+      title: 'Fecha de la orden',
+      collapsible: true,
+      list: [
+        { group: 'date', title: 'Hoy', key: 'T', key_db: 'order_date', value: 'T', type: 'check' },
+        {
+          group: 'date',
+          title: 'Últimos 7 días',
+          key: 'W',
+          key_db: 'order_date',
+          value: 'W',
+          type: 'check',
+        },
+        ...getLastMonths(3),
       ],
     },
   ],

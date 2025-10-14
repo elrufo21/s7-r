@@ -1,3 +1,5 @@
+import { ListFilterItem } from '../shared.types'
+
 export function getShortUUID(length = 8) {
   return crypto.randomUUID().replace(/-/g, '').slice(0, length)
 }
@@ -51,4 +53,25 @@ export function formatNumberDisplay(value: number | string): string {
     return Number(value).toFixed(0)
   }
   return Number(value).toFixed(2)
+}
+
+export const getLastMonths = (count: number = 3): ListFilterItem[] => {
+  const months: ListFilterItem[] = []
+  const now = new Date()
+
+  for (let i = 0; i < count; i++) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const monthName = date.toLocaleString('es-ES', { month: 'long' })
+
+    months.push({
+      group: 'date',
+      title: monthName.charAt(0).toUpperCase() + monthName.slice(1),
+      key: i === 0 ? 'M' : `M_${i}`,
+      key_db: 'order_date',
+      value: i === 0 ? 'M' : `M_${i}`,
+      type: 'check',
+    })
+  }
+
+  return months
 }

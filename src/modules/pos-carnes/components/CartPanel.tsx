@@ -240,6 +240,10 @@ export default function CartPanel() {
             })
             setModalData(dataUpdate)
             updateOrderPartner(selectedOrder, rs.oj_data.partner_id, formData.name)
+            offlineCache.saveContactOffline({
+              ...formData,
+              partner_id: rs.oj_data.partner_id,
+            })
             //setFinalCustomer(dataUpdate.find((item: any) => item.selected === true))
             setIsChange(true)
             setHandleChange(true)
@@ -592,19 +596,21 @@ export default function CartPanel() {
         <div className="pads">
           <div className="control-buttons !pb-0">
             <button
-              className="btn2 btn2-white lh-mlg text-truncate w-auto text-action"
+              className="btn2 btn2-white touch-lh-m text-truncate w-auto text-action"
               onClick={() => {
                 fnc_open_contact_modal()
               }}
             >
               {finalCustomer.name ? finalCustomer.name : defaultPosSessionData.name}
             </button>
-            <button className="btn2 btn2-white lh-mlg w-auto" onClick={() => fnc_open_note_modal()}>
+            <button
+              className="btn2 btn2-white touch-lh-m w-auto"
+              onClick={() => fnc_open_note_modal()}
+            >
               Nota
             </button>
             <button
-              // className="btn2 btn2-white lh-mlg text-truncate ml-auto w-[45.6px] min-w-[45.6px]"
-              className="btn2 btn2-white lh-mlg text-truncate ml-auto w-[55.6px] min-w-[55.6px]"
+              className="btn2 btn2-white touch-lh-m text-truncate ml-auto w-[55.6px] min-w-[55.6px]"
               onClick={() => {
                 fnc_open_more_options_modal()
               }}
@@ -625,6 +631,7 @@ export default function CartPanel() {
               <div className="subpads pt-[8px]">
                 <div className="actionpad">
                   <button
+                    // className="btn btn-primary btn-lg flex-auto touch-lh-l"
                     className="btn btn-primary btn-lg flex-auto min-h-[70px]"
                     disabled={frmLoading}
                     onClick={() => {
