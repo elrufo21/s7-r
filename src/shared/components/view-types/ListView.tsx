@@ -741,14 +741,14 @@ const TableFooter = ({ table, config, dataShow }: { table: Table<any>; config: a
   })
 
   return (
-    <tfoot className="bg-[#F9FAFB] border-t-2 border-gray-300">
+    // <tfoot className="bg-[#F9FAFB] border-t-2 border-gray-300">
+    <tfoot className="bg-transparent">
       {table?.getHeaderGroups()?.map((headerGroup) => (
         <tr key={`footer-${headerGroup.id}`} style={{ height: '44px' }}>
           {headerGroup.headers.map((header, index) => {
             const columnId = header.column.id
             const showTotal = totalColumns.includes(columnId)
             const isFirstDataColumn = index === 1 || (index === 0 && columnId !== 'select' && columnId !== 'drag-handle')
-            
             
             return (
               <td

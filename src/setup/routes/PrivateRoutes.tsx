@@ -5,6 +5,7 @@ import { ModuleLayout } from '@/shared/components/layouts/ModuleLayout'
 import Pos from '@/modules/pos/pages/Pos'
 import PosMeat from '@/modules/pos-carnes/pages/PosMeat'
 import PointOfSaleMeatPage from '@/modules/points-of-sale-carnes/pages/PointsOfSaleMeatPage'
+import PointOfSalePg from '@/modules/pos-pg/pages/PosMeat'
 
 const InvoicePage = lazy(() => import('@/modules/invoicing/pages/InvoicePage'))
 const InventoryPage = lazy(() => import('@/modules/inventory/pages/InventoryPage'))
@@ -99,6 +100,14 @@ export const PrivateRoutes = () => {
           element={
             <Suspense fallback="">
               <PosMeat />
+            </Suspense>
+          }
+        />
+        <Route
+          path="pos-pg/*"
+          element={
+            <Suspense fallback="">
+              <PointOfSalePg />
             </Suspense>
           }
         />

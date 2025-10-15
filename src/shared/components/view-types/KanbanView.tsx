@@ -217,7 +217,7 @@ export const KanbanView = ({ config }: KanbanViewProps) => {
                             }
 
                             localStorage.setItem('sessions', JSON.stringify(nextSessions))
-                            navigate(`/pos-meat/${item.point_id}`)
+                            navigate(`/pos-pg/${item.point_id}`)
                           }}
                         >
                           Seguir vendiendo

@@ -402,6 +402,7 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
       difference: difference,
     }
   }, [data, watch])
+
   return (
     <div className="flex flex-col">
       <DndTable

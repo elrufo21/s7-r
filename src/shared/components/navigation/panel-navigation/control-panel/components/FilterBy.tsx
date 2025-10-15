@@ -4,7 +4,9 @@ import { SearchFiltersEnum } from '@/shared/components/navigation/navigation.typ
 import { Divider, Grid2, MenuItem } from '@mui/material'
 import { Fragment } from 'react'
 import { GrFormCheckmark } from 'react-icons/gr'
-import { VscChevronDown, VscChevronUp, VscFilterFilled } from 'react-icons/vsc'
+import { VscFilterFilled } from 'react-icons/vsc'
+import { IoMdArrowDropup } from "react-icons/io";
+import { IoMdArrowDropdown } from "react-icons/io";
 
 type FilterByProps = {
   config: FormConfig
@@ -29,14 +31,19 @@ export const FilterBy = ({ config, addFilter, listFilterBy, setListFilterBy }: F
   const renderMenuItem = (subItem: any, index: number) => {
     const isSelected = listFilterBy.some((filter) => filter.key === subItem.key)
     return (
-      <MenuItem key={index} onClick={() => handleFilterBy(subItem)}>
-        <span style={{ width: '14px' }}>
-          {isSelected && <GrFormCheckmark className="text-cyan-600" style={{ fontSize: '18px' }} />}
-        </span>
-        <label>
-          <span className={`MenuItemText ${isSelected ? 'font-medium' : ''}`}>{subItem.title}</span>
-        </label>
-      </MenuItem>
+      <>
+        <MenuItem key={index} onClick={() => handleFilterBy(subItem)}>
+          <span style={{ width: '14px' }}>
+            {isSelected && <GrFormCheckmark className="text-cyan-600" style={{ fontSize: '18px' }} />}
+          </span>
+          <label>
+            <span className={`MenuItemText ${isSelected ? 'font-medium' : ''}`}>{subItem.title}</span>
+          </label>
+        </MenuItem>
+        {(index === 1 && subItem.group === 'date') && (
+          <Divider orientation="horizontal" flexItem />
+        )}
+      </>
     )
   }
 
@@ -54,14 +61,18 @@ export const FilterBy = ({ config, addFilter, listFilterBy, setListFilterBy }: F
           {item.collapsible ? (
             <>
               <MenuItem onClick={() => setOpenGroup(openGroup === item.title ? null : item.title)}>
-                <span className="MenuItemText" style={{ flex: 1 }}>
-                  {item.title}
+                <span style={{ width: '14px' }}>
+                  {/* {isSelected && <GrFormCheckmark className="text-cyan-600" style={{ fontSize: '18px' }} />} */}
                 </span>
-                {openGroup === item.title ? <VscChevronUp /> : <VscChevronDown />}
+                <label>
+                  <span className={`MenuItemText`}>{item.title}</span>
+                </label>
+                {openGroup === item.title ? <IoMdArrowDropup style={{ paddingTop: '2px', fontSize: '24px', marginRight: '8px' }} /> : <IoMdArrowDropdown style={{ paddingTop: '2px', fontSize: '24px', marginRight: '8px' }} />}
               </MenuItem>
 
               {openGroup === item.title && (
-                <div style={{ paddingLeft: '20px' }}>{item.list.map(renderMenuItem)}</div>
+                // <div style={{ paddingLeft: '20px' }}>{item.list.map(renderMenuItem)}</div>
+                <div className='prueba33'>{item.list.map(renderMenuItem)}</div>
               )}
             </>
           ) : (
