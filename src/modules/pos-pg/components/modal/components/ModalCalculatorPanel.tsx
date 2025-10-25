@@ -35,15 +35,15 @@ const to2 = (v: any) => Number(Number(v || 0).toFixed(2))
 const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
   const {
     closeDialogWithData,
-    updateOrderLine,
-    setHandleChange,
-    deleteProductInOrder,
-    selectedOrder,
-    containers,
-    setTaraValue,
-    selectedItem,
-    weightValue,
-    getProductPrice,
+    updateOrderLinePg,
+    setHandleChangePg,
+    deleteProductInOrderPg,
+    selectedOrderPg,
+    containersPg,
+    setTaraValuePg,
+    selectedItemPg,
+    weightValuePg,
+    getProductPricePg,
   } = useAppStore()
 
   const [localProduct, setLocalProduct] = useState<Product>({ ...product })
@@ -191,24 +191,27 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
 
   const handleOk = () => {
     applyInput(inputValue)
-    setHandleChange(true)
-    updateOrderLine(localProduct)
+    setHandleChangePg(true)
+    updateOrderLinePg(localProduct)
     closeDialogWithData(dialogId, {})
   }
 
   const showTaraInfo = (localProduct.tara_value ?? 0) > 0 || (localProduct.tara_quantity ?? 0) > 0
-
+  console.log('containersPg', containersPg)
   return (
     <div className="flex flex-row p-[15px]">
+      {/* {activeField === Operation.TARA_VALUE && */}
       <div className="pr-3">
-        <div className="grid grid-cols-2 gap-2">
-          {containers.map((value: { weight: number; name: string }) => (
+        <div className="grid grid-cols-2 gap-3">
+          {containersPg.map((value: { weight: number; name: string }) => (
             <button
               key={value.weight}
-              className="numpad-button btn2 btn2-white fs-3 lh-mlg"
+              // className="numpad-button btn2 btn2-white fs-3 lh-mlg"
+              className="bg-gray-100 hover:bg-gray-200 transition-colors duration-200 
+              rounded-lg text-gray-700 font-medium text-center w-[100px] h-[90px]"
               onClick={() => {
-                setHandleChange(true)
-                setTaraValue(selectedOrder, selectedItem || 0, value.weight)
+                setHandleChangePg(true)
+                setTaraValuePg(selectedOrderPg, selectedItemPg || 0, value.weight)
               }}
             >
               {value.name}
@@ -216,10 +219,12 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
           ))}
 
           {/* Si quieres que la última fila mantenga la alineación cuando hay un número impar de botones */}
-          {containers.length % 2 !== 0 && <div className="w-full h-12" aria-hidden="true" />}
+          {containersPg.length % 2 !== 0 && <div className="w-full h-[90px]" aria-hidden="true" />}
         </div>
       </div>
+      {/* } */}
 
+      {/*
       <div className="pr-3">
         <div className=" h-full">
           <div className="d-flex flex-column" style={{ minWidth: '160px', maxWidth: '180px' }}>
@@ -232,14 +237,14 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
                   className="fw-bold mb-0"
                   style={{ color: '#60a5fa', fontSize: '40px', lineHeight: '1.1' }}
                 >
-                  {weightValue.toFixed(2)}
+                  {weightValuePg.toFixed(2)}
                 </div>
                 <Divider component="div" style={{ height: '2px', backgroundColor: '#60a5fa' }} />
                 <div
                   className="text-truncate"
                   style={{ color: '#fbbf24', fontSize: '14px', fontWeight: '600' }}
                 >
-                  S/ {getProductPrice(selectedItem || '', selectedOrder || '').toFixed(2)}
+                  S/ {getProductPricePg(selectedItemPg || '', selectedOrderPg || '').toFixed(2)}
                 </div>
               </div>
             </div>
@@ -273,7 +278,7 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
               fontSize: '13px',
             }}
             onClick={() => {
-              if (selectedItem && selectedOrder) {
+              if (selectedItemPg && selectedOrderPg) {
                 //  setProductQuantityInOrder(selectedOrder, selectedItem || 0, -weightValue || 0)
               }
             }}
@@ -282,6 +287,8 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
           </button>
         </div>
       </div>
+      */}
+
       <div className="pr-3">
         <div className="grid-container2">
           <div className="grid-item2">
@@ -346,7 +353,7 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
         rounded-lg text-gray-700 font-medium text-center h-full"
               onClick={() => {
                 closeDialogWithData(dialogId, {})
-                deleteProductInOrder(selectedOrder, product?.line_id)
+                deleteProductInOrderPg(selectedOrderPg, product?.line_id)
               }}
             >
               <div className="pt-1">

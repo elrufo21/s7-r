@@ -66,9 +66,10 @@ export enum Operation {
   DISCOUNT = 'discount',
 }
 
-export enum TypeOriginPaymen {
+export enum Type_pos_payment_origin {
   DOCUMENT = 'D',
   DIRECT_PAYMENT = 'P',
+  PAY_DEBT = 'G',
 }
 export enum TypePayment {
   INPUT = 'I',

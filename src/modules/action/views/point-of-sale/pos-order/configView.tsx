@@ -326,6 +326,8 @@ export function FrmTab1({ watch, setValue }: frmElementsProps) {
             onBlur={() => {}} // Ya no necesitamos onBlur porque el debounce maneja la actualización
             onChange={(e) => handleAmountChange(e, row.original.payment_id)}
             type="number"
+            className="text-right w-full"
+            textAlign="right"
           />
         ),
       },

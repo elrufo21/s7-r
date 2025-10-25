@@ -41,6 +41,9 @@ export interface PreviousDataBeforeMenu {
 }
 
 export interface AppSliceState {
+  activateVirtualKeyboard: boolean
+  setActivateVirtualKeyboard: (activateVirtualKeyboard: boolean) => void
+  itemsPerPage: number
   selectedViewType: ViewTypeEnum | null
   setSelectedViewType: (selectedViewType: ViewTypeEnum) => void
   dinamicModule: ModulesEnum
@@ -311,6 +314,7 @@ export interface AppStoreProps
     FrmSliceState,
     DialogSliceState,
     PointsOfSaleSliceState,
+    PointsOfSaleSliceStatePg,
     VKeyboardSliceState {}
 export interface UserStoreProps extends UserSliceState, FiltersSliceState {}
 
@@ -544,6 +548,190 @@ export interface PointsOfSaleSliceState {
   calculateTaraTotal: (taraValue: number, taraQuantity: number) => number
   getProductPrice: (product_id: string, selectedOrder: string) => number
   getProductQuantityInProducts: (product_id: string, order_id: string) => number
+}
+export interface PointsOfSaleSliceStatePg {
+  
+  closeSession: boolean
+  setCloseSession: (closeSession: boolean) => void
+  completedOrderPg: any
+  setCompletedOrderPg: (completedOrderPg: any) => void
+
+  ensureFourOrdersPg: () => Promise<void>
+  getSortedActiveOrdersPg: () => any[] // Retorna array de órdenes ordenadas
+  markOrderAsCompletedPg: (order_id: string | number) => Promise<void>
+  updateOrderLinePg: (updatedLine: Product) => void
+  characteristicPg: BluetoothRemoteGATTCharacteristic | null
+  setCharacteristicPg: (c: BluetoothRemoteGATTCharacteristic | null) => void
+
+  connectToDevicePg: () => Promise<void>
+  disconnectPg: () => void
+  selectedOrderInListPg: number | string
+  setSelectedOrderInListPg: (selectedOrderInList: number | string) => void
+  point_idPg: number | null
+  setPointIdPg: (point_id: number | null) => void
+  searchProductPg: string
+  setSearchProductPg: (searchProduct: string) => void
+  resetTriggerPg: number
+  resetSelectedItemPg: () => void
+  prevItemPg: any
+  setPrevItemPg: (prevItem: any) => void
+  setSelectedLinePg: (order_id: string, line_id: string | null) => void
+  sync_dataPg: boolean
+  setSyncDataPg: (sync_data: boolean) => void
+  updateOrderPartnerPg: (order_id: string, partner_id: number, partner_name: string) => void
+  localModePg: boolean
+  isWeightModePg: boolean
+  setIsWeightModePg: (isWeightMode: boolean) => void
+  PC_multipleSimilarProductsPg: boolean
+  setPC_multipleSimilarProductsPg: (PC_multipleSimilarProducts: boolean) => void
+  bluetooth_configPg: BluetoothConfig
+  setBluetoothConfigPg: (bluetooth_config: BluetoothConfig) => void
+  devicePg: any
+  setDevicePg: (device: any) => void
+  connectedPg: boolean
+  setConnectedPg: (connected: boolean) => void
+  weightValuePg: number
+  setWeightValuePg: (weightValue: number) => void
+  containersPg: any[]
+  setContainersPg: (containers: any[]) => void
+  orderSelectedPg: { order_id: string; state: string } | null
+  setOrderSelectedPg: (orderSelected: { order_id: string; state: string } | null) => void
+  totalPg: number
+  setTotalPg: (total: number) => void
+  paidOrdersPg: any[]
+  setPaidOrdersPg: (paidOrders: any[]) => void
+  paymentMethodsPg: any[]
+  setPaymentMethodsPg: (paymentMethods: any[]) => void
+  defaultPosSessionDataPg: {
+    partner_id: number
+    name: string
+    currency_id?: number
+  }
+  setDefaultPosSessionDataPg: (defaultPosSessionData: {
+    partner_id: number
+    name: string
+    currency_id?: number
+  }) => void
+  backToProductsPg: boolean
+  setBackToProductsPg: (backToProducts: boolean) => void
+  selectedCategoryPg: string
+  setSelectedCategoryPg: (category: string) => void
+  selectedNavbarMenuPg: string
+  setSelectedNavbarMenuPg: (menu: string) => void
+  filteredProductsPg: Product[]
+  setFilteredProductsPg: (products: Product[]) => void
+  filterProductsPg: () => void
+  fetchProductsPg: () => Promise<void>
+  displayValuePg: string
+  setDisplayValuePg: (value: string) => void
+  clearOnNextDigitPg: boolean
+  setClearOnNextDigitPg: (clear: boolean) => void
+  addDigitPg: (digit: string) => void
+  clearDisplayPg: () => void
+  handleChangePg: boolean
+  setHandleChangePg: (handleChange: boolean) => void
+  paymentsPg: any[]
+  setPaymentsPg: (payments: any[]) => void
+  addPaymentToOrderPg: (order_id: string, payment: any) => void
+  updatePaymentInOrderPg: (order_id: string, updatedPayment: any) => void
+  removePaymentFromOrderPg: (order_id: string, payment_id: string) => void
+  setFinalCustomerPg: (finalCustomer: any) => void
+  session_idPg: number | null
+  setSessionIdPg: (session_id: number | null) => void
+  operationPg: Operation
+  setOperationPg: (operation: Operation) => void
+  screenPg: string
+  setScreenPg: (screen: string) => void
+  customersPg: any[]
+  setCustomersPg: (customers: any[]) => void
+  productsPg: any[]
+  setProductsPg: (product: any[]) => void
+  cartPg: any[]
+  setCartPg: (cart: any[]) => void
+  orderCartPg: any[]
+  setOrderCartPg: (orderCart: any[]) => void
+  selectedOrderPg: string
+  setSelectedOrderPg: (selectedOrder: string) => void
+  setOrderDataPg: (orderData: any[]) => void
+  selectedItemPg: string | null
+  setSelectedItemPg: (selectedItem: string | null) => void
+  orderDataPg: {
+    order_id: string
+    name: string
+    lines: any[]
+    state: string
+    payments?: any[]
+    pos_status?: string
+    partner_id?: number
+    partner_name?: string
+    order_date?: Date | string
+    invoice_state?: string
+  }[]
+  finalCustomerPg: any
+  categoriesPg: any[]
+  setCategoriesPg: (categories: any[]) => void
+  addProductToOrderPg: (order_id: number | string, product: Product, new_quantity: number) => void
+  addNewOrderPg: ({
+    date,
+    user_id,
+    point_id,
+    session_id,
+    company_id,
+    partner_id,
+  }: {
+    date: Date
+    user_id: number
+    point_id: number
+    session_id: number
+    company_id: number
+    partner_id: number
+  }) => void
+  setProductQuantityInOrderPg: (
+    order_id: number | string,
+    product: string | number,
+    exact_quantity: number
+  ) => void
+  setProductPriceInOrderPg: (
+    order_id: number | string,
+    product: string | number,
+    new_price: number
+  ) => void
+  toggleProductQuantitySignPg: (order_id: number | string, product_id: string) => void
+  toggleProductPriceSignPg: (order_id: number | string, product_id: string) => void
+  getProductQuantityInOrderPg: (order_id: number | string, product: string | number) => number
+  getProductTaraValuePg: (order_id: number | string, product_id: string | number) => number
+  getProductTaraQuantityPg: (order_id: number | string, product_id: string | number) => number
+  deleteProductInOrderPg: (order_id: number | string, product_id: string) => void
+  getTotalPriceByOrderPg: (order_id: number | string) => number
+  deleteOrderPg: (order_id: number | string, isCloseSession?: boolean) => void
+  updateOrderFromServerPg: (updatedOrder: any) => void
+  changeToPaymentPg: (order_id: number | string) => void
+  changeToPaymentLocalPg: (order_id: number | string) => void
+  updateMoveIdPg: (oldMoveId: string, newMoveId: string) => void
+  initializePointOfSalePg: (
+    pointId: string,
+    isOnline: boolean,
+    session_id: string | null,
+  ) => Promise<void>
+  getOrSetLocalStoragePg: <T>(key: string, fetchFn: () => Promise<T>) => Promise<T>
+  clearPosCachePg: () => void
+  getPosCacheInfoPg: () => Promise<Record<string, string>>
+  forceReloadPosDataPg: (
+    pointId: string | number,
+    isOnline: boolean,
+    session_id: string | number
+  ) => Promise<void>
+  refreshAllCachePg: () => Promise<void>
+  setTaraValuePg: (order_id: string, product_id: string | number, taraValue: number) => void
+  setTaraQuantityPg: (order_id: string, product_id: string | number, taraQuantity: number) => void
+  calculateEffectiveQuantityPg: (
+    base_quantity: number,
+    taraValue: number,
+    taraQuantity: number
+  ) => number
+  calculateTaraTotalPg: (taraValue: number, taraQuantity: number) => number
+  getProductPricePg: (product_id: string, selectedOrder: string) => number
+  getProductQuantityInProductsPg: (product_id: string, order_id: string) => number
 }
 
 export interface VKeyboardSliceState {

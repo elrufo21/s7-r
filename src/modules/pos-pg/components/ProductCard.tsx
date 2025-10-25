@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { offlineCache } from '@/lib/offlineCache'
-import type { Product } from '../types'
+import { Product } from '../types'
 import useAppStore from '@/store/app/appStore'
 
 interface ProductCardProps {
@@ -9,12 +9,12 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const {
-    addProductToOrder,
+    addProductToOrderPg,
     //getProductQuantityInOrder,
-    selectedOrder,
+    selectedOrderPg,
     //PC_multipleSimilarProducts,
     // isWeightMode,
-    getProductQuantityInProducts,
+    getProductQuantityInProductsPg,
   } = useAppStore()
   /*
   const quantity =
@@ -49,9 +49,9 @@ export default function ProductCard({ product }: ProductCardProps) {
   return (
     <article
       className="card_article"
-      onClick={() => {
+      onClick={async () => {
         if (product.product_id) {
-          addProductToOrder(selectedOrder, product as any, 1)
+          addProductToOrderPg(selectedOrderPg, product as any, 1)
         }
       }}
     >
@@ -75,9 +75,9 @@ export default function ProductCard({ product }: ProductCardProps) {
 
       <div className="product-category-color"></div>
       <div className="product-cart-qty">
-        {getProductQuantityInProducts(product.product_id || '', selectedOrder) === 0
+        {getProductQuantityInProductsPg(product.product_id || '', selectedOrderPg) === 0
           ? ''
-          : getProductQuantityInProducts(product.product_id || '', selectedOrder)}
+          : getProductQuantityInProductsPg(product.product_id || '', selectedOrderPg)}
       </div>
     </article>
   )

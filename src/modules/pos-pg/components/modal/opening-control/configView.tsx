@@ -58,6 +58,7 @@ export function FrmMiddle({ control, errors, setValue }: frmElementsProps) {
               name={'initial_cash'}
               control={control}
               errors={errors}
+              useNumericKeyboard
               endButtons={
                 <button
                   className="btn z-100 btn-secondary oe_kanban_action cursor-pointer"

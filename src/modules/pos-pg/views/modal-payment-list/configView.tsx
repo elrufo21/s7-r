@@ -1,18 +1,28 @@
 import { useEffect, useMemo, useState } from 'react'
-import { TypeOriginPaymen, TypePayment } from '../../types'
+import { Type_pos_payment_origin, TypePayment } from '../../types'
 import useAppStore from '@/store/app/appStore'
 import { CustomToast } from '@/components/toast/CustomToast'
 import { ColumnDef } from '@tanstack/react-table'
 import { formatShortDate, getHour } from '@/shared/utils/dateUtils'
 import { GrTrash } from 'react-icons/gr'
 import { DataTable } from '../../components/ListView'
+import { frmElementsProps } from '@/shared/shared.types'
 
-export function FrmMiddle() {
+export function FrmMiddle({ watch }: frmElementsProps) {
   const { executeFnc } = useAppStore()
-
   const getPayments = async () => {
+    const today = new Date()
+    const formattedDate = today.toLocaleDateString('es-PE')
     const { oj_data } = await executeFnc('fnc_pos_payment', 's', [
-      [0, 'fequal', 'origin', TypeOriginPaymen.DIRECT_PAYMENT],
+      [
+        0,
+        'fequal',
+        'origin',
+        watch('typeForm') === 'pg_payments_list'
+          ? Type_pos_payment_origin.PAY_DEBT
+          : Type_pos_payment_origin.DIRECT_PAYMENT,
+      ],
+      [0, 'fbetween', 'date', formattedDate, formattedDate],
     ])
     setData(oj_data || [])
   }

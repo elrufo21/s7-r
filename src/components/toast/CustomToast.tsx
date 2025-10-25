@@ -1,10 +1,11 @@
 import { toast } from 'sonner'
 import { IoCloseSharp } from 'react-icons/io5'
 import { MdErrorOutline } from 'react-icons/md'
+import React from 'react'
 
 interface CustomToastProps {
   title: string
-  description?: string
+  description?: string | React.ReactNode
   items?: { message: string }[]
   type?: 'success' | 'error' | 'info' | 'warning'
 }
@@ -20,15 +21,8 @@ export const CustomToast = ({ title, description, items, type = 'info' }: Custom
   const id = crypto.randomUUID()
 
   return toast.custom(
-    (t) => (
-      <div
-        className={`
-          l-toast-container
-          ${t.visible ? 'animate-in slide-in-from-top-2' : 'animate-out slide-out-to-top-2'}
-          ${styles[type]}
-        `}
-        key={id}
-      >
+    () => (
+      <div className={`l-toast-container ${styles[type]} animate-in slide-in-from-top-2`} key={id}>
         <div className="l-toast-icon">
           <MdErrorOutline className="h-8 w-8 text-white" />
         </div>

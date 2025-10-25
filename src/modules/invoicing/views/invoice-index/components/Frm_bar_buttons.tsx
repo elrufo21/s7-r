@@ -135,7 +135,8 @@ export function Frm_bar_buttons({ setValue, watch }: frmElementsProps) {
   }
 
   const openModal = () => {
-    let getData = () => ({})
+    let getData = (): Record<string, any> => ({})
+
     const dialog = openDialog({
       title: 'Pagar',
       dialogContent: () => (

@@ -32,9 +32,10 @@ export const ActionShow = () => {
     module: config.module,
     id: idAction ?? '',
   })
+  //desarrollo permisos.
   useEffect(() => {
-    offlineCache.ensureDefaultDeletePermissions(1, [201, 202, 888])
-    offlineCache.ensureDefaultCreatePermissions(1, [201, 202, 888])
+    offlineCache.ensureDefaultDeletePermissions(1, [400, 201, 202, 401, 402, 888])
+    offlineCache.ensureDefaultCreatePermissions(1, [400, 201, 202, 401, 402, 888])
   }, [])
   useEffect(() => {
     setFrmLoading(isLoading)
@@ -52,6 +53,7 @@ export const ActionShow = () => {
   }, [data, setInitialData, viewType, listCurrentPage, config.module_url, idAction])
   useEffect(() => {
     if (viewTypeFromConfig && config.module_url === location.pathname) {
+      console.log('config.view_default', config.view_default)
       setViewType(config.view_default)
       setViewTypeFromConfig(false)
       setTabForm(0)

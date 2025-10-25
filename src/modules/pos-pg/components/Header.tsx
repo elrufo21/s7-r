@@ -10,57 +10,57 @@ import { FrmBaseDialog } from '@/shared/components/core'
 import PosModalCashinAndOut from '../views/modal-cash-in-and-out/config'
 import { ViewTypeEnum } from '@/shared/shared.types'
 import ModalButtons from './modal/components/ModalButtons'
-import { usePosActions } from '../hooks/usePosActions'
 import { offlineCache } from '@/lib/offlineCache'
 import { usePWA } from '@/hooks/usePWA'
 import { now } from '@/shared/utils/dateUtils'
-import { TypeOriginPaymen, TypePayment, TypeStateOrder } from '../types'
+import { Type_pos_payment_origin, TypePayment, TypeStateOrder } from '../types'
 import { FiAlertTriangle } from 'react-icons/fi'
 import { CustomToast } from '@/components/toast/CustomToast'
+import { usePosActionsPg } from '@/modules/pos/hooks/usePosActionsPg'
+import { InputWithKeyboard } from '@/shared/ui/inputs/InputWithKeyboard'
 
 export default function Header({ pointId }: { pointId: string }) {
   const {
-    addNewOrder,
-    orderData,
-    selectedOrder,
-    setSelectedOrder,
-    setScreen,
-    screen,
+    addNewOrderPg,
+    orderDataPg,
+    selectedOrderPg,
+    setSelectedOrderPg,
+    setScreenPg,
+    screenPg,
     openDialog,
     closeDialogWithData,
-    searchProduct,
-    setSearchProduct,
-    selectedNavbarMenu,
-    setSelectedNavbarMenu,
-    setSelectedItem,
-    finalCustomer,
+    searchProductPg,
+    setSearchProductPg,
+    selectedNavbarMenuPg,
+    setSelectedNavbarMenuPg,
+    setSelectedItemPg,
+    finalCustomerPg,
     executeFnc,
     frmLoading,
-    setOrderData,
+    setOrderDataPg,
     setSyncLoading,
-    deleteOrder,
-    setHandleChange,
-    defaultPosSessionData,
-    getTotalPriceByOrder,
+    deleteOrderPg,
+    setHandleChangePg,
+    defaultPosSessionDataPg,
+    getTotalPriceByOrderPg,
+    setCloseSession,
   } = useAppStore()
-
-  const { saveCurrentOrder } = usePosActions()
+  const { saveCurrentOrder } = usePosActionsPg()
   const { isOnline } = usePWA()
   const { state } = JSON.parse(localStorage.getItem('session-store') ?? '{}')
   const { userData } = state
   const sessions = JSON.parse(localStorage.getItem('sessions') ?? '[]')
   const { session_id } = sessions.find((s: any) => s.point_id === Number(pointId))
   const navigate = useNavigate()
-
   const handleVisibilityChange = useCallback(async () => {
     if (document.visibilityState === 'hidden') {
       await saveCurrentOrder(true)
     }
     if (document.visibilityState === 'visible') {
-      const order = orderData.filter((i: any) => i.order_id === selectedOrder)
+      const order = orderDataPg.filter((i: any) => i.order_id === selectedOrderPg)
       const selected = order?.[0]?.lines?.filter((i: any) => i.selected)
 
-      setSelectedItem(selected?.[0]?.line_id)
+      setSelectedItemPg(selected?.[0]?.line_id)
     }
   }, [saveCurrentOrder])
   useEffect(() => {
@@ -80,8 +80,8 @@ export default function Header({ pointId }: { pointId: string }) {
           handleCloseCashRegister={handleCloseCashRegister}
           returnToMain={() => {
             closeDialogWithData(dialogId, {})
-            setScreen('products')
-            navigate('/points-of-sale-meat')
+            setScreenPg('products')
+            navigate('/points-of-sale-pg')
           }}
           closeDialog={() => closeDialogWithData(dialogId, {})}
         />
@@ -126,8 +126,6 @@ export default function Header({ pointId }: { pointId: string }) {
           initialValues={{
             paymentMethods,
             customers: localCustomers,
-            partner_name: defaultPosSessionData.name,
-            partner_id: defaultPosSessionData.partner_id,
             type: TypePayment.OUTPUT,
           }}
           viewType={ViewTypeEnum.LIBRE}
@@ -142,16 +140,16 @@ export default function Header({ pointId }: { pointId: string }) {
             const formData = getData()
             const data = {
               amount: formData.amount,
-              partner_id: formData.partner_id,
               reason: formData.reason,
               type: formData.type,
               payment_method_id: formData.payment_method_id,
               date: now().toPlainDateTime().toString(),
-              origin: TypeOriginPaymen.DIRECT_PAYMENT,
+              origin: Type_pos_payment_origin.DIRECT_PAYMENT,
               currency_id: 1,
               state: 'R',
               company_id: userData?.company_id,
               user_id: userData?.user_id,
+              session_id: session_id,
             }
             let errors = []
             if (!data.amount) {
@@ -233,7 +231,7 @@ export default function Header({ pointId }: { pointId: string }) {
               </p>
 
               <ul className="space-y-2">
-                {diferences.map((item) => (
+                {diferences?.map((item) => (
                   <li
                     key={item.payment_method_id}
                     className="flex justify-between items-center bg-slate-700/30 border border-slate-600/40 rounded-lg p-3"
@@ -294,9 +292,9 @@ export default function Header({ pointId }: { pointId: string }) {
     })
   }
   function getDiferences(data) {
-    return data.pm
-      .filter((pmItem) => pmItem.difference !== 0)
-      .map((pmItem) => {
+    return data?.pm
+      ?.filter((pmItem) => pmItem.difference !== 0)
+      ?.map((pmItem) => {
         const match = data.watchData.find((w) => w.payment_method_id === pmItem.payment_method_id)
         return {
           payment_method_id: pmItem.payment_method_id,
@@ -305,9 +303,91 @@ export default function Header({ pointId }: { pointId: string }) {
         }
       })
   }
+  type Payment = {
+    origin: string
+    amount: number
+    type: string
+    date: string
+  }
+  function generateDailyReport(data: Payment[]) {
+    const map = new Map<
+      string,
+      { origin: string; type: string; description: string; total: number }
+    >()
+
+    const getDescription = (origin: string, type: string) => {
+      if (origin === Type_pos_payment_origin.DOCUMENT) return 'pagos por ventas'
+      if (origin === Type_pos_payment_origin.DIRECT_PAYMENT && type === 'I')
+        return 'ingresos diversos'
+      if (origin === Type_pos_payment_origin.DIRECT_PAYMENT && type === 'O')
+        return 'egresos diversos'
+      if (origin === Type_pos_payment_origin.PAY_DEBT) return 'pagos de deudas'
+      return 'otros'
+    }
+
+    data.forEach((item) => {
+      const originKey = Object.values(Type_pos_payment_origin).find((o) =>
+        item.origin.startsWith(o)
+      )
+      if (!originKey) return
+
+      const key =
+        originKey === Type_pos_payment_origin.DOCUMENT ||
+        originKey === Type_pos_payment_origin.PAY_DEBT
+          ? originKey
+          : `${originKey}-${item.type}`
+
+      const description = getDescription(originKey, item.type)
+
+      if (!map.has(key)) {
+        map.set(key, { origin: originKey, type: item.type, description, total: 0 })
+      }
+
+      map.get(key)!.total += item.amount
+    })
+
+    const requiredCases = [
+      { origin: Type_pos_payment_origin.DOCUMENT, type: 'I' },
+      { origin: Type_pos_payment_origin.DIRECT_PAYMENT, type: 'I' },
+      { origin: Type_pos_payment_origin.DIRECT_PAYMENT, type: 'O' },
+      { origin: Type_pos_payment_origin.PAY_DEBT, type: 'I' },
+    ]
+
+    for (const { origin, type } of requiredCases) {
+      const key =
+        origin === Type_pos_payment_origin.DOCUMENT || origin === Type_pos_payment_origin.PAY_DEBT
+          ? origin
+          : `${origin}-${type}`
+
+      if (!map.has(key)) {
+        map.set(key, {
+          origin,
+          type,
+          description: getDescription(origin, type),
+          total: 0,
+        })
+      }
+    }
+
+    const order = [
+      Type_pos_payment_origin.DOCUMENT,
+      `${Type_pos_payment_origin.DIRECT_PAYMENT}-I`,
+      `${Type_pos_payment_origin.DIRECT_PAYMENT}-O`,
+      Type_pos_payment_origin.PAY_DEBT,
+    ]
+
+    const rows = order.map((key) => map.get(key)).filter((v): v is NonNullable<typeof v> => !!v)
+
+    const totalGeneral = rows
+      .filter((r) => !(r.origin === Type_pos_payment_origin.DIRECT_PAYMENT && r.type === 'O'))
+      .reduce((acc, cur) => acc + cur.total, 0)
+
+    return { rows, totalGeneral }
+  }
+
   const handleCloseCashRegister = async () => {
     await offlineCache
-      .syncOfflineData(executeFnc, Number(pointId), setOrderData, setSyncLoading, session_id)
+      .syncOfflineData(executeFnc, Number(pointId), setOrderDataPg, setSyncLoading, session_id)
       .then(async () => {
         const { oj_data: sessionLogOutData } = await executeFnc('fnc_pos_session_log_out', '', [
           session_id,
@@ -344,18 +424,18 @@ export default function Header({ pointId }: { pointId: string }) {
                 }
                 const data = updatePmValues(rawData)
 
-                let pass = await diferenceDialog('', getDiferences(data))
-                if (!pass) return
+                //let pass = await diferenceDialog('', getDiferences(data))
+                // if (!pass) return
 
-                pass = await confirmDialog('Cerrar caja', 'Se eliminarán todas las órdenes')
-                if (!pass) return
-                // 🔄 Eliminar pedidos en memoria
+                //   pass = await confirmDialog('Cerrar caja', 'Se eliminarán todas las órdenes')
+                //if (!pass) return
+                setCloseSession(true)
                 const dataInStore = await offlineCache.getOfflinePosOrders()
                 for (let i = 0; i < dataInStore.length; i++) {
                   if (dataInStore[i].state === 'I' || dataInStore[i].state === 'Y') {
-                    deleteOrder(dataInStore[i].order_id, true)
+                    deleteOrderPg(dataInStore[i].order_id, true)
                     await offlineCache.markOrderAsDeleted(dataInStore[i].order_id)
-                    setHandleChange(true)
+                    setHandleChangePg(true)
                   }
                 }
 
@@ -395,22 +475,23 @@ export default function Header({ pointId }: { pointId: string }) {
 
                 // ✅ Remover de local_pos_open
                 const localPosOpen = JSON.parse(localStorage.getItem('local_pos_open') || '[]')
-                const filtered = localPosOpen.filter((p: any) => p.point_id !== Number(pointId))
+                const filtered = localPosOpen?.filter((p: any) => p.point_id !== Number(pointId))
                 localStorage.setItem('local_pos_open', JSON.stringify(filtered))
 
-                setSelectedOrder('')
+                setSelectedOrderPg('')
                 offlineCache.syncOfflineData(
                   executeFnc,
                   pointId,
-                  setOrderData,
+                  setOrderDataPg,
                   setSyncLoading,
                   session_id,
                   true
                 )
 
                 closeDialogWithData(dialogId, {})
-                setScreen('products')
-                navigate('/points-of-sale')
+                setScreenPg('products')
+                setCloseSession(false)
+                navigate('/points-of-sale-pg')
               },
             },
             {
@@ -441,7 +522,22 @@ export default function Header({ pointId }: { pointId: string }) {
                   ...formData,
                 }
                 const data = updatePmValues(rawData)
-
+                const today = new Date()
+                const formattedDate = today.toLocaleDateString('es-PE')
+                const filter = [0, 'fbetween', 'date', formattedDate, formattedDate]
+                const { oj_data: paymentData } = await executeFnc('fnc_pos_payment', 's', [
+                  [
+                    0,
+                    'multi_filter_in',
+                    [
+                      { key_db: 'origin', value: Type_pos_payment_origin.DOCUMENT },
+                      { key_db: 'origin', value: Type_pos_payment_origin.DIRECT_PAYMENT },
+                      { key_db: 'origin', value: Type_pos_payment_origin.PAY_DEBT },
+                    ],
+                  ],
+                  ,
+                  filter,
+                ])
                 const { oj_data } = await executeFnc('fnc_pos_session', 'u', {
                   session_id: data.session_id,
                   stop_at: data.stop_at,
@@ -453,12 +549,16 @@ export default function Header({ pointId }: { pointId: string }) {
                 const { oj_data: rs } = await executeFnc('fnc_pos_session_report', '', [
                   oj_data.session_id,
                 ])
-                import('@/modules/invoicing/components/SalesReportPDF').then((module) => {
+                import('@/modules/invoicing/components/paymentReport').then((module) => {
                   const SalesReportPDF = module.default
 
                   import('@react-pdf/renderer').then((pdfModule) => {
                     const { pdf } = pdfModule
-                    pdf(SalesReportPDF({ data: { products: rs.result_1, control: rs.result_3 } }))
+                    pdf(
+                      SalesReportPDF({
+                        data: { ...generateDailyReport(paymentData), control: rs.result_3 },
+                      })
+                    )
                       .toBlob()
                       .then((blob) => {
                         const url = URL.createObjectURL(blob)
@@ -479,21 +579,21 @@ export default function Header({ pointId }: { pointId: string }) {
 
   const fnc_change_order = useCallback(
     (id_order: string) => {
-      setScreen('products')
+      setScreenPg('products')
       saveCurrentOrder()
-      setSelectedNavbarMenu('R')
-      setSelectedOrder(id_order)
+      setSelectedNavbarMenuPg('R')
+      setSelectedOrderPg(id_order)
     },
-    [setScreen, saveCurrentOrder, setSelectedNavbarMenu, setSelectedOrder]
+    [setScreenPg, saveCurrentOrder, setSelectedNavbarMenuPg, setSelectedOrderPg]
   )
   const orderFiltered = useMemo(() => {
-    return orderData.filter(
+    return orderDataPg.filter(
       (order) => order.state === TypeStateOrder.PAY || order.state === TypeStateOrder.IN_PROGRESS
     )
-  }, [orderData])
+  }, [orderDataPg])
   useEffect(() => {
     saveCurrentOrder()
-  }, [orderData])
+  }, [orderDataPg])
   return (
     <header className="pos-header">
       <div className="pos-header-left">
@@ -501,39 +601,39 @@ export default function Header({ pointId }: { pointId: string }) {
           <button
             // className="btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] active"
             className={`btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] ${
-              selectedNavbarMenu === 'R' ? 'active' : ''
+              selectedNavbarMenuPg === 'R' ? 'active' : ''
             }`}
             disabled={frmLoading}
             onClick={() => {
-              if (screen === 'invoice') {
+              if (screenPg === 'invoice') {
                 if (
-                  orderData.filter(
+                  orderDataPg.filter(
                     (o) => o.state === TypeStateOrder.IN_PROGRESS || o.state === TypeStateOrder.PAY
                   ).length === 0
                 ) {
-                  addNewOrder({
+                  addNewOrderPg({
                     date: new Date(),
                     user_id: userData?.user_id,
                     point_id: Number(pointId),
                     session_id: session_id,
                     company_id: userData?.company_id,
-                    partner_id: finalCustomer?.partner_id,
-                    partner_name: finalCustomer?.partner_name,
+                    partner_id: finalCustomerPg?.partner_id,
+                    partner_name: finalCustomerPg?.partner_name,
                     lines: [],
                   })
                   return
                 }
-                setSelectedOrder(
-                  orderData.filter(
+                setSelectedOrderPg(
+                  orderDataPg.filter(
                     (o) => o.state === TypeStateOrder.IN_PROGRESS || o.state === TypeStateOrder.PAY
                   )[0].order_id
                 )
-                setSelectedNavbarMenu('R')
-                setScreen('products')
+                setSelectedNavbarMenuPg('R')
+                setScreenPg('products')
                 return
               }
-              setSelectedNavbarMenu('R')
-              setScreen('products')
+              setSelectedNavbarMenuPg('R')
+              setScreenPg('products')
             }}
           >
             Registrar
@@ -543,57 +643,57 @@ export default function Header({ pointId }: { pointId: string }) {
             // onClick={() => setScreen('ticket')}
 
             className={`btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] ${
-              selectedNavbarMenu === 'O' ? 'active' : ''
+              selectedNavbarMenuPg === 'O' ? 'active' : ''
             }`}
             disabled={frmLoading}
             onClick={() => {
-              if (screen === 'invoice') {
+              if (screenPg === 'invoice') {
                 if (
-                  orderData.filter(
+                  orderDataPg.filter(
                     (o) => o.state === TypeStateOrder.IN_PROGRESS || o.state === TypeStateOrder.PAY
                   ).length < 5
                 ) {
-                  setScreen('ticket')
-                  addNewOrder()
-                  setSelectedNavbarMenu('O')
+                  setScreenPg('ticket')
+                  // addNewOrderPg()
+                  setSelectedNavbarMenuPg('O')
                   return
                 }
-                setSelectedOrder(
-                  orderData.filter(
+                setSelectedOrderPg(
+                  orderDataPg.filter(
                     (o) => o.state === TypeStateOrder.IN_PROGRESS || o.state === TypeStateOrder.PAY
                   )[0].order_id
                 )
-                setSelectedNavbarMenu('O')
-                setScreen('ticket')
+                setSelectedNavbarMenuPg('O')
+                setScreenPg('ticket')
                 return
               }
               saveCurrentOrder(true)
-              setSelectedNavbarMenu('O')
-              setScreen('ticket')
+              setSelectedNavbarMenuPg('O')
+              setScreenPg('ticket')
             }}
           >
             Órdenes
           </button>
         </div>
 
-        <div className="navbar-orders">
+        {/** <div className="navbar-orders">
           <button
             // className="btn2 btn2-secondary lh-lg w-auto min-h-[48px]"
             className="btn2 btn2-secondary lh-lg min-h-[48px]"
             disabled={frmLoading}
             onClick={() => {
-              addNewOrder({
+              addNewOrderPg({
                 date: new Date(),
                 user_id: userData?.user_id,
                 point_id: Number(pointId),
                 session_id: session_id,
                 company_id: userData?.company_id,
-                partner_id: finalCustomer?.partner_id,
-                partner_name: finalCustomer?.partner_name,
+                partner_id: finalCustomerPg?.partner_id,
+                partner_name: finalCustomerPg?.partner_name,
                 lines: [],
               })
-              setSelectedNavbarMenu('R')
-              setScreen('products')
+              setSelectedNavbarMenuPg('R')
+              setScreenPg('products')
             }}
           >
             <MdAddCircleOutline style={{ fontSize: '24px' }} />
@@ -608,103 +708,65 @@ export default function Header({ pointId }: { pointId: string }) {
           >
             <WiCloudUp style={{ fontSize: '34px' }} />
           </button>
-          */}
 
-          {/*
+         
           <button
             className="btn2 btn2-secondary lh-lg w-auto min-h-[48px]"
             style={{ paddingLeft: '2px', paddingRight: '2px' }}
           >
             <IoMdArrowDropdown style={{ fontSize: '24px' }} />
           </button>
-          */}
+        
 
-          <div className="pos-orders">
-            {orderFiltered?.map((order, index) => (
-              <button
-                key={order?.order_id}
-                className={`btn2-carnes btn2-secondary btn2-lg lh-lg min-h-[48px] ${selectedOrder === order.order_id ? 'btn2-light active' : ''} `}
-                disabled={frmLoading}
-                onClick={() => {
-                  if (selectedOrder !== order.order_id || screen === 'ticket') {
-                    if (
-                      orderData.filter(
-                        (o) =>
-                          o.state === TypeStateOrder.IN_PROGRESS || o.state === TypeStateOrder.PAY
-                      ).length < 4
-                    ) {
-                      addNewOrder()
-                      return
-                    }
-                    fnc_change_order(order.order_id)
+          
+        </div> 
+        <div className="pos-orders">
+          {orderFiltered?.map((order, index) => (
+            <button
+              key={order?.order_id}
+              className={`btn2-carnes btn2-secondary btn2-lg lh-lg min-h-[48px] ${selectedOrderPg === order.order_id ? 'btn2-light active' : ''} `}
+              disabled={frmLoading}
+              onClick={() => {
+                if (selectedOrderPg !== order.order_id || screenPg === 'ticket') {
+                  if (
+                    orderDataPg.filter(
+                      (o) =>
+                        o.state === TypeStateOrder.IN_PROGRESS || o.state === TypeStateOrder.PAY
+                    ).length < 4
+                  ) {
+                    addNewOrderPg()
+                    return
                   }
-                }}
-              >
-                {order.partner_name}
-                {getTotalPriceByOrder(order.order_id) === 0
-                  ? null
-                  : ' - ' + getTotalPriceByOrder(order.order_id)}
-              </button>
-            ))}
-          </div>
-        </div>
+                  fnc_change_order(order.order_id)
+                }
+              }}
+            >
+              {order.partner_name}
+              {getTotalPriceByOrderPg(order.order_id) === 0
+                ? null
+                : ' - ' + getTotalPriceByOrderPg(order.order_id)}
+            </button>
+          ))}
+        </div>*/}
       </div>
 
       <div className="pos-header-right">
         <div
-          className={`relative ${screen === 'ticket' || screen === 'payment' || screen === 'invoice' ? 'hidden' : ''}`}
+          className={`relative  w-[20rem] pl-5 py-2 border rounded-md bg-white text-[16px] ${screenPg === 'ticket' || screenPg === 'payment' || screenPg === 'invoice' ? 'hidden' : ''}`}
         >
-          <input
+          <InputWithKeyboard
             type="text"
-            className="w-[20rem] pl-10 pr-10 py-2 border rounded-md bg-white text-[16px]"
+            className=""
             placeholder="Buscar productos ..."
-            value={searchProduct}
-            onChange={(e) => setSearchProduct(e.target.value)}
+            value={searchProductPg}
+            onChange={(e) => setSearchProductPg(e.target.value)}
+            onValueChange={(value) => setSearchProductPg(value)} // Para el teclado virtual
             aria-label="Buscar productos"
+            enableVirtualKeyboard={true}
+
+            // useNumericKeyboard={true} // Opcional
+            // isInsideModal={true} // Opcional
           />
-
-          {/* Ícono de lupa */}
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg
-              className="h-5 w-5 text-gray-400"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-          </div>
-
-          {/* Botón X para limpiar el input */}
-          {searchProduct && (
-            <button
-              type="button"
-              onClick={() => setSearchProduct('')}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-black"
-            >
-              <svg
-                className="h-5 w-5"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          )}
         </div>
 
         {/* 

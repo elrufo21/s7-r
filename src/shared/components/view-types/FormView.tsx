@@ -47,7 +47,10 @@ export const FormView = ({ item }: { item?: any }) => {
  */
   useEffect(() => {
     return () => {
-      setViewType(selectedViewType ?? config.view_default)
+      console.log('breadcrumb', breadcrumb, config.view_default)
+      if (selectedViewType) {
+        setViewType(selectedViewType ?? config.view_default)
+      }
     }
   }, [])
   const {
@@ -83,10 +86,17 @@ export const FormView = ({ item }: { item?: any }) => {
     if (prevFrmIsChanged.current) {
       console.log('Autoguardado', id, { ...watch() })
 
-      //handleSubmit(() => saveCore())()
+      handleSubmit(() => saveCore())()
+      prevFrmIsChanged.current = frmIsChanged
     }
+    return () => {
+      if (prevFrmIsChanged.current) {
+        console.log('Autoguardado', id, { ...watch() })
 
-    prevFrmIsChanged.current = frmIsChanged
+        handleSubmit(() => saveCore())()
+        prevFrmIsChanged.current = frmIsChanged
+      }
+    }
   }, [id])
   // Mantenemos la referencia actualizada
   useEffect(() => {

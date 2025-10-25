@@ -47,6 +47,8 @@ export interface ContactData {
 }
 
 export interface InvoiceData {
+  amount_withtaxed_currency: string
+  line_id: number | string
   move_id: number
   company_id: string
   company_name: string

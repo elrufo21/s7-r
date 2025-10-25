@@ -352,7 +352,6 @@ const createPos = (
           lines: updatedLines,
         }
       })
-
       return {
         orderData: newOrderData.filter((order) => order.state !== 'P'),
         selectedItem: selectedItem,

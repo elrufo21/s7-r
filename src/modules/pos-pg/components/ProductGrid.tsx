@@ -21,22 +21,22 @@ function hasCategoryRecursive(categories: any[], selectedId: number): boolean {
 }
 
 export default function ProductGrid() {
-  const { products, searchProduct, selectedCategory } = useAppStore()
+  const { productsPg, searchProductPg, selectedCategoryPg } = useAppStore()
 
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name.toLowerCase().includes(searchProduct.toLowerCase())
+  const filteredProducts = productsPg.filter((product) => {
+    const matchesSearch = product.name.toLowerCase().includes(searchProductPg.toLowerCase())
 
     const matchesCategory =
-      !selectedCategory || hasCategoryRecursive(product.categories, Number(selectedCategory))
+      !selectedCategoryPg || hasCategoryRecursive(product.categories, Number(selectedCategoryPg))
 
     return matchesSearch && matchesCategory
   })
 
   if (filteredProducts.length === 0) {
     return (
-      <div className="flex items-center justify-center text-center h-full">
+      <div className="flex items-center justify-center text-center ">
         <p>
-          No se encontraron productos para <b>{searchProduct}</b> en esta categoría
+          No se encontraron productos para <b>{searchProductPg}</b> en esta categoría
         </p>
       </div>
     )

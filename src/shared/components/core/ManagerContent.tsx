@@ -59,9 +59,9 @@ export const ManagerContent = () => {
   useEffect(() => {
     // setBreadcrumb([{ title: config.title, url: pathname, viewType }])
   }, [config.title, pathname, setBreadcrumb, viewType])
-
   useEffect(() => {
     if (!breadcrumb.find((item) => item.title === config.title)) {
+      console.log('config.view_default', config.view_default)
       setViewType(config.view_default)
     }
   }, [breadcrumb, config.title, config.view_default, setViewType])

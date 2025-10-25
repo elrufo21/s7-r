@@ -56,6 +56,7 @@ export interface PosOrderData {
 const PosOrderConfig: FormConfig = {
   form_id: 201,
   aditionalFilters: [
+    
     [
       0,
       'multi_filter_in',

@@ -27,6 +27,7 @@ export const SettingsIndex = () => {
 
   useEffect(() => {
     if (viewTypeFromConfig) {
+      console.log('config.view_default', config.view_default)
       setViewType(config.view_default)
       setViewTypeFromConfig(false)
     }

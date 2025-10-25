@@ -1,10 +1,10 @@
 import { ModulesEnum } from '@/shared/shared.types'
 import { MenuItemType } from '@/shared/components/navigation/navigation.types'
 import Frm_894_config from '@/modules/action/views/point-of-sale/order-detail-modal/config'
-import Frm_830_config from '@/modules/action/views/point-of-sale/pos-pay-bill-modal/config'
 import PosReportSessionConfig from '@/modules/action/views/point-of-sale/report-session-modal/config'
 import { generateExcel } from '@/modules/pos-carnes/views/modal-payment-list/components/ExcelReport'
 import * as XLSX from 'xlsx'
+import { downloadAccountsReportPDF } from '@/modules/invoicing/components/AcountsReport'
 
 export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
   [ModulesEnum.BASE]: null,
@@ -701,23 +701,6 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
           },
           */
           { title: 'Clientes', key: 'clientes', path: '/action/895' },
-
-          {
-            title: 'Pagar recibos',
-            key: 'pagar-recibos',
-            path: '/action/930',
-            openAsModal: true,
-            modalConfig: {
-              initialValues: {
-                fncName: 'fnc_pos_order',
-                action: 's',
-                data: [[1, 'pag', 1]],
-              },
-              size: 'medium',
-              title: 'Pagar recibo',
-              config: Frm_830_config,
-            },
-          },
         ],
       },
 
@@ -903,7 +886,7 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
         title: 'Órdenes',
         key: 'ordenes-menu',
         items: [
-          // { title: 'Sesiones', key: 'sesiones', path: '/action/200' },
+          { title: 'Sesiones', key: 'sesiones', path: '/action/200' },
           { title: 'Órdenes', key: 'ordenes', path: '/action/201' },
           { title: 'Pagos', key: 'pagos', path: '/action/202' },
           /*
@@ -1118,6 +1101,260 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
               },
               { title: 'Atributos', key: 'atributos', path: '/action/211' },
               { title: 'Contenedor', key: 'Contenedor', path: '/action/212' },
+              /*  {
+                title: 'Etiquetas de producto',
+                key: 'etiquetas-producto',
+                path: '/configuracion/productos/etiquetas',
+              }*/
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  [ModulesEnum.POINTS_OF_SALE_PG]: {
+    title: 'Puntos de venta',
+    key: 'Puntos de venta-contacts',
+    items: [
+      {
+        title: 'Tablero',
+        key: 'Puntos de venta-pos',
+        path: '/points-of-sale-pg',
+      },
+      {
+        title: 'Órdenes',
+        key: 'ordenes-menu',
+        items: [
+          { title: 'Sesiones', key: 'sesiones', path: '/action/400' },
+          { title: 'Órdenes', key: 'ordenes', path: '/action/401' },
+          { title: 'Pagos', key: 'pagos', path: '/action/402' },
+          /*
+          {
+            title: 'Preparation Display',
+            key: 'preparation-display',
+            path: '/preparation-display',
+          },
+          */
+          { title: 'Clientes', key: 'clientes', path: '/action/403' },
+
+          /*
+          {
+            title: 'Pagar recibos',
+            key: 'pagar-recibos',
+            path: '/action/930',
+            openAsModal: true,
+            modalConfig: {
+              initialValues: {
+                fncName: 'fnc_pos_order',
+                action: 's',
+                data: [[1, 'pag', 1]],
+              },
+              size: 'medium',
+              title: 'Pagar recibo',
+              config: Frm_830_config,
+            },
+          },
+          */
+        ],
+      },
+
+      /*
+      {
+        title: 'Herramientas',
+        key: 'tools-menu',
+        items: [
+          {
+            title: 'Pagar recibos',
+            key: 'pagar-recibos',
+            path: '/action/930',
+            openAsModal: true,
+            modalConfig: {
+              initialValues: {
+                fncName: 'fnc_pos_order',
+                action: 's',
+                data: [[1, 'pag', 1]],
+              },
+              size: 'medium',
+              title: 'Pagar recibo',
+              config: Frm_830_config,
+            },
+          },
+        ],
+      },
+      */
+
+      {
+        title: 'Productos',
+        key: 'productos-menu',
+        items: [
+          { title: 'Productos', key: 'productos', path: '/action/404' },
+          { title: 'Variantes de producto', key: 'variantes-producto', path: '/action/405' },
+          // { title: 'Opciones de los combos', key: 'opciones-combos', path: '/combo-options' },
+          // { title: 'Listas de precios', key: 'listas-precios', path: '/price-lists' },
+        ],
+      },
+      {
+        title: 'Reportes',
+        key: 'reportes-menu',
+        items: [
+          // { title: 'Órdenes', key: 'ordenes', path: '/action/893' },
+          {
+            title: 'Detalles de las ventas',
+            key: 'sesiones',
+            path: '/action/894',
+            openAsModal: true,
+            modalConfig: {
+              size: 'medium',
+              title: 'Detalle de la Sesión',
+              config: Frm_894_config,
+              customButtons: [
+                {
+                  text: 'Descargar PDF',
+                  type: 'confirm',
+                  onClick: async (id, close, fncExecute) => {
+                    const { oj_data } = await fncExecute('fnc_pos_order ', 's', [
+                      [2, 'list_select_all'],
+                      [0, 'fequal', 'state', 'R'],
+                    ])
+
+                    import(
+                      '@/modules/pos-carnes/views/modal-payment-list/components/SalesByClientPDF.tsx'
+                    ).then((module) => {
+                      const OrdersReportPDF = module.default
+
+                      import('@react-pdf/renderer').then((pdfModule) => {
+                        const { pdf } = pdfModule
+
+                        const orders = oj_data
+
+                        import('react').then((React) => {
+                          pdf(React.createElement(OrdersReportPDF, { orders }))
+                            .toBlob()
+                            .then((blob) => {
+                              const url = URL.createObjectURL(blob)
+                              const link = document.createElement('a')
+                              link.href = url
+                              link.download = 'detalle-ventas.pdf'
+                              link.click()
+                              URL.revokeObjectURL(url)
+                            })
+                        })
+                      })
+                    })
+                  },
+                },
+                {
+                  text: 'Descargar Excel',
+                  type: 'confirm',
+                  onClick: async (id, close, fncExecute) => {
+                    if (!fncExecute) return
+                    const { oj_data } = await fncExecute('fnc_pos_order ', 's', [
+                      [2, 'list_select_all'],
+                    ])
+
+                    const wb = generateExcel(oj_data)
+                    XLSX.writeFile(wb, `pedido_123.xlsx`)
+                  },
+                },
+              ],
+            },
+          },
+          {
+            title: 'Reporte de pagos',
+            key: 'reporte-pagos',
+            path: '#',
+            onClick: async (navigate, executeFnc) => {
+              const { oj_data } = await executeFnc('fnc_pos_customer_debt_report', '', [])
+              try {
+                await downloadAccountsReportPDF(oj_data[0].details)
+              } catch (error) {
+                console.error('Error al descargar PDF:', error)
+              }
+            },
+          },
+          /*
+          {
+            title: 'Reporte de la sesión',
+            key: 'pagos',
+            path: '#',
+            openAsModal: true,
+            modalConfig: {
+              size: 'medium',
+              title: 'Reporte de la sesión',
+              config: PosReportSessionConfig,
+              customButtons: [
+                {
+                  text: 'Descargar PDF',
+                  type: 'confirm',
+                  onClick: () => {
+                    import('@/modules/invoicing/components/SessionReportPDF').then((module) => {
+                      const SessionReportPDF = module.default
+
+                      import('@react-pdf/renderer').then((pdfModule) => {
+                        const { pdf } = pdfModule
+                        pdf(SessionReportPDF())
+                          .toBlob()
+                          .then((blob) => {
+                            const url = URL.createObjectURL(blob)
+                            const link = document.createElement('a')
+                            link.href = url
+                            link.download = 'reporte-sesion.pdf'
+                            link.click()
+                            URL.revokeObjectURL(url)
+                          })
+                      })
+                    })
+                  },
+                },
+              ],
+            },
+          },
+          */
+        ],
+      },
+      {
+        title: 'Configuración',
+        key: 'configuracion-menu',
+        items: [
+          { title: 'Ajustes', key: 'ajustes', path: '/settings#points-of-sale' },
+          { title: 'Métodos de pago', key: 'metodos-pago', path: '/action/406' },
+          {
+            title: 'Monedas/billetes',
+            key: 'monedas-billetes',
+            path: '/action/407',
+          },
+          { title: 'Punto de venta', key: 'punto-venta', path: '/action/409' },
+          { title: 'Modelos de nota', key: 'modelos-nota', path: '/configuracion/modelos-nota' },
+          { title: 'Dispositivos', key: 'weighing-scale', path: '/action/408' },
+          /*
+          {
+            title: 'Pricer',
+            key: 'pricer-submenu',
+            items: [
+              {
+                title: 'Tiendas Pricer',
+                key: 'tiendas-pricer',
+                path: '/configuracion/pricer/tiendas',
+              },
+              {
+                title: 'Etiquetas de Pricer',
+                key: 'etiquetas-pricer',
+                path: '/configuracion/pricer/etiquetas',
+              },
+            ],
+          },
+          */
+          {
+            title: 'Productos',
+            key: 'productos-submenu',
+            items: [
+              {
+                title: 'Categorías de producto de PdV',
+                key: 'categories-pos-inventory',
+                path: '/action/410',
+              },
+              { title: 'Atributos', key: 'atributos', path: '/action/411' },
+              { title: 'Contenedor', key: 'Contenedor', path: '/action/412' },
               /*  {
                 title: 'Etiquetas de producto',
                 key: 'etiquetas-producto',

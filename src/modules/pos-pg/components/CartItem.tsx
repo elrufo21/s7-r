@@ -18,15 +18,19 @@ export default function CartItem({
   maxDecimals = 2,
   btnDelete = false,
 }: CartItemProps) {
-  const { selectedOrder, deleteProductInOrder, setHandleChange } = useAppStore()
+  const { selectedOrderPg, deleteProductInOrderPg, setHandleChangePg } = useAppStore()
   return (
     <div
-      className={`py-2 px-2 flex items-center justify-between hover:bg-gray-50 cursor-pointer  ${isSelected ? 'bg-blue-50' : ''
+      // className={`py-2 px-2 flex items-center justify-between hover:bg-gray-50 cursor-pointer  ${
+      //   isSelected ? 'bg-blue-50' : ''
+      // }`}
+
+      className={`py-2 px-2 flex items-center justify-between cursor-pointer  ${isSelected ? 'bg-yellow-400' : ''
         }`}
+
       onClick={onSelect}
     >
       <div className="flex items-center">
-
         {/* <div className="w-6 text-center c1"> */}
         <div className="w-auto min-w-[24px] text-center c1">
           {
@@ -66,26 +70,29 @@ export default function CartItem({
             {formatNumber(Number(item.price_unit) * Number(item.quantity), maxDecimals)}
           </div>
 
+          {/*
           {btnDelete && (
             <button
               className="text-red-500 text-sm"
               onClick={(e) => {
                 e.stopPropagation()
-                deleteProductInOrder(selectedOrder, item.line_id)
-                setHandleChange(true)
+                deleteProductInOrderPg(selectedOrderPg, item.line_id)
+                setHandleChangePg(true)
               }}
             >
               Eliminar
             </button>
           )}
+          */}
+
         </div>
 
         {/* 
         <button
           onClick={(e) => {
             e.stopPropagation()
-            deleteProductInOrder(selectedOrder, item.line_id)
-            setHandleChange(true)
+            deleteProductInOrderPg(selectedOrderPg, item.line_id)
+            setHandleChangePg(true)
           }}
           className="p-1 text-red-500 hover:bg-red-50 rounded"
         >

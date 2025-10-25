@@ -12,6 +12,7 @@ export type MenuItemType = {
   // ✅ Propiedades para modales
   openAsModal?: boolean
   modalConfig?: ModalConfigType
+  onClick?: (navigate: (path: string) => void, executeFnc: ExecuteFncType) => void | Promise<void>
 }
 
 // ===== CONFIGURACIÓN DE MODALES =====

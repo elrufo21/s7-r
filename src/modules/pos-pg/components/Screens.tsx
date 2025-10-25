@@ -16,33 +16,35 @@ import TicketHTML from './TicketHtml'
 
 import { AiOutlineEdit } from 'react-icons/ai'
 import { RiPrinterLine } from 'react-icons/ri'
-import { TypeStateOrder } from '../types'
+import { TypeStateOrder, TypeStatePayment } from '../types'
 import { useParams } from 'react-router-dom'
 import { offlineCache } from '@/lib/offlineCache'
 
 const Screens = () => {
   const {
-    screen,
-    cart,
-    orderData,
-    selectedOrder,
-    setScreen,
-    backToProducts,
-    total,
-    orderSelected,
-    setSelectedOrder,
-    setSelectedNavbarMenu,
+    screenPg,
+    cartPg,
+    orderDataPg,
+    selectedOrderPg,
+    setScreenPg,
+    backToProductsPg,
+    totalPg,
+    orderSelectedPg,
+    setSelectedOrderPg,
+    setSelectedNavbarMenuPg,
     openDialog,
     closeDialogWithData,
     executeFnc,
-    finalCustomer,
-    setOrderData,
-    setSyncData,
+    finalCustomerPg,
+    setOrderDataPg,
+    setSyncDataPg,
     setSyncLoading,
-    session_id,
-    setSelectedOrderInList,
-    selectedOrderInList,
+    session_id: session_idPg,
+    setSelectedOrderInListPg,
+    selectedOrderInListPg,
+    getSortedActiveOrdersPg,
   } = useAppStore()
+  const sortedOrders = getSortedActiveOrdersPg()
   const { pointId } = useParams()
   const fnc_printTicket = async (order_id: string) => {
     // Obtener los datos completos de la orden
@@ -104,7 +106,7 @@ const Screens = () => {
 
     // Renderizar el TicketHTML en el contenedor temporal (NO el PDF)
     const root = createRoot(printContainer)
-    root.render(<TicketHTML info={ticketInfo} finalCustomer={finalCustomer} />)
+    root.render(<TicketHTML info={ticketInfo} finalCustomer={finalCustomerPg} />)
 
     // Esperar un momento para que se renderice y luego imprimir
     setTimeout(() => {
@@ -121,26 +123,26 @@ const Screens = () => {
 
   useEffect(() => {
     if (
-      (screen === 'products' || screen === 'payment') &&
-      orderData?.find((item) => item.order_id === selectedOrder)?.state === 'Y' &&
-      backToProducts === false
+      (screenPg === 'products' || screenPg === 'payment') &&
+      orderDataPg?.find((item) => item.order_id === selectedOrderPg)?.state === 'Y' &&
+      backToProductsPg === false
     ) {
-      setScreen('payment')
+    //  setScreenPg('payment')
     }
-    if (screen === 'payment' && backToProducts === true) {
-      setScreen('products')
+    if (screenPg === 'payment' && backToProductsPg === true) {
+      setScreenPg('products')
     }
-    if (orderData?.find((item) => item.order_id === selectedOrder)?.state === 'P') {
-      setScreen('invoice')
+    if (orderDataPg?.find((item) => item.order_id === selectedOrderPg)?.state === 'P') {
+      setScreenPg('invoice')
     }
-  }, [orderData, selectedOrder, screen])
+  }, [orderDataPg, selectedOrderPg, screenPg])
   useEffect(() => {
-    if (screen === 'products') {
-      if (!selectedOrder) {
-        setSelectedOrder(orderData[0]?.order_id)
+    if (screenPg === 'products') {
+      if (!selectedOrderPg) {
+        setSelectedOrderPg(orderDataPg[0]?.order_id)
       }
     }
-  }, [screen])
+  }, [screenPg])
   const fnc_detailsModal = async (order_id: string | number) => {
     let orderID = order_id
     let data
@@ -148,26 +150,26 @@ const Screens = () => {
       const { selectedOr } = await offlineCache.syncOfflineData(
         executeFnc,
         pointId,
-        setOrderData,
+        setOrderDataPg,
         setSyncLoading,
-        session_id,
+        session_idPg,
         null,
         null,
         true
       )
-      setSyncData(false)
+      setSyncDataPg(false)
       const { oj_data } = await executeFnc('fnc_pos_order', 's1', [selectedOr])
       data = oj_data[0]
-      setSelectedOrderInList(selectedOr || 0)
+      setSelectedOrderInListPg(selectedOr || 0)
     } else {
       await offlineCache
-        .syncOfflineData(executeFnc, pointId, setOrderData, setSyncLoading, session_id)
+        .syncOfflineData(executeFnc, pointId, setOrderDataPg, setSyncLoading, session_idPg)
         .then(async () => {
-          setSyncData(false)
+          setSyncDataPg(false)
           const { oj_data } = await executeFnc('fnc_pos_order', 's1', [orderID])
           data = oj_data[0]
         })
-      setSelectedOrderInList(orderID)
+      setSelectedOrderInListPg(orderID)
     }
 
     let getData = () => ({})
@@ -183,13 +185,13 @@ const Screens = () => {
       handleCloseDialog: async () => {
         closeDialogWithData(dialogId, {})
         await offlineCache
-          .syncOfflineData(executeFnc, pointId, setOrderData, setSyncLoading, session_id)
+          .syncOfflineData(executeFnc, pointId, setOrderDataPg, setSyncLoading, session_idPg)
           .then(async () => {
-            setSyncData(false)
+            setSyncDataPg(false)
             const { oj_data } = await executeFnc('fnc_pos_order', 's1', [orderID])
             data = oj_data[0]
           })
-        setSelectedOrderInList(orderID)
+        setSelectedOrderInListPg(orderID)
       },
       buttons: [
         {
@@ -197,7 +199,7 @@ const Screens = () => {
           text: 'Cerrar',
           onClick: () => {
             const formData = getData()
-            setSelectedOrderInList(formData.order_id)
+            setSelectedOrderInListPg(formData.order_id)
             closeDialogWithData(dialogId, {})
           },
         },
@@ -205,19 +207,24 @@ const Screens = () => {
     })
   }
 
-  const orders = orderData.filter((o) => o.state == 'I' || o.state == 'Y')
-  switch (screen) {
+  const displayOrders = sortedOrders?.map((order) => ({
+    ...order,
+    payment_state:
+      order.payment_state === 'PF' ? TypeStatePayment.PAYMENT : TypeStatePayment.PENDING_PAYMENT,
+  }))
+
+  switch (screenPg) {
     case 'products':
       return (
-        <div className="product-screen">
-          {orders.map((order) => (
-            <div className="leftpanel-pg">
-              <CartPanel order={order} />
+        <div className="product-screen gap-[8px] px-[8px]">
+          {displayOrders?.map((order) => (
+            <div className="leftpanel-pg" key={order.order_id}>
+              <CartPanel order={order} payment_state={order.payment_state} />
             </div>
           ))}
 
           <div className="rightpanel">
-            <div className="rightpanel-sub-1">
+            <div className="rightpanel-sub-1 overflow-auto">
               <TaraOptions />
               <CategorySelector />
               <ProductGrid />
@@ -237,7 +244,7 @@ const Screens = () => {
               <div className="d-flex flex-column flex-grow-1 overflow-hidden">
                 <div className="order-container d-flex flex-column flex-grow-1 overflow-y-auto text-start">
                   <div>
-                    {cart.map((item) => (
+                    {cartPg?.map((item) => (
                       <div key={crypto.randomUUID()}>
                         <CartItem item={item} maxDecimals={2} />
                       </div>
@@ -251,13 +258,13 @@ const Screens = () => {
                   </div>
                   <div className="flex justify-between text-lg font-bold mt-1">
                     <span>Total</span>
-                    <span>S/ {total}</span>
+                    <span>S/ {totalPg}</span>
                   </div>
                 </div>
               </div>
-              {(orderSelected?.state === TypeStateOrder.REGISTERED ||
-                orderSelected?.state === TypeStateOrder.CANCELED ||
-                orderSelected?.state === 'E') && (
+              {(orderSelectedPg?.state === TypeStateOrder.REGISTERED ||
+                orderSelectedPg?.state === TypeStateOrder.CANCELED ||
+                orderSelectedPg?.state === 'E') && (
                 <div className="control-buttons ticket">
                   {/*
                   <button
@@ -279,7 +286,7 @@ const Screens = () => {
 
                   <button
                     onClick={() => {
-                      fnc_detailsModal(selectedOrderInList || '')
+                      fnc_detailsModal(selectedOrderInListPg || '')
                     }}
                     className="btn-style-1 h-[100px] flex-1 bg-gray-200 hover:bg-gray-300 transition-colors duration-200 p-6 rounded-[0.25rem] text-gray-700 font-medium text-center"
                   >
@@ -292,7 +299,7 @@ const Screens = () => {
                   </button>
 
                   <button
-                    onClick={() => fnc_printTicket(orderSelected?.order_id || '')}
+                    onClick={() => fnc_printTicket(orderSelectedPg?.order_id || '')}
                     className="btn-style-1 h-[100px] flex-1 bg-gray-200 hover:bg-gray-300 transition-colors duration-200 p-6 rounded-[0.25rem] text-gray-700 font-medium text-center"
                   >
                     <div>
@@ -304,7 +311,7 @@ const Screens = () => {
                   </button>
                 </div>
               )}
-              {(orderSelected?.state === 'I' || orderSelected?.state === 'Y') && (
+              {(orderSelectedPg?.state === 'I' || orderSelectedPg?.state === 'Y') && (
                 <div className="d-flex gap-2 m-2 mt-0 min-h-[100px]">
                   <button className="back-button btn btn-secondary btn-lg lh-lg">
                     <MdKeyboardArrowLeft style={{ fontSize: '36px' }} />
@@ -312,9 +319,9 @@ const Screens = () => {
                   <button
                     className="button validation load-order-button w-100 btn btn-lg btn-primary py-3 min-h-[100px]"
                     onClick={() => {
-                      setScreen('products')
-                      setSelectedNavbarMenu('R')
-                      setSelectedOrder(orderSelected?.order_id || '')
+                      setScreenPg('products')
+                      setSelectedNavbarMenuPg('R')
+                      setSelectedOrderPg(orderSelectedPg?.order_id || '')
                     }}
                   >
                     <span className="d-block">Cargar orden</span>

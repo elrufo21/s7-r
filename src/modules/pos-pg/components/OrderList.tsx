@@ -6,6 +6,7 @@ import { GrTrash } from 'react-icons/gr'
 import { TypeStateOrder, TypeStatePayment } from '../types'
 import { formatShortDate, getHour } from '@/shared/utils/dateUtils'
 import { OfflineCache } from '@/lib/offlineCache'
+import { Enum_Payment_State } from '@/modules/invoicing/invoice.types'
 
 type Order = {
   order_id: string
@@ -32,30 +33,16 @@ type Order = {
 
 const statusOptions = [
   {
-    label: 'Activo',
-    value: TypeStateOrder.ACTIVE,
-    children: [
-      { label: 'En curso', value: TypeStateOrder.IN_PROGRESS },
-      { label: 'Pago', value: TypeStateOrder.PAY },
-    ],
+    label: 'Pagado',
+    value: TypeStateOrder.PAID,
   },
   {
-    label: 'Cerrado',
-    value: TypeStateOrder.CLOSE,
-    children: [
-      {
-        label: 'Pago pendiente',
-        value: TypeStateOrder.PENDING_PAYMENT,
-      },
-      {
-        label: 'Pago parcial',
-        value: TypeStateOrder.PARTIAL_PAYMENT,
-      },
-      {
-        label: 'Pagado',
-        value: TypeStateOrder.PAID,
-      },
-    ],
+    label: 'Pago pendiente',
+    value: TypeStateOrder.PENDING_PAYMENT,
+  },
+  {
+    label: 'Pago parcial',
+    value: TypeStateOrder.PARTIAL_PAYMENT,
   },
   {
     label: 'Todo',
@@ -65,26 +52,25 @@ const statusOptions = [
 
 export const OrderList = () => {
   const {
-    setScreen,
-    orderData,
-    selectedOrder,
-    setSelectedOrder,
-    setCart,
+    setScreenPg,
+    orderDataPg,
+    selectedOrderPg,
+    setSelectedOrderPg,
+    setCartPg,
     executeFnc,
-    deleteOrder,
-    setSelectedNavbarMenu,
-    paidOrders,
-    setOrderSelected,
-    setTotal,
-    getTotalPriceByOrder,
-    localMode,
-    setSelectedOrderInList,
-    selectedOrderInList,
+    deleteOrderPg,
+    setSelectedNavbarMenuPg,
+    paidOrdersPg,
+    setOrderSelectedPg,
+    setTotalPg,
+    getTotalPriceByOrderPg,
+    localModePg,
+    setSelectedOrderInListPg,
+    selectedOrderInListPg,
   } = useAppStore()
-
   useEffect(() => {
-    setSelectedOrderInList(orderData[orderData?.length - 1]?.order_id)
-    setCart(orderData.find((o) => o.order_id === selectedOrder)?.lines || [])
+    setSelectedOrderInListPg(orderDataPg[orderDataPg?.length - 1]?.order_id)
+    setCartPg(orderDataPg.find((o) => o.order_id === selectedOrderPg)?.lines || [])
   }, [])
 
   const cache = new OfflineCache()
@@ -106,26 +92,39 @@ export const OrderList = () => {
     CPF: 'Cancelado',
   }
 
-  // Función de filtrado personalizada
   const filterFunction = (data: Order[], filterValue: string) => {
-    if (filterValue === TypeStateOrder.PAID) {
-      return data.filter((item: any) => item?.payment_state === TypeStatePayment.PAYMENT)
-    } else if (filterValue === TypeStateOrder.ACTIVE) {
-      return data.filter(
-        (item: any) =>
-          item?.state === TypeStateOrder.PAY || item?.state === TypeStateOrder.IN_PROGRESS
-      )
-    } else if (filterValue === TypeStateOrder.PENDING_PAYMENT) {
-      return data.filter((item: any) => item?.payment_state === TypeStatePayment.PENDING_PAYMENT)
-    } else if (filterValue === TypeStateOrder.PARTIAL_PAYMENT) {
-      return data.filter((item: any) => item?.payment_state === TypeStatePayment.PARTIAL_PAYMENT)
-    } else if (filterValue === TypeStateOrder.ALL) {
-      return data
-    } else if (filterValue === TypeStateOrder.CLOSE) {
-      return data.filter((item: any) => item?.state === TypeStateOrder.REGISTERED)
-    } else {
-      return data.filter((item: any) => item?.state === filterValue)
+    if (filterValue === TypeStateOrder.ALL) {
+      return data.filter((item: any) => {
+        const paymentState = item?.payment_state || item?.payment_state
+        return item.state !== 'Y' && item.state !== 'I'
+      })
     }
+
+    if (filterValue === TypeStateOrder.PAID) {
+      const filtered = data.filter((item: any) => {
+        const paymentState = item?.payment_state || item?.payment_state
+        return paymentState === 'PF' && item.state === 'R'
+      })
+      return filtered
+    }
+
+    if (filterValue === TypeStateOrder.PENDING_PAYMENT) {
+      const filtered = data.filter((item: any) => {
+        const paymentState = item?.payment_state || item?.payment_state
+        return paymentState === 'PE' && item.state === 'R'
+      })
+      return filtered
+    }
+
+    if (filterValue === TypeStateOrder.PARTIAL_PAYMENT) {
+      const filtered = data.filter((item: any) => {
+        const paymentState = item?.payment_state || item?.payment_state
+        return paymentState === 'PP' && item.state === 'R'
+      })
+      return filtered
+    }
+
+    return data
   }
 
   const columns = useMemo(
@@ -168,7 +167,6 @@ export const OrderList = () => {
           columnHelper.accessor('order_name', {
             cell: (info) => (
               <div className="flex flex-col truncate pointer-events-none">
-
                 {/*
                 <span className="font-medium pointer-events-none">
                   {String(info.row.original.order_sequence).padStart(4, '0')}
@@ -185,7 +183,6 @@ export const OrderList = () => {
                 >
                   {info.row.original.receipt_number}
                 </span>
-
               </div>
             ),
             header: 'Documento',
@@ -212,7 +209,7 @@ export const OrderList = () => {
               }`}*/
             className={`grid-col ${info.row.original.combined_states} font-medium text-right min-w-[100px] truncate pointer-events-none`}
           >
-            S/ {Number(getTotalPriceByOrder(info.row.original.order_id)).toFixed(2)}
+            S/ {Number(getTotalPriceByOrderPg(info.row.original.order_id)).toFixed(2)}
           </div>
         ),
       }),
@@ -254,18 +251,18 @@ export const OrderList = () => {
         ),
       }),
     ],
-    [orderData, cache.getOfflinePosOrders()]
+    [orderDataPg, cache.getOfflinePosOrders()]
   )
 
   const handleDeleteClick = async (row: Order) => {
     await cache.init()
-    if (localMode) {
+    if (localModePg) {
       await cache.markOrderAsDeleted(row.order_id)
-      deleteOrder(row.order_id)
+      deleteOrderPg(row.order_id)
       return
     }
     await executeFnc('fnc_pos_order', 'd', [row.order_id])
-    deleteOrder(row.order_id)
+    deleteOrderPg(row.order_id)
   }
 
   const handleStatusChange = (value: string) => {
@@ -274,21 +271,21 @@ export const OrderList = () => {
 
   const handleDobleClick = async (row: Order) => {
     if (row.state === TypeStateOrder.REGISTERED || row.state === TypeStateOrder.CANCELED) return
-    const existOrder = orderData.find((item) => item.order_id === row?.order_id)
+    const existOrder = orderDataPg.find((item) => item.order_id === row?.order_id)
     if (existOrder) {
-      setSelectedOrder(row?.order_id)
-      setSelectedNavbarMenu('R')
-      setScreen('products')
+      setSelectedOrderPg(row?.order_id)
+      setSelectedNavbarMenuPg('R')
+      setScreenPg('products')
     }
   }
 
   const handleRowClick = async (row: Order) => {
-    setSelectedOrderInList(row.order_id)
-    const orderSource = row.state === 'P' || row.state === 'E' ? paidOrders : orderData
+    setSelectedOrderInListPg(row.order_id)
+    const orderSource = row.state === 'P' || row.state === 'E' ? paidOrdersPg : orderDataPg
     const order = orderSource.find((item: any) => item.order_id === row.order_id)
 
     if (order && order.lines) {
-      setCart(order.lines)
+      setCartPg(order.lines)
 
       const total = order.lines.reduce((acc: number, line: any) => {
         const quantity = Number(line.quantity) || 0
@@ -296,12 +293,12 @@ export const OrderList = () => {
         return acc + quantity * price
       }, 0)
 
-      setTotal(total)
-      setOrderSelected({ order_id: row.order_id, state: row.state })
+      setTotalPg(total)
+      setOrderSelectedPg({ order_id: row.order_id, state: row.state })
     } else {
-      setOrderSelected({ order_id: row.order_id, state: row.state })
-      setCart([])
-      setTotal(0)
+      setOrderSelectedPg({ order_id: row.order_id, state: row.state })
+      setCartPg([])
+      setTotalPg(0)
     }
   }
 
@@ -309,8 +306,8 @@ export const OrderList = () => {
     <div className="w-full h-full">
       <DataTable
         columns={columns as any}
-        data={orderData}
-        enablePagination={true}
+        data={orderDataPg}
+        enablePagination={false}
         enableSearch={true}
         pageSize={10}
         searchPlaceholder="Buscar órdenes ..."
@@ -318,7 +315,7 @@ export const OrderList = () => {
         onStatusChange={handleStatusChange}
         filterFunction={filterFunction}
         className="rounded-lg"
-        selectedRowId={selectedOrderInList}
+        selectedRowId={selectedOrderInListPg}
         rowIdField="order_id"
         onRowClick={(row: any) => {
           handleRowClick(row)
@@ -326,6 +323,8 @@ export const OrderList = () => {
         onRowDoubleClick={(row: any) => {
           handleDobleClick(row)
         }}
+        enablePagination={false}
+        defaultStatus={TypeStateOrder.ALL}
       />
     </div>
   )

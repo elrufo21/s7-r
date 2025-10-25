@@ -26,6 +26,7 @@ export const ContactIndex = () => {
     fncName: 'fnc_partner',
     module: ModulesEnum.CONTACTS,
   })
+  console.log('config.view_default', config.view_default)
 
   useEffect(() => {
     if (viewTypeFromConfig && config.module_url === location.pathname) {

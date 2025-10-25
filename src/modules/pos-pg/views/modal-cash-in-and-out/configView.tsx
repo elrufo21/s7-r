@@ -6,10 +6,8 @@ import { ColumnDef } from '@tanstack/react-table'
 import { useEffect, useMemo, useState } from 'react'
 import { DataTable } from '../../components/ListView'
 import { PaymentMethodCard } from '@/modules/pos-carnes/components/Payment'
-import { ModalBase } from '@/shared/components/modals/ModalBase'
-import { CustomHeader } from '../../components/CustomHeader'
 import { FrmBaseDialog } from '@/shared/components/core'
-import { TypeOriginPaymen, TypePayment } from '../../types'
+import { Type_pos_payment_origin, TypePayment } from '../../types'
 import { formatShortDate, getHour } from '@/shared/utils/dateUtils'
 import { GrTrash } from 'react-icons/gr'
 import { CustomToast } from '@/components/toast/CustomToast'
@@ -167,6 +165,7 @@ export function FrmMiddle({ control, errors, setValue, watch }: frmElementsProps
             placeholder="Importe"
             control={control}
             errors={errors}
+            useNumericKeyboard
           />
           <PosTextControlled
             name="reason"
@@ -185,7 +184,7 @@ export function FrmTab1() {
 
   const getPayments = async () => {
     const { oj_data } = await executeFnc('fnc_pos_payment', 's', [
-      [0, 'fequal', 'origin', TypeOriginPaymen.DIRECT_PAYMENT],
+      [0, 'fequal', 'origin', Type_pos_payment_origin.DIRECT_PAYMENT],
     ])
     setData(oj_data || [])
   }

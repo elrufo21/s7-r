@@ -5,7 +5,7 @@ import { ModuleLayout } from '@/shared/components/layouts/ModuleLayout'
 import Pos from '@/modules/pos/pages/Pos'
 import PosMeat from '@/modules/pos-carnes/pages/PosMeat'
 import PointOfSaleMeatPage from '@/modules/points-of-sale-carnes/pages/PointsOfSaleMeatPage'
-import PointOfSalePg from '@/modules/pos-pg/pages/PosMeat'
+import PointOfSalePg from '@/modules/pos-pg/pages/PosPg'
 
 const InvoicePage = lazy(() => import('@/modules/invoicing/pages/InvoicePage'))
 const InventoryPage = lazy(() => import('@/modules/inventory/pages/InventoryPage'))
@@ -14,7 +14,7 @@ const ActionPage = lazy(() => import('@/modules/action/pages/ActionPage'))
 const MenuModules = lazy(() => import('@/pages/ModuleOverviewPage'))
 const SettingsPage = lazy(() => import('@/modules/settings/pages/SettingsPage'))
 const PointOfSalePage = lazy(() => import('@/modules/points-of-sale/pages/PointsOfSalePage'))
-
+const PointsOfSalePg = lazy(() => import('@/modules/points-of-sale-pg/pages/PointsOfSalePgPage'))
 export const PrivateRoutes = () => {
   return (
     <Routes>
@@ -42,6 +42,14 @@ export const PrivateRoutes = () => {
             element={
               <Suspense fallback="">
                 <PointOfSaleMeatPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="points-of-sale-pg/*"
+            element={
+              <Suspense fallback="">
+                <PointsOfSalePg />
               </Suspense>
             }
           />

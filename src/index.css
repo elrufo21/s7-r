@@ -10857,16 +10857,23 @@ body {
 
 
 
+
+.pos-content-pg
+{
+  background-color: var(--btn-bg-pos) !important;
+  /* flex-grow: 1; */
+  /* overflow: auto; */
+}
 .leftpanel-pg
 {
-  width: 300px;
-  max-width: 300px;
-  min-width: 300px;
+  width: 250px;
+  max-width: 250px;
+  min-width: 250px;
   
-  padding-bottom: 4px;
-  padding-top: 4px;
-  padding-left: 4px;
-  padding-right: 4px;
+  padding-bottom: 0.5rem;
+  padding-top: 0.5rem;
+  padding-left: 0;
+  padding-right: 0;
 
   display: flex;
   flex-direction: column;

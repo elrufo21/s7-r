@@ -100,7 +100,9 @@ const ControlPanel = ({ config, viewType }: FrmWebOptionsProps) => {
     dataListShow: { counterPage, totalPages },
     breadcrumb,
     setSelectedViewType,
+    selectedViewType,
   } = useAppStore()
+  console.log('setViewType', viewType)
   const [isCreate, setIsCreate] = useState(true)
   const views = config.views
   const changeView = (view: ViewTypeEnum) => {

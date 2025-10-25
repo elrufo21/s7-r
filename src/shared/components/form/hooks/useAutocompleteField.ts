@@ -1,10 +1,10 @@
 import useAppStore from '@/store/app/appStore'
 import { useState, useEffect, useCallback } from 'react'
 import { OptionsType } from '@/shared/ui/inputs/input.types'
-
-type SimpleFilter = [0, 'fequal', string, string | number]
-type AdvancedFilter = ['s2', string, string, string[]]
-export type Filter = SimpleFilter | AdvancedFilter
+export type Filter =
+  | [0, 'fequal' | 'flike', string, string | number]
+  | ['s2', string, string, string | string[]]
+  | { column: string; value: string | number }
 type UseAutocompleteFieldProps = {
   initialValue?: { id: string | number; name: string }
   fncName: string

@@ -19,6 +19,7 @@ interface BaseTextControlledProps {
     fieldName?: string
   }
   required?: boolean
+  isNumeric?: boolean
 }
 const BaseTextControlled = ({
   name,
@@ -31,6 +32,7 @@ const BaseTextControlled = ({
   navigateLink,
   navigationConfig,
   required = false,
+  isNumeric = false,
 }: BaseTextControlledProps) => {
   const { formItem, setBreadcrumb, breadcrumb } = useAppStore()
   const navigate = useNavigate()
@@ -59,6 +61,8 @@ const BaseTextControlled = ({
         multiline={multiline}
         navigateLink={navigationConfig ? handleNavigate : navigateLink}
         required={required}
+        enableVirtualKeyboard={true}
+        useNumericKeyboard={isNumeric}
       />
     </FormRow>
   )

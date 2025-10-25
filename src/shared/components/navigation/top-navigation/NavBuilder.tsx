@@ -40,6 +40,7 @@ const NavBuilder: FC = () => {
   const { module } = config
   const navigation = pathname === '/app' ? ModulesEnum.BASE : navigationList[module]
   const { openDialog, closeDialogWithData } = useAppStore()
+
   const resetView = () => {
     setViewTypeFromConfig(true)
     setFiltersLocal([])
@@ -80,6 +81,10 @@ const NavBuilder: FC = () => {
           disableElevation
           onClick={() => {
             resetView()
+            // Ejecutar onClick personalizado si existe
+            if (item.onClick) {
+              item.onClick(navigate, executeFnc)
+            }
             if (item.path) navigate(item.path)
           }}
         >
@@ -102,6 +107,11 @@ const NavBuilder: FC = () => {
                 className="MenuItem_N2"
                 key={`${subSubItem.key}-${ind}`}
                 onClick={async () => {
+                  // Ejecutar onClick personalizado si existe
+                  if (subSubItem.onClick) {
+                    await subSubItem.onClick(navigate, executeFnc)
+                  }
+
                   if (subSubItem.openAsModal) {
                     let initialValues = {}
                     const values = subSubItem.modalConfig?.initialValues
@@ -155,6 +165,11 @@ const NavBuilder: FC = () => {
         <MenuItem
           key={subItem.key}
           onClick={async () => {
+            // Ejecutar onClick personalizado si existe
+            if (subItem.onClick) {
+              await subItem.onClick(navigate, executeFnc)
+            }
+
             if (subItem.openAsModal) {
               let initialValues = {}
               const values = subItem.modalConfig?.initialValues
@@ -200,6 +215,7 @@ const NavBuilder: FC = () => {
       )
     })
   }
+
   return (
     <>
       {navigation ? (
@@ -222,10 +238,7 @@ const NavBuilder: FC = () => {
             />
             <span className="o_menu_brand d-none d-md-flex ms-3 pe-0">{navigation.title}</span>
           </Link>
-          {/* <div className="mx-2"> */}
-          {/* <div className="hidden md:flex items-center text-sm">{renderNavigationItems()}</div> */}
           <div className="flex">{renderNavigationItems()}</div>
-          {/* </div> */}
         </>
       ) : (
         appShowPrevView && (

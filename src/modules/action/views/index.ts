@@ -36,6 +36,21 @@ import Frm_302_config from '@/modules/action/views/invoicing/products/config'
 import Frm_303_config from '@/modules/action/views/inventory/products_variant/config'
 import Frm_307_config from '@/modules/action/views/inventory/products/config'
 import Frm_317_config from '@/modules/action/views/inventory/products-category/config'
+import Frm_400_config from '@/modules/action/views/point-of-sale-pg/pos-session-pg/config'
+import Frm_401_config from '@/modules/action/views/point-of-sale-pg/pos-order-pg/config'
+import Frm_402_config from '@/modules/action/views/point-of-sale-pg/pos-payment-pg/config'
+import Frm_403_config from '@/modules/action/views/point-of-sale-pg/pos-customers-pg/config'
+import Frm_404_config from '@/modules/action/views/point-of-sale-pg/pos-products-pg/config'
+import Frm_405_config from '@/modules/action/views/point-of-sale-pg/pos-variants-product-pg/config'
+import Frm_406_config from '@/modules/action/views/point-of-sale-pg/pos-payment-method-pg/config'
+import Frm_407_config from '@/modules/action/views/point-of-sale-pg/coins-and-bills-pg/config'
+import Frm_408_config from '@/modules/action/views/point-of-sale-pg/weighing-scale-pg/config'
+import Frm_409_config from '@/modules/action/views/point-of-sale-pg/pos-point-pg/config'
+import Frm_410_config from '@/modules/action/views/point-of-sale-pg/product-pos-category-pg/config'
+import Frm_411_config from '@/modules/action/views/point-of-sale-pg/pos-attributes-pg/config'
+import Frm_412_config from '@/modules/action/views/point-of-sale-pg/containers-pg/config'
+import Frm_440_config from '@/modules/action/views/point-of-sale-pg/users-pg/config'
+import Frm_441_config from '@/modules/action/views/point-of-sale-pg/pos-unit-measurement-pg/config'
 import Frm_605_config from '@/modules/action/views/invoicing/customers/config'
 import Frm_606_config from '@/modules/action/views/invoicing/suppliers/config'
 import Frm_613_config from '@/modules/action/views/invoicing/payment-terms/config'
@@ -111,6 +126,21 @@ export const forms: FormConfigs = {
   Frm_303_config,
   Frm_307_config,
   Frm_317_config,
+  Frm_400_config,
+  Frm_401_config,
+  Frm_402_config,
+  Frm_403_config,
+  Frm_404_config,
+  Frm_405_config,
+  Frm_406_config,
+  Frm_407_config,
+  Frm_408_config,
+  Frm_409_config,
+  Frm_410_config,
+  Frm_411_config,
+  Frm_412_config,
+  Frm_440_config,
+  Frm_441_config,
   Frm_605_config,
   Frm_606_config,
   Frm_613_config,

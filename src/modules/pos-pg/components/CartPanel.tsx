@@ -15,117 +15,121 @@ import ModalMoreOptions from './modal/components/ModalMoreOptions'
 import productInfoConfig from '../views/product-info/config'
 import { usePWA } from '@/hooks/usePWA'
 import { offlineCache } from '@/lib/offlineCache'
-import { usePosActions } from '../hooks/usePosActions'
-import { adjustTotal } from '@/shared/helpers/helpers'
-import { CustomToast } from '@/components/toast/CustomToast'
-import CalculatorPanel from './modal/components/ModalCalculatorPanel'
 
-export default function CartPanel({ order }) {
+import { adjustTotal } from '@/shared/helpers/helpers'
+import CalculatorPanel from './modal/components/ModalCalculatorPanel'
+import { usePosActionsPg } from '@/modules/pos/hooks/usePosActionsPg'
+
+export default function CartPanel({ order }: { order: any[] }) {
   const {
     openDialog,
     closeDialogWithData,
     executeFnc,
     modalData,
-    updateOrderPartner,
+    updateOrderPartnerPg,
     setModalData,
-    orderData,
-    getTotalPriceByOrder,
-    selectedOrder,
-    selectedItem,
-    setSelectedItem,
-    setScreen,
-    screen,
-    changeToPaymentLocal,
-    finalCustomer,
-    setFinalCustomer,
-    setHandleChange,
-    operation,
-    setOperation,
-    clearDisplay,
-    addDigit,
-    setBackToProducts,
-    backToProducts,
-    defaultPosSessionData,
-    deleteOrder,
-    setSelectedLine,
-    frmLoading,
-    resetTrigger,
-    setSelectedOrder,
+    orderDataPg,
+    getTotalPriceByOrderPg,
+    selectedOrderPg,
+    selectedItemPg,
+    setSelectedItemPg,
+    setScreenPg,
+    screenPg,
+    changeToPaymentLocalPg,
+    finalCustomerPg,
+    setFinalCustomerPg,
+    setHandleChangePg,
+    operationPg,
+    setOperationPg,
+    clearDisplayPg,
+    addDigitPg,
+    backToProductsPg,
+    defaultPosSessionDataPg,
+    deleteOrderPg,
+    setSelectedLinePg,
+    resetTriggerPg,
+    setSelectedOrderPg,
   } = useAppStore()
   const { isOnline } = usePWA()
   const [cart, setCart] = useState<Product[]>([])
-
+  const prevLinesCount = useRef<number>(order?.lines?.length || 0)
+  useEffect(() => {
+    prevLinesCount.current = order?.lines?.length || 0
+    //  openCalculatorModal()
+  }, [order?.lines?.length])
   const [total, setTotal] = useState<number | string>()
   const [is_change, setIsChange] = useState(false)
-  const { saveCurrentOrder } = usePosActions()
-  const finalCustomerRef = useRef(finalCustomer)
+  const { saveCurrentOrder } = usePosActionsPg()
+
+  const finalCustomerPgRef = useRef(finalCustomerPg)
+
   useEffect(() => {
-    setOperation(Operation.QUANTITY)
-    setSelectedLine(selectedOrder, selectedItem)
-  }, [selectedItem])
+    setOperationPg(Operation.QUANTITY)
+    setSelectedLinePg(selectedOrderPg, selectedItemPg)
+  }, [selectedItemPg])
   useEffect(() => {
-    if (!resetTrigger) return
+    if (!resetTriggerPg) return
 
     // 👇 Aquí limpias los estados locales del CartPanel
-    clearDisplay()
-  }, [resetTrigger])
+    clearDisplayPg()
+  }, [resetTriggerPg])
   useEffect(() => {
-    const pos_Status = orderData?.find((item) => item?.order_id === selectedOrder)?.pos_status
-    if (pos_Status === 'P' && backToProducts === false) setScreen('payment')
+    const pos_Status = orderDataPg?.find((item) => item?.order_id === selectedOrderPg)?.pos_status
+    // if (pos_Status === 'P' && backToProductsPg === false) setScreenPg('payment')
 
     setCart(
-      orderData
-        ?.find((item) => item.order_id === selectedOrder)
+      orderDataPg
+        ?.find((item) => item.order_id === selectedOrderPg)
         ?.lines?.filter((item: any) => item.action !== ActionTypeEnum.DELETE) || []
     )
 
-    // setLocalValue(cart?.find((item) => item.product_id === selectedItem)?.quantity.toString() || '')
-  }, [orderData, selectedOrder])
+    // setLocalValue(cart?.find((item) => item.product_id === selectedItemPg)?.quantity.toString() || '')
+  }, [orderDataPg, selectedOrderPg])
 
   useEffect(() => {
-    finalCustomerRef.current = finalCustomer
-  }, [finalCustomer])
+    finalCustomerPgRef.current = finalCustomerPg
+  }, [finalCustomerPg])
 
   useEffect(() => {
     setIsChange(true)
-  }, [screen, selectedOrder])
+  }, [screenPg, selectedOrderPg])
 
   useEffect(() => {
-    const currentOrder = orderData.find((item) => item.order_id === selectedOrder)
+    const currentOrder = orderDataPg.find((item) => item.order_id === selectedOrderPg)
     const lines = currentOrder?.lines || []
     const selected = lines.filter((item: any) => item.selected)[0]?.line_id
     if (lines.length === 0) {
-      setSelectedItem(null)
+      setSelectedItemPg(null)
       return
     }
     if (selected) {
-      setSelectedItem(selected)
+      setSelectedItemPg(selected)
     } else {
-      setSelectedItem(lines[lines.length - 1].line_id)
+      setSelectedItemPg(lines[lines.length - 1].line_id)
     }
-  }, [selectedOrder])
+  }, [selectedOrderPg])
   useEffect(() => {
-    setFinalCustomer({
+    setFinalCustomerPg({
       partner_id:
-        orderData.find((item) => item.order_id === selectedOrder)?.partner_id ||
-        defaultPosSessionData.partner_id,
+        orderDataPg.find((item) => item.order_id === selectedOrderPg)?.partner_id ||
+        defaultPosSessionDataPg.partner_id,
       name:
-        orderData.find((item) => item.order_id === selectedOrder)?.partner_name ||
-        defaultPosSessionData.name,
+        orderDataPg.find((item) => item.order_id === selectedOrderPg)?.partner_name ||
+        defaultPosSessionDataPg.name,
     })
     if (is_change) {
-      if (orderData.find((item) => item.order_id === selectedOrder)?.partner_id) {
-        /* setFinalCustomer({
-          partner_id: orderData.find((item) => item.order_id === selectedOrder)?.partner_id,
-          name: orderData.find((item) => item.order_id === selectedOrder)?.partner_name,
+      if (orderDataPg.find((item) => item.order_id === selectedOrderPg)?.partner_id) {
+        /* setFinalCustomerPg({
+          partner_id: orderDataPg.find((item) => item.order_id === selectedOrderPg)?.partner_id,
+          name: orderDataPg.find((item) => item.order_id === selectedOrderPg)?.partner_name,
         })*/
       }
-      if (orderData?.find((item) => item?.order_id === selectedOrder)?.pos_status === 'Y')
-        // setScreen('payment')
+      if (orderDataPg?.find((item) => item?.order_id === selectedOrderPg)?.pos_status === 'Y')
+        // setScreenPg('payment')
 
         setIsChange(false)
     }
-  }, [is_change, orderData, selectedOrder])
+  }, [is_change, orderDataPg, selectedOrderPg])
 
   const fnc_edit_client = async (client: any) => {
     const { oj_data } = await executeFnc('fnc_partner', 's1', [client.partner_id.toString()])
@@ -149,9 +153,9 @@ export default function CartPanel({ order }) {
               const formData = getData() as any
               await executeFnc('fnc_partner', 'u', formData)
               const rs = await executeFnc('fnc_partner', 's', [[1, 'pag', 1]])
-              if (finalCustomer) {
+              if (finalCustomerPg) {
                 const newData = rs.oj_data.map((item: any) => {
-                  if (item.partner_id === finalCustomerRef.current?.partner_id) {
+                  if (item.partner_id === finalCustomerPgRef.current?.partner_id) {
                     return {
                       ...item,
                       selected: true,
@@ -160,13 +164,13 @@ export default function CartPanel({ order }) {
                   return item
                 })
                 setModalData(newData)
-                setHandleChange(true)
+                setHandleChangePg(true)
                 closeDialogWithData(dialogId, {})
                 return
               }
               /*if (formData.selected === true) {
                 const newData = rs.oj_data.map((item: any) => {
-                  if (item.partner_id === finalCustomerRef.current?.partner_id) {
+                  if (item.partner_id === finalCustomerPgRef.current?.partner_id) {
                     return {
                       ...item,
                       selected: true,
@@ -180,7 +184,7 @@ export default function CartPanel({ order }) {
                 return
               }*/
               setModalData(rs.oj_data)
-              setHandleChange(true)
+              setHandleChangePg(true)
               closeDialogWithData(dialogId, {})
             } catch (err) {
               console.error('Error al actualizar cliente:', err)
@@ -197,7 +201,7 @@ export default function CartPanel({ order }) {
   }
 
   useEffect(() => {
-    setTotal(getTotalPriceByOrder(order.order_id))
+    setTotal(getTotalPriceByOrderPg(order.order_id))
   }, [cart])
   const MAX_DECIMALS = 2
 
@@ -221,9 +225,9 @@ export default function CartPanel({ order }) {
                 partner_id: crypto.randomUUID(),
                 action: ActionTypeEnum.INSERT,
               })
-              setFinalCustomer(formData)
+              setFinalCustomerPg(formData)
               setIsChange(true)
-              setHandleChange(true)
+              setHandleChangePg(true)
               closeDialogWithData(dialogId, {})
               return
             }
@@ -240,14 +244,14 @@ export default function CartPanel({ order }) {
               return item
             })
             setModalData(dataUpdate)
-            updateOrderPartner(selectedOrder, rs.oj_data.partner_id, formData.name)
+            updateOrderPartnerPg(selectedOrderPg, rs.oj_data.partner_id, formData.name)
             offlineCache.saveContactOffline({
               ...formData,
               partner_id: rs.oj_data.partner_id,
             })
-            //setFinalCustomer(dataUpdate.find((item: any) => item.selected === true))
+            //setFinalCustomerPg(dataUpdate.find((item: any) => item.selected === true))
             setIsChange(true)
-            setHandleChange(true)
+            setHandleChangePg(true)
             closeDialogWithData(dialogId, {})
           },
         },
@@ -261,7 +265,7 @@ export default function CartPanel({ order }) {
   }
   const fnc_open_contact_modal = async () => {
     const localCustomers = await offlineCache.getOfflineContacts()
-    if (modalData.length === 0) setModalData(localCustomers)
+    setModalData(localCustomers)
     const dialogId = openDialog({
       title: 'Elija un cliente',
       contactModal: true,
@@ -269,17 +273,17 @@ export default function CartPanel({ order }) {
         <ModalBase
           config={contactsConfig}
           onRowClick={(row) => {
-            if (row.partner_id === finalCustomer.partner_id) {
-              setFinalCustomer({})
+            /*if (row.partner_id === finalCustomerPg.partner_id) {
+              setFinalCustomerPg({})
               setIsChange(true)
-              setHandleChange(true)
+              setHandleChangePg(true)
               closeDialogWithData(dialogId, row)
               return
-            }
+            }*/
             setIsChange(true)
-            updateOrderPartner(selectedOrder, row.partner_id, row.name)
-            //setFinalCustomer(row)
-            setHandleChange(true)
+            updateOrderPartnerPg(order.order_id, row.partner_id, row.name)
+            //setFinalCustomerPg(row)
+            setHandleChangePg(true)
             closeDialogWithData(dialogId, row)
           }}
           contactModal={true}
@@ -294,9 +298,9 @@ export default function CartPanel({ order }) {
           text: 'Descartar',
           type: 'cancel',
           onClick: () => {
-            setFinalCustomer({
-              partner_id: defaultPosSessionData.partner_id,
-              partner_name: defaultPosSessionData.name,
+            setFinalCustomerPg({
+              partner_id: defaultPosSessionDataPg.partner_id,
+              partner_name: defaultPosSessionDataPg.name,
             })
             closeDialogWithData(dialogId, {})
           },
@@ -308,7 +312,7 @@ export default function CartPanel({ order }) {
   useEffect(() => {
     if (cart.length > 0) {
       const lastItem = cart[cart.length - 1]
-      if (lastItem && lastItem.line_id === selectedItem) {
+      if (lastItem && lastItem.line_id === selectedItemPg) {
         // Esperar a que el DOM se actualice
         setTimeout(() => {
           if (itemRefs.current[lastItem.line_id]) {
@@ -324,18 +328,18 @@ export default function CartPanel({ order }) {
 
   // Efecto para manejar el scroll cuando se selecciona un item existente
   useEffect(() => {
-    if (selectedItem && itemRefs.current[selectedItem]) {
-      itemRefs.current[selectedItem]?.scrollIntoView({
+    if (selectedItemPg && itemRefs.current[selectedItemPg]) {
+      itemRefs.current[selectedItemPg]?.scrollIntoView({
         behavior: 'smooth',
         block: 'center',
       })
     }
-  }, [selectedItem])
+  }, [selectedItemPg])
 
   // Función para manejar la selección de productos
   const handleSelectItem = (productId: string) => {
-    if (productId !== selectedItem) {
-      setSelectedItem(productId)
+    if (productId !== selectedItemPg) {
+      setSelectedItemPg(productId)
 
       const selectedProduct = cart.find((item) => item.line_id === productId)
       if (selectedProduct && selectedProduct.quantity !== undefined) {
@@ -346,21 +350,21 @@ export default function CartPanel({ order }) {
         const tara = selectedProduct.taraQuantity?.toString() || '0'
         const taraValue = selectedProduct.taraValue?.toString() || '0'
 
-        clearDisplay()
+        clearDisplayPg()
         let valueToDisplay
-        if (operation === Operation.PRICE) {
+        if (operationPg === Operation.PRICE) {
           valueToDisplay = price
-        } else if (operation === Operation.TARA_QUANTITY) {
+        } else if (operationPg === Operation.TARA_QUANTITY) {
           valueToDisplay = tara
-        } else if (operation === Operation.TARA_VALUE) {
+        } else if (operationPg === Operation.TARA_VALUE) {
           valueToDisplay = taraValue
         } else {
           valueToDisplay = quantity
         }
         for (const digit of valueToDisplay) {
-          addDigit(digit)
+          addDigitPg(digit)
         }
-        setHandleChange(true)
+        setHandleChangePg(true)
       }
     }
   }
@@ -384,7 +388,7 @@ export default function CartPanel({ order }) {
     })
   }
   const fnc_more_info = async () => {
-    const product_id = cart.find((item) => item.line_id === selectedItem)?.product_id
+    const product_id = cart.find((item) => item.line_id === selectedItemPg)?.product_id
     const { oj_data } = await executeFnc('fnc_product', 's1', [product_id])
 
     const dialogId = openDialog({
@@ -400,7 +404,7 @@ export default function CartPanel({ order }) {
     })
   }
   const fnc_cancel_order = async () => {
-    await executeFnc('fnc_pos_order', 'd', [selectedOrder])
+    await executeFnc('fnc_pos_order', 'd', [selectedOrderPg])
     /*const newOrders = await executeFnc('fnc_pos_order', 's_pos', [
       [0, 'fequal', 'point_id', pointId],
       [
@@ -412,7 +416,7 @@ export default function CartPanel({ order }) {
         ],
       ],
     ])*/
-    deleteOrder(selectedOrder)
+    deleteOrderPg(selectedOrderPg)
   }
 
   const fnc_open_more_options_modal = () => {
@@ -470,20 +474,20 @@ export default function CartPanel({ order }) {
   }
 
   const fnc_to_pay = async () => {
-    changeToPaymentLocal(selectedOrder)
+    changeToPaymentLocalPg(selectedOrderPg)
     /*  const rs = await executeFnc('fnc_pos_order', 'u', {
-      order_id: selectedOrder,
+      order_id: selectedOrderPg,
       state: 'Y',
     })
     if (rs.oj_data.length > 0) {
       const newOrders = await executeFnc('fnc_pos_order', 's_pos', [
         [0, 'fequal', 'point_id', pointId],
       ])
-      setOrderData(newOrders.oj_data)
+      setorderDataPg(newOrders.oj_data)
     }*/
     //Linea comentada, analizar luego
-    //  changeToPayment(selectedOrder)
-    setScreen('payment')
+    //  changeToPayment(selectedOrderPg)
+    // setScreenPg('payment')
     saveCurrentOrder(true, true)
   }
 
@@ -491,10 +495,10 @@ export default function CartPanel({ order }) {
 
   const openCalculatorModal = () => {
     const dialogId = openDialog({
-      title: cart?.find((c) => c.line_id === selectedItem)?.name,
+      title: cart?.find((c) => c.line_id === selectedItemPg)?.name,
       dialogContent: () => (
         <CalculatorPanel
-          product={cart?.find((c) => c.line_id === selectedItem)}
+          product={cart?.find((c) => c.line_id === selectedItemPg)}
           dialogId={dialogId}
           selectedField={Operation.QUANTITY}
         />
@@ -526,19 +530,70 @@ export default function CartPanel({ order }) {
   }
 
   return (
-    <div
-      className={`flex flex-col h-full border rounded-md shadow-sm transition-all duration-200 ${
-        selectedOrder === order.order_id
-          ? 'border-green600 ring-4 ring-green-300'
-          : 'border-gray-200'
-      }`}
-    >
+    // <div
+    //   className={`flex flex-col h-full border rounded-md shadow-sm transition-all duration-200 ${selectedOrderPg === order.order_id
+    //     ? 'border-green600 ring-4 ring-green-300 !bg-green-200 *:!bg-green-200'
+    //     : 'border-gray-200'
+    //     }`}
+    // >
+
+    <div className={`flex flex-col h-full`}>
+      <div className="w-full min-h-[40px] h-[40px] flex items-center justify-center font-bold bg-white">
+        {/* Usar order.payment_state en lugar de order.payment_state */}
+        {order.payment_state === 'PE' ? 'Crédito' : 'Venta público'}
+      </div>
+
+      <div className="pads">
+        <div className="control-buttons pb-[8px]">
+          <button
+            // className="btn2 btn2-white touch-lh-m text-truncate w-auto text-action"
+            className="btn2 btn2-white touch-lh-m text-truncate w-full text-action"
+            onClick={() => {
+              fnc_open_contact_modal()
+            }}
+          >
+            {order.partner_name}
+          </button>
+
+          {/*
+          <button
+            className="btn2 btn2-white touch-lh-m w-auto"
+            onClick={() => fnc_open_note_modal()}
+          >
+            Nota
+          </button>
+          */}
+
+          {/*
+          <button
+            className="btn2 btn2-white touch-lh-m text-truncate ml-auto w-[55.6px] min-w-[55.6px]"
+            onClick={() => {
+              fnc_open_more_options_modal()
+            }}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+            </svg>
+          </button>
+          */}
+        </div>
+      </div>
+
       <div
-        className="order-container cursor-pointer "
-        onClick={() => setSelectedOrder(order.order_id)}
+        // className={`order-container cursor-pointer`}
+        className={`order-container cursor-pointer ${
+          selectedOrderPg === order.order_id ? 'bg-yellow-200' : ''
+        }`}
+        onClick={() => setSelectedOrderPg(order.order_id)}
       >
         {order.lines?.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full">
+            {/*
             <div className="text-6xl mb-4">
               <svg
                 fill="#858585"
@@ -557,8 +612,8 @@ export default function CartPanel({ order }) {
                 </g>
               </svg>
             </div>
-
-            <p className="text-gray-500">Comience a agregar productos</p>
+            */}
+            {/* <p className="text-gray-500">Comience a agregar productos</p> */}
           </div>
         ) : (
           <div>
@@ -574,11 +629,11 @@ export default function CartPanel({ order }) {
                     quantity: item.quantity ?? 0,
                     price_unit: item.price_unit ?? 0,
                   }}
-                  isSelected={selectedItem === item.line_id}
+                  isSelected={selectedItemPg === item.line_id}
                   onSelect={() => {
-                    setOperation(Operation.QUANTITY)
+                    setOperationPg(Operation.QUANTITY)
                     handleSelectItem(item.line_id)
-                    // setSelectedLine(selectedOrder, item.line_id)
+                    // setSelectedLinePg(selectedOrderPg, item.line_id)
                   }}
                   maxDecimals={MAX_DECIMALS}
                   btnDelete={true}
@@ -590,87 +645,79 @@ export default function CartPanel({ order }) {
         )}
       </div>
 
-      <div className="order-bottom">
-        {order.lines?.length > 0 && (
-          // <div className="order-summary p-3 border-b bg-gray-50">
-          <div className="order-summary p-3">
+      <div className="order-bottom mt-[8px]">
+        {/* {order.lines?.length > 0 && ( */}
+        {/* <div className="order-summary p-3 border-b bg-gray-50"> */}
+        <div className="order-summary p-3">
+          {/*
             <div className="flex justify-between text-gray-500">
               <span>Impuestos</span>
               <span>S/ 0:00</span>
             </div>
-            <div className="flex justify-between text-lg font-bold mt-1">
-              <span>Total</span>
-              <span>S/ {adjustTotal(Number(total)).adjusted}</span>
+            */}
+
+          <div className="flex justify-between text-lg font-bold mt-1">
+            {/*
+            <span>Total</span>
+            <span>S/ {adjustTotal(Number(total)).adjusted}</span>
+            */}
+
+            {/* <span>Total</span> */}
+            <div className="w-full text-center">
+              S/ {adjustTotal(Number(total)).adjusted.toFixed(2)}
             </div>
           </div>
-        )}
-        <div className="pads bg-white">
-          <div className="control-buttons !pb-0">
+        </div>
+        {/* )} */}
+      </div>
+
+      {/*
+      <div className="pads bg-white">
+        <div className="subpads pt-[8px]">
+          <div className="actionpad">
             <button
-              className="btn2 btn2-white touch-lh-m text-truncate w-auto text-action"
-              onClick={() => {
-                fnc_open_contact_modal()
+              // className="btn btn-primary btn-lg flex-auto touch-lh-l"
+              className="btn btn-primary btn-lg flex-auto min-h-[70px]"
+              disabled={frmLoading}
+              onClick={async () => {
+                if (total === 0) {
+                  CustomToast({
+                    title: 'Error al continuar a pago',
+                    description: 'No se puede continuar: el monto debe ser distinto de 0.',
+                    type: 'error',
+                  })
+                  return
+                }
+                if (order.payment_state === TypeStatePayment.PENDING_PAYMENT) {
+                  const nd = buildOrderPayloadNoPayment({
+                    orderData: order,
+                    selectedOrder: selectedOrderPg,
+                    session_id: session_id,
+                    userData,
+                    finalCustomer: finalCustomerPg,
+                    pointId,
+                  })
+                  await offlineCache.saveOrderOffline({
+                    ...nd,
+                    action: typeof order.order_id === 'string' ? 'i' : 'u',
+                  })
+                  const orders = await offlineCache.getOfflinePosOrders()
+                  setOrderDataPg(orders)
+                  setScreenPg('invoice')
+                  return
+                }
+                setBackToProductsPg(false)
+                setIsChange(true)
+                setHandleChangePg(true)
+                fnc_to_pay()
               }}
             >
-              {order.partner_name}
-            </button>
-            {/**
-             * <button
-              className="btn2 btn2-white touch-lh-m w-auto"
-              onClick={() => fnc_open_note_modal()}
-            >
-              Nota
-            </button>
-             * 
-             */}
-            <button
-              className="btn2 btn2-white touch-lh-m text-truncate ml-auto w-[55.6px] min-w-[55.6px]"
-              onClick={() => {
-                fnc_open_more_options_modal()
-              }}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-              </svg>
+              Pago
             </button>
           </div>
-
-          {order.lines?.length > 0 && (
-            <>
-              <div className="subpads pt-[8px]">
-                <div className="actionpad">
-                  <button
-                    // className="btn btn-primary btn-lg flex-auto touch-lh-l"
-                    className="btn btn-primary btn-lg flex-auto min-h-[70px]"
-                    disabled={frmLoading}
-                    onClick={() => {
-                      if (total === 0) {
-                        CustomToast({
-                          title: 'Error al continuar a pago',
-                          description: 'No se puede continuar: el monto debe ser distinto de 0.',
-                          type: 'error',
-                        })
-                        return
-                      }
-                      setBackToProducts(false)
-                      setIsChange(true)
-                      setHandleChange(true)
-                      fnc_to_pay()
-                    }}
-                  >
-                    Pago
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
         </div>
       </div>
+      */}
     </div>
   )
 }

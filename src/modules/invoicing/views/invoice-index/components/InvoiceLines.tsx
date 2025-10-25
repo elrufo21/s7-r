@@ -1,13 +1,4 @@
-import {
-  useState,
-  useMemo,
-  useEffect,
-  useRef,
-  FocusEvent,
-  ChangeEvent,
-  memo,
-  useCallback,
-} from 'react'
+import { useState, useMemo, useEffect, useRef, ChangeEvent, memo, useCallback } from 'react'
 import { Row, ColumnDef, Column, Table } from '@tanstack/react-table'
 
 import useAppStore from '@/store/app/appStore'
@@ -19,7 +10,6 @@ import {
 } from '@/modules/invoicing/invoice.types'
 import { defaultProduct } from '@/modules/invoicing/constants'
 import { Chip, Tooltip } from '@mui/material'
-import { toast } from 'sonner'
 import {
   ActionTypeEnum,
   FormActionEnum,
@@ -29,7 +19,7 @@ import {
 import { AutocompleteTable, MultiSelecTable, TextControlled } from '@/shared/ui'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { GiHamburgerMenu } from 'react-icons/gi'
-import { InvoiceData, TypeInvoiceLineEnum } from '@/shared/components/view-types/viewTypes.types'
+import { TypeInvoiceLineEnum } from '@/shared/components/view-types/viewTypes.types'
 import { GrTrash } from 'react-icons/gr'
 import { useInvoiceCalculations } from '@/modules/invoicing/hooks/useInvoiceLines'
 import { formatCurrency } from '@/shared/helpers/currency'
@@ -41,17 +31,14 @@ import UomConfig from '@/modules/action/views/inventory/unit-measurement/config'
 import { useAutocompleteField } from '@/shared/components/form/hooks/useAutocompleteField'
 import { DragEditableTable } from '@/shared/components/table/drag-editable-table/base-components/EditableTable'
 
-// Componente optimizado para Cantidad que mantiene el foco
 const normalizeTaxes = (taxes: MoveLinesTax[], taxOptions: any[]) => {
   if (!taxes || !taxOptions) return []
 
   return taxes.map((tax) => {
-    // Si ya tiene value, lo retorna tal como está
     if (tax.value !== undefined) {
       return tax
     }
 
-    // Buscar el value en las opciones
     const taxOption = taxOptions.find((option) => option.value === tax.tax_id)
     return {
       ...tax,
@@ -74,7 +61,8 @@ const QuantityField = memo(
     taxOptions: any[]
   }) => {
     const [localValue, setLocalValue] = useState(row.original.quantity?.toString() || '0')
-    const debounceRef = useRef<NodeJS.Timeout | null>(null)
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
     const { setFrmIsChangedItem } = useAppStore()
 
     // Sincronizar con cambios externos
@@ -202,7 +190,8 @@ const PriceField = memo(
     taxOptions: any[]
   }) => {
     const [localValue, setLocalValue] = useState(row.original.price_unit?.toString() || '0')
-    const debounceRef = useRef<NodeJS.Timeout | null>(null)
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
     const { setFrmIsChangedItem } = useAppStore()
 
     // Sincronizar con cambios externos
@@ -550,7 +539,8 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
     return []
   })
 
-  const handleNumericFieldChange = async (
+  /**
+  *  const handleNumericFieldChange = async (
     row: Row<MoveLine>,
     event: FocusEvent<HTMLInputElement | HTMLTextAreaElement, Element>,
     table: Table<MoveLine>,
@@ -595,6 +585,7 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
       console.error(error)
     }
   }
+  */
 
   const handleChangeUdM = async (
     row: Row<MoveLine>,
@@ -659,13 +650,13 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
     }
   }
   const handleChangeProduct = async (
-    row: Row<InvoiceData>,
+    row: Row<MoveLine>,
     dataProduct: {
       rowId: number
       columnId: string
       option: Record<string, any>
     },
-    table: Table<InvoiceData>
+    table: Table<MoveLine>
   ) => {
     try {
       const updateRow = (table.options.meta as any).updateRow
@@ -696,7 +687,7 @@ const InvoiceLines = ({ watch, setValue, control, errors, editConfig }: frmEleme
       }
 
       const amount_untaxed = await calculateAmounts({
-        products: table.getRowModel().rows.map((elem: Row<InvoiceData>) => elem.original) as any,
+        products: table.getRowModel().rows.map((elem: Row<MoveLine>) => elem.original) as any,
         product: productParams,
       })
       const fieldUpdate = {

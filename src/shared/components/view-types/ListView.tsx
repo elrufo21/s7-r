@@ -167,7 +167,6 @@ export const ListView = ({
     const parentRow = row.getParentRow()
     const data = parentRow?.original?.groupItems ?? []
     const item = row.original
-
     if (!item[idRow]) return
     if (parent) setGroupedParentRow(parentRow!)
     if (setDataFormShow) {
@@ -706,10 +705,18 @@ const TableHeader = ({ table }: { table: Table<any> }) => (
   </thead>
 )
 
-const TableFooter = ({ table, config, dataShow }: { table: Table<any>; config: any; dataShow: any[] }) => {
+const TableFooter = ({
+  table,
+  config,
+  dataShow,
+}: {
+  table: Table<any>
+  config: any
+  dataShow: any[]
+}) => {
   // Obtener las columnas que deben mostrar totales desde config.grid.totalColumns
   const totalColumns = config.grid?.totalColumns || []
-  
+
   if (!totalColumns.length || !dataShow.length) return null
 
   // Función para extraer valor numérico de strings formateados
@@ -726,13 +733,13 @@ const TableFooter = ({ table, config, dataShow }: { table: Table<any>; config: a
   // Calcular totales
   const totals: Record<string, number> = {}
   const totalFormats: Record<string, string> = {}
-  
+
   totalColumns.forEach((columnId: string) => {
     totals[columnId] = dataShow.reduce((sum, row) => {
       const value = extractNumericValue(row[columnId])
       return sum + value
     }, 0)
-    
+
     // Detectar si la columna tiene formato de moneda basado en el primer valor
     const firstValue = dataShow[0]?.[columnId]
     if (typeof firstValue === 'string' && firstValue.includes('S/')) {
@@ -748,8 +755,9 @@ const TableFooter = ({ table, config, dataShow }: { table: Table<any>; config: a
           {headerGroup.headers.map((header, index) => {
             const columnId = header.column.id
             const showTotal = totalColumns.includes(columnId)
-            const isFirstDataColumn = index === 1 || (index === 0 && columnId !== 'select' && columnId !== 'drag-handle')
-            
+            const isFirstDataColumn =
+              index === 1 || (index === 0 && columnId !== 'select' && columnId !== 'drag-handle')
+
             return (
               <td
                 key={`footer-${header.id}`}
@@ -760,10 +768,9 @@ const TableFooter = ({ table, config, dataShow }: { table: Table<any>; config: a
               >
                 {showTotal ? (
                   <span>
-                    {totalFormats[columnId] === 'currency' 
+                    {totalFormats[columnId] === 'currency'
                       ? `S/ ${totals[columnId]?.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                      : `S/ ${totals[columnId]?.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                    }
+                      : `S/ ${totals[columnId]?.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                   </span>
                 ) : isFirstDataColumn ? (
                   <span></span>

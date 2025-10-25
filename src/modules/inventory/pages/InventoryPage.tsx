@@ -11,6 +11,7 @@ const InventoryPage = () => {
     setDinamicModule(config.module)
     setConfig(config)
     localStorage.setItem('module', config.module)
+    console.log('config.view_default', config.view_default)
     setViewType(config.view_default)
   }, [config, setConfig])
 

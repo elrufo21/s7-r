@@ -33,6 +33,7 @@ export const PointOfSaleIndex = () => {
 
   useEffect(() => {
     if (viewTypeFromConfig && config.module_url === location.pathname) {
+      console.log('config.view_default', config.view_default)
       setViewType(config.view_default)
       setTabForm(0)
       setViewTypeFromConfig(false)

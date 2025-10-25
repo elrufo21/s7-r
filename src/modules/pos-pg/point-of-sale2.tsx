@@ -21,17 +21,17 @@ const PointOfSale = () => {
     executeFnc,
     openDialog,
     closeDialogWithData,
-    initializePointOfSale,
-    setOrderData,
+    initializePointOfSalePg,
+    setOrderDataPg,
     setSyncLoading,
-    setScreen,
-    localMode,
-    sync_data,
-    setSyncData,
-    setSessionId,
-    setPointId,
-    connected,
-    connectToDevice
+    setScreenPg,
+    localModePg,
+    sync_dataPg,
+    setSyncDataPg,
+    setSessionIdPg,
+    setPointIdPg,
+    connectedPg,
+    connectToDevicePg,
   } = useAppStore()
   const sessions = JSON.parse(localStorage.getItem('sessions') || '[]')
   const session = sessions.find((s: any) => s.point_id === Number(pointId))
@@ -42,34 +42,34 @@ const PointOfSale = () => {
 
     try {
       if (!isOnline) {
-        //  await offlineCache.generateTestOrders(100, Number(pointId), session_id)
+        //await offlineCache.generateTestOrders(100, Number(pointId), session_id)
       }
-      if (sync_data) {
+      if (sync_dataPg) {
         await offlineCache.syncOfflineData(
           executeFnc,
           pointId,
-          setOrderData,
+          setOrderDataPg,
           setSyncLoading,
           session_id
         )
-        setSyncData(false)
+        setSyncDataPg(false)
       }
-      await initializePointOfSale(pointId, isOnline, session_id)
+      await initializePointOfSalePg(pointId, isOnline, session_id, true)
     } catch (error) {
       console.error('Fallo la inicialización de datos del POS:', error)
     }
   }
-  useEffect(()=>{
-    if(!connected){
-      connectToDevice()
+  useEffect(() => {
+    if (!connectedPg) {
+      connectToDevicePg()
     }
-  },[connected])
+  }, [connectedPg])
   useEffect(() => {
     isOnlineRef.current = isOnline
   }, [isOnline])
   useEffect(() => {
-    setPointId(Number(pointId))
-    if (session_id !== 0 && session_id) setSessionId(session_id)
+    setPointIdPg(Number(pointId))
+    if (session_id !== 0 && session_id) setSessionIdPg(session_id)
     return () => {
       if (!isOnlineRef.current) {
         offlineCache.addPosOrderToQueue()
@@ -90,12 +90,12 @@ const PointOfSale = () => {
     localStorage.setItem(key, JSON.stringify(updated))
   }
   useEffect(() => {
-    if (isOnline && !localMode) {
+    if (isOnline && !localModePg) {
       const getPosOrders = async () => {
         offlineCache.syncOfflineData(
           executeFnc,
           Number(pointId),
-          setOrderData,
+          setOrderDataPg,
           setSyncLoading,
           session_id
         )
@@ -106,7 +106,7 @@ const PointOfSale = () => {
   }, [isOnline])
 
   useEffect(() => {
-    setScreen('products')
+    setScreenPg('products')
     const getSession = async (s: number) => {
       const { oj_data } = await executeFnc('fnc_pos_session', 's1', [s])
       updateLocalStorageObject('secuence', oj_data[0].sequence)
@@ -196,8 +196,8 @@ const PointOfSale = () => {
               getSession(response.oj_data?.session_id)
               localStorage.setItem('sessions', JSON.stringify(newSessions))
 
-              setSessionId(response.oj_data?.session_id)
-              setPointId(Number(pointId))
+              setSessionIdPg(response.oj_data?.session_id)
+              setPointIdPg(Number(pointId))
 
               // ✅ Guardamos en local_pos_open para que luego "Seguir vendiendo" funcione
               const localPosOpen = JSON.parse(localStorage.getItem('local_pos_open') || '[]')
@@ -235,7 +235,7 @@ const PointOfSale = () => {
   return (
     <>
       <Header pointId={pointId ?? ''} />
-      <div className="pos-content">
+      <div className="pos-content pos-content-pg">
         <Screens />
       </div>
     </>

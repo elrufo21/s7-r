@@ -110,6 +110,7 @@ export interface MoveLine {
   amount_untaxed_in_currency: string
   action: ActionTypeEnum
   move_lines_taxes_change: boolean
+  notes: string
   _resetKey?: number
 }
 

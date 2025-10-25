@@ -4,11 +4,11 @@ import { useState } from 'react'
 import { AiTwotoneHome } from 'react-icons/ai'
 
 export default function CategorySelector() {
-  const { categories, selectedCategory, setSelectedCategory } = useAppStore()
+  const { categoriesPg, selectedCategoryPg, setSelectedCategoryPg } = useAppStore()
   const [currentPath, setCurrentPath] = useState<number[]>([])
   const getVisibleCategories = () => {
     const visible: any[] = []
-    let current = categories
+    let current = categoriesPg
 
     visible.push({ isHome: true })
 
@@ -29,12 +29,12 @@ export default function CategorySelector() {
   const handleCategoryClick = (category: any) => {
     if (category.isBack) {
       setCurrentPath(currentPath.slice(0, -1))
-      setSelectedCategory(category.category_id)
+      setSelectedCategoryPg(category.category_id)
     } else if (category.isHome) {
       setCurrentPath([])
-      setSelectedCategory('')
+      setSelectedCategoryPg('')
     } else {
-      setSelectedCategory(category.category_id)
+      setSelectedCategoryPg(category.category_id)
       if (category.children && category.children.length > 0) {
         setCurrentPath([...currentPath, category.category_id])
       }
@@ -45,7 +45,7 @@ export default function CategorySelector() {
     <div>
       <div className="category-list d-flex flex-wrap gap-2">
         {getVisibleCategories().map((category: any, index: number) => {
-          const isSelected = selectedCategory === category.category_id
+          const isSelected = selectedCategoryPg === category.category_id
           const baseClass =
             'category-button p-1 btn d-flex justify-content-center align-items-center rounded-3'
 

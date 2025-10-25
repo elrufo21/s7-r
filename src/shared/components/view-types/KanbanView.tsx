@@ -11,7 +11,7 @@ type KanbanViewProps = {
 export const KanbanView = ({ config }: KanbanViewProps) => {
   const navigate = useNavigate()
 
-  const { setSessionId, setSyncData, frmLoading } = useAppStore()
+  const { setSessionId, setSyncData, setSyncDataPg, setSessionIdPg, frmLoading } = useAppStore()
   const {
     dataKanbanShow: { dataShow },
     setDataFormShow,
@@ -21,6 +21,7 @@ export const KanbanView = ({ config }: KanbanViewProps) => {
   const viewItem = async (item: any) => {
     setDataFormShow(dataShow)
     setSessionId(item['session_id'])
+    setSessionIdPg(item['session_id'])
     navigate(`${config.item_url}/${item?.[idRow]}`)
   }
   if (fnc_name === 'fnc_pos_point') {
@@ -166,7 +167,7 @@ export const KanbanView = ({ config }: KanbanViewProps) => {
           ))}
         </>
       )
-    } else if (config.module === ModulesEnum.POINTS_OF_SALE_MEAT) {
+    } else if (config.module === ModulesEnum.POINTS_OF_SALE_PG) {
       return (
         <>
           {dataShow.map((item, index) => (
@@ -194,6 +195,25 @@ export const KanbanView = ({ config }: KanbanViewProps) => {
                           onClick={(e) => {
                             e.stopPropagation()
 
+                            const localPosOpen = JSON.parse(
+                              localStorage.getItem('local_pos_open') || '[]'
+                            )
+                            const isOpen = localPosOpen.some(
+                              (p: any) => p?.point_id === item.point_id
+                            )
+
+                            if (!isOpen) {
+                              CustomToast({
+                                title: 'No se puede seguir vendiendo',
+                                description: `Otro usuario está en el punto de venta.`,
+                                type: 'warning',
+                              })
+                              console.warn(
+                                `Punto ${item.point_id} no está en local_pos_open. No se abrirá.`
+                              )
+                              return // ❌ Evita continuar si no está abierto
+                            }
+
                             const sessions = JSON.parse(localStorage.getItem('sessions') || '[]')
 
                             const targetSession = {
@@ -213,7 +233,7 @@ export const KanbanView = ({ config }: KanbanViewProps) => {
 
                             const prevActive = sessions.find((s: any) => s.active)
                             if (!prevActive || prevActive.point_id !== item.point_id) {
-                              setSyncData(true)
+                              setSyncDataPg(true)
                             }
 
                             localStorage.setItem('sessions', JSON.stringify(nextSessions))
@@ -247,11 +267,11 @@ export const KanbanView = ({ config }: KanbanViewProps) => {
 
                             const prevActive = sessions.find((s: any) => s.active)
                             if (!prevActive || prevActive.point_id !== item.point_id) {
-                              setSyncData(true)
+                              setSyncDataPg(true)
                             }
 
                             localStorage.setItem('sessions', JSON.stringify(nextSessions))
-                            navigate(`/pos/${item.point_id}`)
+                            navigate(`/pos-pg/${item.point_id}`)
                           }}
                         >
                           Aperturar caja
@@ -266,7 +286,127 @@ export const KanbanView = ({ config }: KanbanViewProps) => {
         </>
       )
     }
+  } else if (config.module === ModulesEnum.POINTS_OF_SALE_MEAT) {
+    return (
+      <>
+        {dataShow.map((item, index) => (
+          <div key={index} className="oe_kanban_card flex pos_point">
+            <div
+              role="article"
+              className="o_kanban_record d-flex flex-grow-1 flex-md-shrink-1 flex-shrink-0"
+            >
+              <div className="oe_kanban_card oe_kanban_global_click flex">
+                <div className="oe_kanban_details ">
+                  <div className="o_kanban_record_top">
+                    <div className="o_kanban_record_headings ">
+                      <strong className="o_kanban_record_title">
+                        <span>{item['name']}</span>
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div className="w-full o_kanban_tags_section"></div>
+
+                  <div className="w-full">
+                    {item?.session_id ? (
+                      <button
+                        className="btn btn-primary oe_kanban_action"
+                        onClick={(e) => {
+                          e.stopPropagation()
+
+                          // ✅ MISMA VALIDACIÓN QUE POINTS_OF_SALE
+                          const localPosOpen = JSON.parse(
+                            localStorage.getItem('local_pos_open') || '[]'
+                          )
+                          const isOpen = localPosOpen.some(
+                            (p: any) => p?.point_id === item.point_id
+                          )
+
+                          if (!isOpen) {
+                            CustomToast({
+                              title: 'No se puede seguir vendiendo',
+                              description: `Otro usuario esta en el punto de venta.`,
+                              type: 'warning',
+                            })
+                            console.warn(
+                              `Punto ${item.point_id} no está en local_pos_open. No se abrirá.`
+                            )
+                            return
+                          }
+
+                          const sessions = JSON.parse(localStorage.getItem('sessions') || '[]')
+
+                          const targetSession = {
+                            session_id: item.session_id ?? null,
+                            point_id: item.point_id,
+                            session_name: item.name,
+                            active: true,
+                          }
+
+                          const nextSessions = sessions.map((s: any) =>
+                            s.point_id === item.point_id ? targetSession : { ...s, active: false }
+                          )
+
+                          if (!nextSessions.find((s: any) => s.point_id === item.point_id)) {
+                            nextSessions.push(targetSession)
+                          }
+
+                          const prevActive = sessions.find((s: any) => s.active)
+                          if (!prevActive || prevActive.point_id !== item.point_id) {
+                            setSyncData(true)
+                          }
+
+                          localStorage.setItem('sessions', JSON.stringify(nextSessions))
+                          navigate(`/pos-pg/${item.point_id}`)
+                        }}
+                      >
+                        Seguir vendiendo
+                      </button>
+                    ) : (
+                      <button
+                        className="btn btn-primary oe_kanban_action"
+                        onClick={(e) => {
+                          e.stopPropagation()
+
+                          const sessions = JSON.parse(localStorage.getItem('sessions') || '[]')
+
+                          const targetSession = {
+                            session_id: null,
+                            point_id: item.point_id,
+                            session_name: item.name,
+                            active: true,
+                          }
+
+                          const nextSessions = sessions.map((s: any) =>
+                            s.point_id === item.point_id ? targetSession : { ...s, active: false }
+                          )
+
+                          if (!nextSessions.find((s: any) => s.point_id === item.point_id)) {
+                            nextSessions.push(targetSession)
+                          }
+
+                          const prevActive = sessions.find((s: any) => s.active)
+                          if (!prevActive || prevActive.point_id !== item.point_id) {
+                            setSyncData(true)
+                          }
+
+                          localStorage.setItem('sessions', JSON.stringify(nextSessions))
+                          navigate(`/pos-pg/${item.point_id}`)
+                        }}
+                      >
+                        Aperturar cajas
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </>
+    )
   }
+
   if (!dataShow.length && fnc_name !== ' fnc_point_of_sale' && !frmLoading)
     return (
       <div className="o_view_nocontent">

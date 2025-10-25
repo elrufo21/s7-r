@@ -79,6 +79,7 @@ export function FrmMiddle({ control, errors, editConfig, watch, setValue }: frmE
         control={control}
         errors={errors}
         editConfig={editConfig}
+        isNumeric
       />
       <BaseTextControlled
         label="Método de pago"

@@ -66,6 +66,7 @@ interface BaseAutocompleteProps {
   allowNavigationWhenNotEditable?: boolean
   draftLabel?: string // Etiqueta para borradores, si aplica
   disableFrmIsChanged?: boolean
+  className?: string
 }
 
 const BaseAutocomplete = ({
@@ -84,19 +85,21 @@ const BaseAutocomplete = ({
   allowSearchMore = false,
   allowNavigationWhenNotEditable = false, // Nueva prop
   disableFrmIsChanged = false,
+  className = '',
 }: BaseAutocompleteProps) => {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const {
     openDialog,
     closeDialogWithData,
-    setNewAppDialogs,
+    //setNewAppDialogs,
     setFrmIsChanged,
     breadcrumb,
     setBreadcrumb,
     frmCreater,
     executeFnc,
     setFrmIsChangedItem,
+    activateVirtualKeyboard,
   } = useAppStore()
 
   // Usar el hook para manejar el campo de autocompletado
@@ -247,6 +250,10 @@ const BaseAutocomplete = ({
       fnc_enlace={shouldShowNavigationLink() ? fncEnlace : undefined}
       rules={rulers ? required() : {}}
       disableFrmIsChanged={disableFrmIsChanged}
+      className={className}
+      enableVirtualKeyboard={activateVirtualKeyboard}
+      // useNumericKeyboard
+      // isInsideModal
     />
   )
 }

@@ -2,80 +2,112 @@ import useAppStore from '@/store/app/appStore'
 import { Divider } from '@mui/material'
 import { useEffect, useState } from 'react'
 import { Operation } from '../context/CalculatorContext'
-import { IoArrowUndoSharp } from 'react-icons/io5'
 import CalculatorPanel from './modal/components/ModalCalculatorPanel'
-import { Product } from '@/lib/offlineCache'
-import { ActionTypeEnum } from '@/shared/shared.types'
+import { offlineCache, Product } from '@/lib/offlineCache'
+import { ActionTypeEnum, ViewTypeEnum } from '@/shared/shared.types'
+import { FrmBaseDialog } from '@/shared/components/core'
+import PaymentsModal from '../../pos-pg/views/modal-payment/config'
+import { CustomToast } from '@/components/toast/CustomToast'
+import { usePosActionsPg } from '@/modules/pos/hooks/usePosActionsPg'
+import { Type_pos_payment_origin, TypePayment } from '../types'
+import { now } from '@/shared/utils/dateUtils'
+import PosModalPaymentListConfig from '../views/modal-payment-list/config'
 
 const TaraOptions = () => {
   const {
-    setTaraValue,
-    setTaraQuantity,
-    selectedItem,
-    selectedOrder,
-    setProductQuantityInOrder,
-    getProductTaraValue,
-    getProductTaraQuantity,
-    setOperation,
-    operation,
-    containers,
-    getProductPrice,
-    weightValue,
-    resetSelectedItem,
-    setHandleChange,
-    connected,
-    connectToDevice,
-    orderData,
-    backToProducts,
-    setScreen,
+    setTaraValuePg,
+    setTaraQuantityPg,
+    selectedItemPg,
+    selectedOrderPg,
+    setProductQuantityInOrderPg,
+    getProductTaraValuePg,
+    getProductTaraQuantityPg,
+    setOperationPg,
+    operationPg,
+    containersPg,
+    getProductPricePg,
+    weightValuePg,
+    resetSelectedItemPg,
+    setHandleChangePg,
+    connectedPg,
+    connectToDevicePg,
+    orderDataPg,
+    backToProductsPg,
+    setScreenPg,
     openDialog,
     closeDialogWithData,
+    defaultPosSessionDataPg,
+    getTotalPriceByOrderPg,
+    setBackToProductsPg,
+    changeToPaymentLocalPg,
+    executeFnc,
+    getProductQuantityInOrderPg,
+    session_idPg,
   } = useAppStore()
+  const { saveCurrentOrder } = usePosActionsPg()
   const [cart, setCart] = useState<Product[]>([])
-  console.log('containers', containers)
+  const { state } = JSON.parse(localStorage.getItem('session-store') ?? '{}')
+  const { userData } = state
+  const fnc_to_pay = async () => {
+    changeToPaymentLocalPg(selectedOrderPg)
+    /*  const rs = await executeFnc('fnc_pos_order', 'u', {
+      order_id: selectedOrderPg,
+      state: 'Y',
+    })
+    if (rs.oj_data.length > 0) {
+      const newOrders = await executeFnc('fnc_pos_order', 's_pos', [
+        [0, 'fequal', 'point_id', pointId],
+      ])
+      setorderDataPg(newOrders.oj_data)
+    }*/
+    //Linea comentada, analizar luego
+    //  changeToPayment(selectedOrderPg)
+    setScreenPg('payment')
+    saveCurrentOrder(true, true)
+  }
   useEffect(() => {
-    const pos_Status = orderData?.find((item) => item?.order_id === selectedOrder)?.pos_status
-    if (pos_Status === 'P' && backToProducts === false) setScreen('payment')
+    const pos_Status = orderDataPg?.find((item) => item?.order_id === selectedOrderPg)?.pos_status
+    if (pos_Status === 'P' && backToProductsPg === false) setScreenPg('payment')
 
     setCart(
-      orderData
-        ?.find((item) => item.order_id === selectedOrder)
+      orderDataPg
+        ?.find((item) => item.order_id === selectedOrderPg)
         ?.lines?.filter((item: any) => item.action !== ActionTypeEnum.DELETE) || []
     )
-  }, [orderData, selectedOrder])
+  }, [orderDataPg, selectedOrderPg])
 
   useEffect(() => {
-    setOperation(Operation.QUANTITY)
+    setOperationPg(Operation.QUANTITY)
 
-    if (selectedItem && selectedOrder) {
-      const currentTaraQuantity = getProductTaraQuantity(selectedOrder, selectedItem)
-      const currentTaraValue = getProductTaraValue(selectedOrder, selectedItem)
+    if (selectedItemPg && selectedOrderPg) {
+      const currentTaraQuantity = getProductTaraQuantityPg(selectedOrderPg, selectedItemPg)
+      const currentTaraValue = getProductTaraValuePg(selectedOrderPg, selectedItemPg)
 
       if (currentTaraValue > 0 && currentTaraQuantity === 0) {
-        setTaraQuantity(selectedOrder, selectedItem, 1)
+        setTaraQuantityPg(selectedOrderPg, selectedItemPg, 1)
       }
     }
-  }, [selectedItem])
+  }, [selectedItemPg])
 
   const handleTaraSelect = (weight: number) => {
-    setTaraValue(selectedOrder, selectedItem || 0, weight)
+    setTaraValuePg(selectedOrderPg, selectedItemPg || 0, weight)
 
-    const currentTaraQuantity = getProductTaraQuantity(selectedOrder, selectedItem || 0)
+    const currentTaraQuantity = getProductTaraQuantityPg(selectedOrderPg, selectedItemPg || 0)
     if (currentTaraQuantity === 0) {
-      setTaraQuantity(selectedOrder, selectedItem || 0, 1)
+      setTaraQuantityPg(selectedOrderPg, selectedItemPg || 0, 1)
     }
   }
   const resetItem = () => {
-    resetSelectedItem()
-    setHandleChange(true)
+    resetSelectedItemPg()
+    setHandleChangePg(true)
   }
 
   const openCalculatorModal = ({ operation }: { operation: Operation }) => {
     const dialogId = openDialog({
-      title: cart.find((c) => c.line_id === selectedItem)?.name,
+      title: cart.find((c) => c.line_id === selectedItemPg)?.name,
       dialogContent: () => (
         <CalculatorPanel
-          product={cart.find((c) => c.line_id === selectedItem)}
+          product={cart.find((c) => c.line_id === selectedItemPg)}
           selectedField={operation}
           dialogId={dialogId}
         />
@@ -91,23 +123,126 @@ const TaraOptions = () => {
       ],
     })
   }
+  const openPaymentsModal = async () => {
+    const paymentMethods = await offlineCache.getOfflinePaymentMethods()
+    const localCustomers = await offlineCache.getOfflineContacts()
+    let getData = () => ({})
+    const dialogId = openDialog({
+      title: 'PAGOS',
 
+      dialogContent: () => (
+        <FrmBaseDialog
+          initialValues={{
+            paymentMethods: paymentMethods,
+            type: TypePayment.INPUT,
+            origin: Type_pos_payment_origin.PAY_DEBT,
+            customers: localCustomers,
+            dialogId: dialogId,
+            partner_id: null,
+          }}
+          viewType={ViewTypeEnum.LIBRE}
+          config={PaymentsModal}
+          setGetData={(fn: any) => (getData = fn)}
+        />
+      ),
+      buttons: [
+        {
+          text: 'Guardar',
+          type: 'confirm',
+          onClick: async () => {
+            const formData = getData()
+            const data = {
+              amount: formData.amount,
+              partner_id: formData.partner_id,
+              reason: formData.reason,
+              type: TypePayment.INPUT,
+              payment_method_id: formData.payment_method_id,
+              date: now().toPlainDateTime().toString(),
+              origin: Type_pos_payment_origin.PAY_DEBT,
+              currency_id: 1,
+              state: 'R',
+              company_id: userData?.company_id,
+              user_id: userData?.user_id,
+              session_id: session_idPg,
+            }
+            let errors = []
+            if (!data.amount) {
+              errors.push({ message: 'El campo importe es requerido' })
+            }
+            if (!data.reason) errors.push({ message: 'El campo motivo es requerido' })
+            if (!data.payment_method_id) errors.push({ message: 'Seleccione un metodo de pago' })
+            if (!data.partner_id) errors.push({ message: 'Seleccione un cliente' })
+            if (errors.length > 0) {
+              CustomToast({
+                title: 'Errores encontrados',
+                items: errors,
+                type: 'error',
+              })
+              return
+            }
+            const { oj_data } = await executeFnc('fnc_pos_payment', 'i', data)
+            CustomToast({
+              title: 'Exito',
+              description: `¡Se creo el pago de S/ ${data.amount} correctamente!`,
+              type: 'success',
+            })
+            closeDialogWithData(dialogId, null)
+          },
+        },
+        {
+          type: 'cancel',
+          text: 'Cerrar',
+          onClick: () => {
+            closeDialogWithData(dialogId, {})
+          },
+        },
+        {
+          text: 'Lista de pagos',
+          type: 'cancel',
+          onClick: () => {
+            handlePaymentsList()
+          },
+        },
+      ],
+    })
+  }
+  const handlePaymentsList = async () => {
+    const dialogId = openDialog({
+      title: 'Lista de pagos',
+      dialogContent: () => (
+        <FrmBaseDialog
+          config={PosModalPaymentListConfig}
+          viewType={ViewTypeEnum.LIBRE}
+          initialValues={{ typeForm: 'pg_payments_list' }}
+        />
+      ),
+      buttons: [
+        {
+          text: 'Cerrar',
+          type: 'cancel',
+          onClick: () => {
+            closeDialogWithData(dialogId, {})
+          },
+        },
+      ],
+    })
+  }
   return (
-    <div className="d-flex gap-3 py-2 pr-2 w-100 align-items-start flex-wrap">
-      {!connected && (
+    <div className="d-flex gap-3 py-2 w-100 align-items-start flex-wrap">
+      {!connectedPg && (
         <div className="w-100 ">
           <button
             className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white w-100"
             style={{
-              backgroundColor: connected ? '#059669' : '#D63515',
-              borderColor: connected ? '#059669' : '#D63515',
+              backgroundColor: connectedPg ? '#059669' : '#D63515',
+              borderColor: connectedPg ? '#059669' : '#D63515',
               height: '80px',
               fontSize: '13px',
             }}
-            onClick={() => connectToDevice()}
-            disabled={connected}
+            onClick={() => connectToDevicePg()}
+            disabled={connectedPg}
           >
-            <span>{connected ? 'CONECTADO' : 'CONECTAR BALANZA'}</span>
+            <span>{connectedPg ? 'CONECTADO' : 'CONECTAR BALANZA'}</span>
           </button>
         </div>
       )}
@@ -120,10 +255,12 @@ const TaraOptions = () => {
         {/* <div className="d-flex gap-2 align-items-center numpad"> */}
         <div className="grid grid-cols-2 gap-2 numpad">
           <button
-            className={`numpad-button btn2 btn2-white fs-3 lh-xlg ${operation === Operation.QUANTITY ? 'active' : ''}`}
+            className={`numpad-button btn2 btn2-white fs-3 lh-xlg ${operationPg === Operation.QUANTITY ? 'active' : ''}`}
             onClick={() => {
-              setOperation(Operation.QUANTITY)
-              openCalculatorModal({ operation: Operation.QUANTITY })
+              if (selectedItemPg) {
+                setOperationPg(Operation.QUANTITY)
+                openCalculatorModal({ operation: Operation.QUANTITY })
+              }
             }}
             // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
           >
@@ -131,10 +268,12 @@ const TaraOptions = () => {
           </button>
 
           <button
-            className={`numpad-button btn2 btn2-white fs-3 lh-xlg ${operation === Operation.PRICE ? 'active' : ''}`}
+            className={`numpad-button btn2 btn2-white fs-3 lh-xlg ${operationPg === Operation.PRICE ? 'active' : ''}`}
             onClick={() => {
-              setOperation(Operation.PRICE)
-              openCalculatorModal({ operation: Operation.PRICE })
+              if (selectedItemPg) {
+                setOperationPg(Operation.PRICE)
+                openCalculatorModal({ operation: Operation.PRICE })
+              }
             }}
             // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
           >
@@ -142,10 +281,12 @@ const TaraOptions = () => {
           </button>
 
           <button
-            className={`numpad-button btn2 btn2-white fs-3 lh-xlg ${operation === Operation.TARA_QUANTITY ? 'active' : ''}`}
+            className={`numpad-button btn2 btn2-white fs-3 lh-xlg ${operationPg === Operation.TARA_QUANTITY ? 'active' : ''}`}
             onClick={() => {
-              setOperation(Operation.TARA_QUANTITY)
-              openCalculatorModal({ operation: Operation.TARA_QUANTITY })
+              if (selectedItemPg) {
+                setOperationPg(Operation.TARA_QUANTITY)
+                openCalculatorModal({ operation: Operation.TARA_QUANTITY })
+              }
             }}
             // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
           >
@@ -153,10 +294,12 @@ const TaraOptions = () => {
           </button>
 
           <button
-            className={`numpad-button btn2 btn2-white fs-3 lh-xlg ${operation === Operation.TARA_VALUE ? 'active' : ''}`}
+            className={`numpad-button btn2 btn2-white fs-3 lh-xlg ${operationPg === Operation.TARA_VALUE ? 'active' : ''}`}
             onClick={() => {
-              setOperation(Operation.TARA_VALUE)
-              openCalculatorModal({ operation: Operation.TARA_VALUE })
+              if (selectedItemPg) {
+                setOperationPg(Operation.TARA_VALUE)
+                openCalculatorModal({ operation: Operation.TARA_VALUE })
+              }
             }}
             // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
           >
@@ -165,14 +308,16 @@ const TaraOptions = () => {
         </div>
 
         <div className="mt-2 d-flex flex-wrap gap-2 numpad">
-          {containers.map((value: { weight: number; name: string }) => (
+          {containersPg.map((value: { weight: number; name: string }) => (
             <button
               key={value.weight}
               className="numpad-button btn2 btn2-white fs-3 lh-mlg"
               onClick={() => {
-                handleTaraSelect(value.weight)
-                setHandleChange(true)
-                setTaraValue(selectedOrder, selectedItem || 0, value.weight)
+                if (selectedItemPg) {
+                  handleTaraSelect(value.weight)
+                  setHandleChangePg(true)
+                  setTaraValuePg(selectedOrderPg, selectedItemPg || 0, value.weight)
+                }
               }}
               // style={{ minWidth: '60px', flex: '1 0 60px', height: '48px', fontSize: '14px' }}
               style={{ minWidth: '60px' }}
@@ -196,16 +341,28 @@ const TaraOptions = () => {
               className="fw-bold mb-0"
               style={{ color: '#60a5fa', fontSize: '40px', lineHeight: '1.1' }}
             >
-              {weightValue.toFixed(2)}
+              {weightValuePg.toFixed(2)}
             </div>
             <Divider component="div" style={{ height: '2px', backgroundColor: '#60a5fa' }} />
             <div
               className="text-truncate"
               style={{ color: '#fbbf24', fontSize: '14px', fontWeight: '600' }}
             >
-              S/ {getProductPrice(selectedItem || '', selectedOrder || '').toFixed(2)}
+              S/ {getProductPricePg(selectedItemPg || '', selectedOrderPg || '').toFixed(2)}
             </div>
           </div>
+        </div>
+
+        <div className="rounded-3 p-3 d-flex flex-column mt-2" style={{ height: '104px' }}>
+          <button
+            className={`numpad-button btn2 btn2-white fs-3 w-full lh-xlg ${operationPg === Operation.TARA_VALUE ? 'active' : ''}`}
+            onClick={() => {
+              openPaymentsModal()
+            }}
+            // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
+          >
+            <span>PAGAR DEUDA</span>
+          </button>
         </div>
       </div>
 
@@ -220,11 +377,28 @@ const TaraOptions = () => {
             fontSize: '13px',
           }}
           onClick={() => {
-            setProductQuantityInOrder(selectedOrder, selectedItem || 0, weightValue || 0)
+            if (!selectedItemPg || !selectedOrderPg) return
+            const currentTaraQuantity = getProductTaraQuantityPg(
+              selectedOrderPg,
+              selectedItemPg || 0
+            )
+            const quantityTotal = getProductQuantityInOrderPg(selectedOrderPg, selectedItemPg)
+            if (Number(quantityTotal) !== 0 && Number(quantityTotal) > 0) {
+              CustomToast({
+                title: '',
+                description: 'El producto ya tiene un peso asignado.',
+                type: 'warning',
+              })
+              return
+            }
+            setProductQuantityInOrderPg(selectedOrderPg, selectedItemPg || 0, weightValuePg || 0)
 
-            const currentTaraQuantity = getProductTaraQuantity(selectedOrder, selectedItem || 0)
+            /*const currentTaraQuantity = getProductTaraQuantityPg(
+              selectedOrderPg,
+              selectedItemPg || 0
+            )*/
             if (currentTaraQuantity === 0) {
-              setTaraQuantity(selectedOrder, selectedItem || 0, 0)
+              setTaraQuantityPg(selectedOrderPg, selectedItemPg || 0, 0)
             }
           }}
         >
@@ -240,14 +414,44 @@ const TaraOptions = () => {
             fontSize: '13px',
           }}
           onClick={() => {
-            if (selectedItem && selectedOrder) {
-              setProductQuantityInOrder(selectedOrder, selectedItem || 0, -weightValue || 0)
+            if (selectedItemPg && selectedOrderPg) {
+              setProductQuantityInOrderPg(selectedOrderPg, selectedItemPg || 0, -weightValuePg || 0)
             }
           }}
         >
           DEVOLVER
         </button>
       </div>
+
+      <div className="d-flex flex-column gap-2" style={{ minWidth: '120px' }}>
+        <button
+          className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white"
+          style={{
+            backgroundColor: '#3b82f6',
+            borderColor: '#3b82f6',
+            flex: '2',
+            height: '48px',
+            fontSize: '13px',
+          }}
+          onClick={() => {
+            if (getTotalPriceByOrderPg(selectedOrderPg) === 0) {
+              CustomToast({
+                title: 'Error al continuar a pago',
+                description: 'No se puede continuar: el monto debe ser distinto de 0.',
+                type: 'error',
+              })
+
+              return
+            }
+            setBackToProductsPg(false)
+            setHandleChangePg(true)
+            fnc_to_pay()
+          }}
+        >
+          <span>FINALIZAR VENTA</span>
+        </button>
+      </div>
+
       {/**
        * <div className="d-flex flex-column gap-2" style={{ minWidth: '120px' }}>
         <button

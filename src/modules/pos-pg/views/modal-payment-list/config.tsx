@@ -111,7 +111,15 @@ const PosModalPaymentListConfig: FormConfig = {
   form_inputs: {
     imagenFields: [],
     auditoria: false,
-    frm_middle: FrmMiddle,
+    frm_middle: ({ watch, control, errors, editConfig = {}, setValue }) => (
+      <FrmMiddle
+        control={control}
+        errors={errors}
+        setValue={setValue}
+        editConfig={editConfig}
+        watch={watch}
+      />
+    ),
   },
 }
 

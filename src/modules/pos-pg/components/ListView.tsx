@@ -11,6 +11,7 @@ import {
 import { BiLoader, BiSearch } from 'react-icons/bi'
 import { IoMdArrowDropleft, IoMdArrowDropright, IoMdClose } from 'react-icons/io'
 import HierarchicalDropdown from '@/modules/pos/components/hierarchical-dropdown'
+import { InputWithKeyboard } from '@/shared/ui/inputs/InputWithKeyboard'
 
 export type FilterOption = {
   value: string
@@ -37,6 +38,7 @@ export type DataTableProps<TData extends object, TValue = any> = {
   header?: boolean
   selectedRowId?: string
   rowIdField?: keyof TData
+  defaultStatus?: string
 }
 
 // Componente de Dropdown Jerárquico
@@ -136,6 +138,7 @@ export function DataTable<TData extends { isSelected?: boolean }, TValue = any>(
   header = false,
   selectedRowId,
   rowIdField = 'order_id' as keyof TData,
+  defaultStatus = '',
 }: DataTableProps<TData, TValue>) {
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -143,8 +146,9 @@ export function DataTable<TData extends { isSelected?: boolean }, TValue = any>(
   })
   const [globalFilter, setGlobalFilter] = useState<string>('')
   const [selectedStatus, setSelectedStatus] = useState<string>(
-    statusOptions && statusOptions.length > 0 ? statusOptions[0].value : ''
+    defaultStatus ?? (statusOptions && statusOptions.length > 0 ? statusOptions[0].value : '')
   )
+
   const [displayData, setDisplayData] = useState<TData[]>([])
 
   // Aplicar filtros
@@ -156,16 +160,35 @@ export function DataTable<TData extends { isSelected?: boolean }, TValue = any>(
       setDisplayData(data)
     }
   }, [data, selectedStatus, filterFunction])
-
-  // Actualizar el pageSize cuando cambian los datos para mostrar toda la lista
+  // Aplicar filtros
   useEffect(() => {
+    if (filterFunction) {
+      const filtered = filterFunction(data, selectedStatus)
+      setDisplayData(filtered)
+      // Actualizar pageSize inmediatamente cuando cambia displayData
+      setPagination((prev) => ({
+        ...prev,
+        pageIndex: 0, // Reset a la primera página
+        pageSize: filtered.length > 0 ? filtered.length : pageSize,
+      }))
+    } else {
+      setDisplayData(data)
+      setPagination((prev) => ({
+        ...prev,
+        pageIndex: 0,
+        pageSize: data.length > 0 ? data.length : pageSize,
+      }))
+    }
+  }, [data, selectedStatus, filterFunction])
+  // Actualizar el pageSize cuando cambian los datos para mostrar toda la lista
+  /*useEffect(() => {
     if (displayData.length > 0) {
       setPagination((prev) => ({
         ...prev,
         pageSize: displayData.length,
       }))
     }
-  }, [displayData])
+  }, [displayData])*/
 
   const table = useReactTable({
     data: displayData,
@@ -203,29 +226,22 @@ export function DataTable<TData extends { isSelected?: boolean }, TValue = any>(
   }, [globalFilter, onSearchChange])
 
   return (
-    <div className={`w-full bg-white shadow-sm h-full flex flex-col ${className} `}>
+    <div className={`w-full bg-white shadow-sm h-full flex flex-col h-full ${className} `}>
       {(enableSearch || enablePagination || statusOptions) && (
         <div className="pos-controls-order-list border-b border-gray-200 py-2 pr-2 pl-3">
           <div className="pos-search-bar">
-            <BiSearch className="mt-[3px] text-gray-400" size={20} />
-            <input
+            <InputWithKeyboard
               type="text"
-              value={globalFilter || ''}
+              className=""
+              placeholder={searchPlaceholder || 'Buscar ordenes ...'}
+              value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
-              placeholder={searchPlaceholder}
-              className="pl-2 outline-none text-gray-500 text-xl w-96"
+              onValueChange={(value) => setGlobalFilter(value)} // Para el teclado virtual
+              aria-label="Buscar ordenes"
+              enableVirtualKeyboard={true}
+              // useNumericKeyboard={true} // Opcional
+              // isInsideModal={true} // Opcional
             />
-
-            {/* Botón para limpiar búsqueda */}
-            {globalFilter && (
-              <button
-                onClick={() => setGlobalFilter('')}
-                className="ml-2 p-1 hover:bg-gray-200 rounded-full transition-colors"
-                title="Limpiar búsqueda"
-              >
-                <IoMdClose className="text-gray-500 hover:text-gray-700" size={20} />
-              </button>
-            )}
 
             {statusOptions && statusOptions.length > 0 && (
               <div className="flex items-center">
@@ -241,45 +257,42 @@ export function DataTable<TData extends { isSelected?: boolean }, TValue = any>(
           </div>
 
           <div className="flex items-center ">
-            {enablePagination && (
-              <div className="flex items-center">
-                <span className="text-gray-800 text-base whitespace-nowrap">
-                  {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
-                  -
-                  {Math.min(
-                    (table.getState().pagination.pageIndex + 1) *
-                      table.getState().pagination.pageSize,
-                    data.length
-                  )}{' '}
-                  / {data.length}
-                </span>
+            <div className="flex items-center">
+              <span className="text-gray-800 text-base whitespace-nowrap">
+                {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}-
+                {Math.min(
+                  (table.getState().pagination.pageIndex + 1) *
+                    table.getState().pagination.pageSize,
+                  data.length
+                )}{' '}
+                / {data.length}
+              </span>
 
-                <div className="flex ml-2">
-                  <button
-                    onClick={() => table.previousPage()}
-                    disabled={!table.getCanPreviousPage()}
-                    className={`${!table.getCanPreviousPage() ? 'text-gray-300' : 'text-gray-600'} mx-1 btn2 btn2-secondary`}
-                    style={{ paddingLeft: '0.45rem', paddingRight: '0.55rem' }}
-                  >
-                    <IoMdArrowDropleft size={24} />
-                  </button>
-                  <button
-                    onClick={() => table.nextPage()}
-                    disabled={!table.getCanNextPage()}
-                    className={`${!table.getCanNextPage() ? 'text-gray-300' : 'text-gray-600'} ml-1 btn2 btn2-secondary`}
-                    style={{ paddingLeft: '0.55rem', paddingRight: '0.45rem' }}
-                  >
-                    <IoMdArrowDropright size={24} />
-                  </button>
-                </div>
+              <div className="flex ml-2">
+                <button
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                  className={`${!table.getCanPreviousPage() ? 'text-gray-300' : 'text-gray-600'} mx-1 btn2 btn2-secondary`}
+                  style={{ paddingLeft: '0.45rem', paddingRight: '0.55rem' }}
+                >
+                  <IoMdArrowDropleft size={24} />
+                </button>
+                <button
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                  className={`${!table.getCanNextPage() ? 'text-gray-300' : 'text-gray-600'} ml-1 btn2 btn2-secondary`}
+                  style={{ paddingLeft: '0.55rem', paddingRight: '0.45rem' }}
+                >
+                  <IoMdArrowDropright size={24} />
+                </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}
 
-      <div className="flex flex-col flex-1 overflow-auto max-h-[400px]">
-        <div className="flex-1 overflow-y-auto ">
+      <div className="flex flex-col flex-1 overflow-auto ">
+        <div className="flex-1 overflow-y-auto  h-full">
           <table className="w-full table-auto">
             {header && (
               <thead className="sticky top-0 bg-gray-50 z-10">

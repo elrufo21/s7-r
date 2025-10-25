@@ -253,7 +253,7 @@ export class OfflineCache {
   // Métodos para cachear y obtener cada entidad
 
   async cacheProducts(executeFnc: any) {
-    const { setProducts } = useAppStore.getState()
+    const { setProducts, setProductsPg } = useAppStore.getState()
     const existing = await this.getAll<Product>('products')
     if (existing.length > 0) {
       return
@@ -282,6 +282,7 @@ export class OfflineCache {
         }
       }
       setProducts(result.oj_data)
+      setProductsPg(result.oj_data)
     }
   }
 
@@ -332,8 +333,12 @@ export class OfflineCache {
 
   async cachePosOrders(executeFnc: any, pos_id: number) {
     if (!pos_id) return
+    const today = new Date()
+    const formattedDate = today.toLocaleDateString('es-PE')
     const result = await executeFnc('fnc_pos_order', 's_pos', [
-      [0, 'fequal', 'point_id', pos_id],
+      //[0, 'fequal', 'point_id', pos_id],
+      // [0, 'fbetween', 'order_date', formattedDate, formattedDate],
+
       [
         0,
         'multi_filter_in',
@@ -618,8 +623,16 @@ export class OfflineCache {
     reloadOrders?: boolean,
     orderSelected?: boolean
   ) {
-    const { selectedOrder, setSelectedOrder, setSelectedItem, selectedOrderInList } =
-      useAppStore.getState()
+    const {
+      selectedOrder,
+      setSelectedOrder,
+      setSelectedItem,
+      selectedOrderInList,
+      selectedOrderPg,
+      setSelectedOrderPg,
+      setSelectedItemPg,
+      selectedOrderInListPg,
+    } = useAppStore.getState()
     if (setSyncLoading) setSyncLoading(true)
     let selectedOrderInListRT
     try {
@@ -697,6 +710,7 @@ export class OfflineCache {
       let selectedLine: string | undefined
 
       // 3. Procesar órdenes (ya están ordenadas)
+      //  console.log('syncOrders', syncOrders)
       if (syncOrders.length > 0) {
         await processBatch(
           syncOrders,
@@ -716,13 +730,17 @@ export class OfflineCache {
               }
               const result = await executeFnc('fnc_pos_order', order.action, orderToSync)
 
-              if (order.order_id === selectedOrder) {
+              if (order.order_id === selectedOrder || order.order_id === selectedOrderPg) {
                 setSelectedOrder(result.oj_data.order_id)
+                setSelectedOrderPg(result.oj_data.order_id)
                 selectedLine = result.oj_data.order_id
               }
 
               if (orderSelected) {
-                if (order.order_id === selectedOrderInList) {
+                if (
+                  order.order_id === selectedOrderInList ||
+                  order.order_id === selectedOrderInListPg
+                ) {
                   selectedOrderInListRT = result.oj_data.order_id
                 }
               }
@@ -742,9 +760,13 @@ export class OfflineCache {
 
       // 5. Recargar órdenes desde el backend
       try {
+        const today = new Date()
+        const formattedDate = today.toLocaleDateString('es-PE')
         const newOrders = await executeFnc('fnc_pos_order', 's_pos', [
-          ['0', 'fequal', 'point_id', point_id],
+          //  ['0', 'fequal', 'point_id', point_id],
           ['0', 'fequal', 'session_id', session_id],
+          // [0, 'fbetween', 'order_date', formattedDate, formattedDate],
+
           /*[
             '0',
             'multi_filter_in',
@@ -766,21 +788,24 @@ export class OfflineCache {
         // 🔹 Obtener desde IndexedDB
         const localOrders = await this.getOfflinePosOrders()
         setOrderData(localOrders)
-
         // 🔹 Re-seleccionar orden y línea
         const order = localOrders.find((o: any) => o.order_id === selectedLine)
         if (order) {
           setSelectedOrder(order.order_id)
-
+          setSelectedOrderPg(order.order_id)
           if (order.lines?.length > 0) {
             const line = order.lines.find((l: any) => l.selected)
             setSelectedItem(line?.line_id ?? null)
+            setSelectedItemPg(line?.line_id ?? null)
           } else {
             setSelectedItem(null)
+            setSelectedItemPg(null)
           }
         } else {
           setSelectedOrder(selectedOrder)
           setSelectedItem(null)
+          setSelectedOrderPg(selectedOrder)
+          setSelectedItemPg(null)
         }
       } catch (error) {
         console.error('Error recargando órdenes desde el servidor:', error)
@@ -793,11 +818,12 @@ export class OfflineCache {
         await this.clearOfflinePosOrders()
       }
       if (reloadOrders) {
-        this.refreshCache(executeFnc)
+        await this.refreshCache(executeFnc)
       }
     } catch (error) {
       console.error('Error general durante la sincronización:', error)
     } finally {
+      console.log('Finalizando')
       if (setSyncLoading) setSyncLoading(false)
     }
     return {

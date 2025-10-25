@@ -7,6 +7,9 @@ export const createAppSlice = (
   set: SetState<AppSliceState>,
   get: () => AppStoreProps
 ): AppSliceState => ({
+  activateVirtualKeyboard: true,
+  setActivateVirtualKeyboard: (activateVirtualKeyboard) => set({ activateVirtualKeyboard }),
+  itemsPerPage: 10,
   selectedViewType: null,
   setSelectedViewType: (selectedViewType) => set({ selectedViewType }),
   dinamicModule: ModulesEnum.SETTINGS,

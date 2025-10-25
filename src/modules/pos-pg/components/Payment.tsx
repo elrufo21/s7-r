@@ -13,7 +13,7 @@ import contactsConfig from '../views/contact-index/config'
 import { CustomHeader } from './CustomHeader'
 import { offlineCache } from '@/lib/offlineCache'
 import { usePWA } from '@/hooks/usePWA'
-import { TypeOriginPaymen, TypePayment, TypeStateOrder, TypeStatePayment } from '../types'
+import { Type_pos_payment_origin, TypePayment, TypeStateOrder, TypeStatePayment } from '../types'
 import { adjustTotal } from '@/shared/helpers/helpers'
 import { now } from '@/shared/utils/dateUtils'
 
@@ -28,7 +28,6 @@ interface PaymentItem {
   payment_method_id: number
   company_id: number
   state: string
-  session_id: string
   order_id: number | string
   date: Date
   currency_id: number
@@ -88,73 +87,105 @@ const Payment = () => {
   const sessions = JSON.parse(localStorage.getItem('sessions') ?? '[]')
   const { session_id } = sessions.find((s: any) => s.point_id === Number(pointId))
   const {
-    setScreen,
-    getTotalPriceByOrder,
-    selectedOrder,
+    setScreenPg,
+    getTotalPriceByOrderPg,
+    selectedOrderPg,
     executeFnc,
-    orderData,
-    setHandleChange,
-    setBackToProducts,
-    addPaymentToOrder,
-    updatePaymentInOrder,
-    removePaymentFromOrder,
-    setOrderData,
-    paymentMethods,
-    finalCustomer,
-    defaultPosSessionData,
+    orderDataPg,
+    setHandleChangePg,
+    setBackToProductsPg,
+    addPaymentToOrderPg,
+    updatePaymentInOrderPg,
+    removePaymentFromOrderPg,
+    setOrderDataPg,
+    paymentMethodsPg,
+    finalCustomerPg,
+    defaultPosSessionDataPg,
     modalData,
     setModalData,
     openDialog,
     closeDialogWithData,
-    setFinalCustomer,
+    setFinalCustomerPg,
     setFrmIsChanged,
     frmLoading,
-    localMode,
-    updateOrderPartner,
+    localModePg,
+    updateOrderPartnerPg,
   } = useAppStore()
   const [is_change, setIsChange] = useState(false)
-  const finalCustomerRef = useRef(finalCustomer)
+  const finalCustomerRef = useRef(finalCustomerPg)
   const [selectedPaymentId, setSelectedPaymentId] = useState('')
   const [inputAmount, setInputAmount] = useState('')
   const [isFirstDigit, setIsFirstDigit] = useState(true)
   const { userData } = useUserStore()
-  const currentOrder = orderData?.find((o) => o.order_id === selectedOrder)
+  const currentOrder = orderDataPg?.find((o) => o.order_id === selectedOrderPg)
   const payments = currentOrder?.payments || []
+
+  // Efecto para precargar el primer método de pago automáticamente al entrar a la vista
   useEffect(() => {
-    setFinalCustomer({
+    if (
+      payments.length === 0 &&
+      paymentMethodsPg.length > 0 &&
+      selectedOrderPg &&
+      currentOrder.payment_state === TypeStatePayment.PAYMENT
+    ) {
+      const firstMethod = paymentMethodsPg[0]
+      const id = crypto.randomUUID()
+      const orderTotal = adjustTotal(getTotalPriceByOrderPg(selectedOrderPg)).adjusted
+
+      const newPayment: PaymentItem = {
+        payment_id: id,
+        company_id: userData.company_id,
+        state: 'A',
+        order_id: selectedOrderPg,
+        date: now().toPlainDateTime().toString(),
+        currency_id: 1,
+        amount: orderTotal,
+        payment_method_id: firstMethod.payment_method_id,
+        payment_method_name: firstMethod.name,
+      }
+
+      addPaymentToOrderPg(selectedOrderPg, newPayment)
+      setSelectedPaymentId(id)
+      setInputAmount(Math.abs(orderTotal).toFixed(2))
+      setIsFirstDigit(true)
+      setHandleChangePg(true)
+      setFrmIsChanged(true)
+    }
+  }, [paymentMethodsPg.length, selectedOrderPg])
+
+  useEffect(() => {
+    setFinalCustomerPg({
       partner_id:
-        orderData.find((item) => item.order_id === selectedOrder)?.partner_id ||
-        defaultPosSessionData.partner_id,
+        orderDataPg.find((item) => item.order_id === selectedOrderPg)?.partner_id ||
+        defaultPosSessionDataPg.partner_id,
       name:
-        orderData.find((item) => item.order_id === selectedOrder)?.partner_name ||
-        defaultPosSessionData.name,
+        orderDataPg.find((item) => item.order_id === selectedOrderPg)?.partner_name ||
+        defaultPosSessionDataPg.name,
     })
     if (is_change) {
-      if (orderData.find((item) => item.order_id === selectedOrder)?.partner_id) {
+      if (orderDataPg.find((item) => item.order_id === selectedOrderPg)?.partner_id) {
         /* setFinalCustomer({
           partner_id: orderData.find((item) => item.order_id === selectedOrder)?.partner_id,
           name: orderData.find((item) => item.order_id === selectedOrder)?.partner_name,
         })*/
       }
-      if (orderData?.find((item) => item?.order_id === selectedOrder)?.pos_status === 'Y')
-        // setScreen('payment')
-
+      if (orderDataPg?.find((item) => item?.order_id === selectedOrderPg)?.pos_status === 'Y')
         setIsChange(false)
     }
-  }, [is_change, orderData, selectedOrder])
+  }, [is_change, orderDataPg, selectedOrderPg])
 
   const getTotalPaid = () => {
     return payments.reduce((sum, payment) => sum + payment.amount, 0)
   }
 
   const getChange = () => {
-    const total = adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted
+    const total = adjustTotal(getTotalPriceByOrderPg(selectedOrderPg)).adjusted
     const paid = getTotalPaid()
     return Math.max(0, paid - total)
   }
 
   const getRemainingAmount = () => {
-    const total = adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted
+    const total = adjustTotal(getTotalPriceByOrderPg(selectedOrderPg)).adjusted
     const paid = getTotalPaid()
     return Math.max(0, total - paid)
   }
@@ -163,27 +194,26 @@ const Payment = () => {
     setFrmIsChanged(true)
     const id = crypto.randomUUID()
 
-    const orderTotal = adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted
+    const orderTotal = adjustTotal(getTotalPriceByOrderPg(selectedOrderPg)).adjusted
     const totalPaid = getTotalPaid()
     const remaining = orderTotal < 0 ? orderTotal - totalPaid : getRemainingAmount()
     const newPayment: PaymentItem = {
       payment_id: id,
       company_id: userData.company_id,
       state: 'A',
-      session_id: session_id,
-      order_id: selectedOrder,
-      date: new Date(),
+      order_id: selectedOrderPg,
+      date: now().toPlainDateTime().toString(),
       currency_id: 1,
       amount: remaining,
       payment_method_id,
       payment_method_name: method,
     }
 
-    addPaymentToOrder(selectedOrder, newPayment)
+    addPaymentToOrderPg(selectedOrderPg, newPayment)
     setSelectedPaymentId(id)
     setInputAmount(Math.abs(remaining).toFixed(2))
     setIsFirstDigit(true)
-    setHandleChange(true)
+    setHandleChangePg(true)
   }
 
   const handleNumpadClick = (value: string) => {
@@ -205,7 +235,7 @@ const Payment = () => {
       newAmount = newAmount.startsWith('-') ? newAmount.substring(1) : '-' + newAmount
     } else if (value === '.') {
       if (!newAmount.includes('.')) {
-        if (isFirstDigit) {
+        if (isFirstDigit || newAmount === '0') {
           newAmount = '0.'
           setIsFirstDigit(false)
         } else {
@@ -216,58 +246,69 @@ const Payment = () => {
       const addValue = parseInt(value.substring(1))
       const currentValue = parseFloat(newAmount) || 0
       newAmount = (currentValue + addValue).toFixed(2)
-      setIsFirstDigit(true)
+      setIsFirstDigit(false)
     } else {
+      // Números del 0-9
       if (isFirstDigit) {
         newAmount = value
         setIsFirstDigit(false)
       } else {
         newAmount += value
       }
-      setHandleChange(true)
+      setHandleChangePg(true)
     }
+
+    // Permitir ingresar cualquier valor sin restricciones
+    let finalAmount = parseFloat(newAmount) || 0
 
     setInputAmount(newAmount)
 
     const updatedPayment = {
       ...payments[paymentIndex],
-      amount: parseFloat(newAmount) || 0,
+      amount: finalAmount,
     }
 
-    updatePaymentInOrder(selectedOrder, updatedPayment)
+    updatePaymentInOrderPg(selectedOrderPg, updatedPayment)
   }
 
   const handleSelectPayment = (id: string) => {
     setSelectedPaymentId(id)
     const payment = payments.find((p) => p.payment_id === id)
-    setInputAmount(payment ? payment.amount.toFixed(2) : '')
-    setIsFirstDigit(true)
+    if (payment) {
+      const amountStr = Math.abs(payment.amount).toFixed(2)
+      setInputAmount(amountStr)
+      setIsFirstDigit(true)
+    } else {
+      setInputAmount('')
+      setIsFirstDigit(true)
+    }
   }
 
   const handleRemovePayment = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
     setFrmIsChanged(true)
-    removePaymentFromOrder(selectedOrder, id)
+    removePaymentFromOrderPg(selectedOrderPg, id)
 
     if (selectedPaymentId === id) {
       setSelectedPaymentId('')
       setInputAmount('')
       setIsFirstDigit(true)
     }
-    setHandleChange(true)
+    setHandleChangePg(true)
   }
 
   const validatePayment = () => {
     let message = ''
     if (getRemainingAmount() === 0) return
-    if (getRemainingAmount() === adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted) {
+    if (getRemainingAmount() === adjustTotal(getTotalPriceByOrderPg(selectedOrderPg)).adjusted) {
       message = 'Se creara una orden de venta al crédito'
     }
-    if (getRemainingAmount() !== adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted) {
+    if (getRemainingAmount() !== adjustTotal(getTotalPriceByOrderPg(selectedOrderPg)).adjusted) {
       message = 'Se creara una orden de venta con pago parcial'
     }
     return message
   }
+
   const modalValidateMethod = async () => {
     const message = validatePayment()
     if (message) {
@@ -302,23 +343,23 @@ const Payment = () => {
   const handleValidatePayment = async () => {
     let paymentState = TypeStatePayment.PAYMENT
 
-    if (getRemainingAmount() === adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted) {
+    if (getRemainingAmount() === adjustTotal(getTotalPriceByOrderPg(selectedOrderPg)).adjusted) {
       paymentState = TypeStatePayment.PENDING_PAYMENT
     }
     if (
-      getRemainingAmount() !== adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted &&
+      getRemainingAmount() !== adjustTotal(getTotalPriceByOrderPg(selectedOrderPg)).adjusted &&
       getRemainingAmount() !== 0
     ) {
       paymentState = TypeStatePayment.PARTIAL_PAYMENT
     }
     const { state } = JSON.parse(localStorage.getItem('session-store') ?? '{}')
     const { userData } = state
-    const data = orderData.find((item) => item.order_id === selectedOrder)
+    const data = orderDataPg.find((item) => item.order_id === selectedOrderPg)
     const newPayments = data?.payments?.filter((item: any) => item.amount !== 0)
     const amount_payment = () => {
       const totalPaid = getTotalPaid()
       if (paymentState === TypeStatePayment.PAYMENT) {
-        return adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted
+        return adjustTotal(getTotalPriceByOrderPg(selectedOrderPg)).adjusted
       } else if (paymentState === TypeStatePayment.PARTIAL_PAYMENT) {
         return totalPaid
       } else if (paymentState === TypeStatePayment.PENDING_PAYMENT) {
@@ -332,18 +373,17 @@ const Payment = () => {
       name: data.name,
       state: TypeStateOrder.REGISTERED,
       order_date: now().toPlainDateTime().toString(),
-      //user_id: userData?.user_id,
       session_id: typeof data.order_id === 'string' ? session_id : undefined,
       currency_id: 1,
-      company_id: userData?.company_id,
+      company_id: data.company_id,
       invoice_state: data.invoice_state || 'T',
-      partner_id: finalCustomer?.partner_id,
+      partner_id: finalCustomerPg?.partner_id,
       payment_state: paymentState,
       combined_states: TypeStateOrder.REGISTERED + paymentState,
       point_id: pointId,
       lines: data.lines?.map((item: any, i: number) => ({
         line_id: item?.line_id,
-        order_id: selectedOrder,
+        order_id: selectedOrderPg,
         position: i + 1,
         product_id: item?.product_id,
         name: item?.name,
@@ -363,38 +403,34 @@ const Payment = () => {
         tara_total: item?.tara_total,
         uom_name: item?.uom_name,
       })),
-      order_id: selectedOrder,
+      order_id: selectedOrderPg,
       payments: newPayments?.map((p) => ({
         ...p,
         user_id: userData?.user_id,
         state: 'R',
-        origin: TypeOriginPaymen.DOCUMENT,
+        origin: Type_pos_payment_origin.DOCUMENT,
         type: TypePayment.INPUT,
       })),
-      amount_untaxed: adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted,
-      amount_withtaxed: adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted,
-      amount_total: adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted,
-      amount_adjustment: adjustTotal(getTotalPriceByOrder(selectedOrder)).residual,
+      amount_untaxed: adjustTotal(getTotalPriceByOrderPg(selectedOrderPg)).adjusted,
+      amount_withtaxed: adjustTotal(getTotalPriceByOrderPg(selectedOrderPg)).adjusted,
+      amount_total: adjustTotal(getTotalPriceByOrderPg(selectedOrderPg)).adjusted,
+      amount_adjustment: adjustTotal(getTotalPriceByOrderPg(selectedOrderPg)).residual,
       amount_payment: amount_payment(),
       amount_residual: getRemainingAmount().toFixed(2),
     }
-    if (!isOnline || localMode) {
+    if (!isOnline || localModePg) {
       await offlineCache.saveOrderOffline({
         ...updatedData,
         action: typeof data.order_id === 'string' ? 'i' : 'u',
       })
       const orders = await offlineCache.getOfflinePosOrders()
-      setOrderData(orders)
+      setOrderDataPg(orders)
       setFrmIsChanged(true)
 
-      setScreen('invoice')
+      setScreenPg('invoice')
       return
     }
     await executeFnc('fnc_pos_order', typeof data.order_id === 'string' ? 'i' : 'u', updatedData)
-    /*
-    if (oj_data?.order_id) {
-      setSelectedOrder(oj_data?.order_id)
-    }*/
     const orders = await executeFnc('fnc_pos_order', 's_pos', [
       [0, 'fequal', 'point_id', pointId],
       [
@@ -407,13 +443,12 @@ const Payment = () => {
       ],
     ])
 
-    setOrderData(orders?.oj_data || [])
+    setOrderDataPg(orders?.oj_data || [])
     setFrmIsChanged(false)
-    setScreen('invoice')
+    setScreenPg('invoice')
     return
   }
 
-  /*Clientes*/
   const fnc_create_customer = () => {
     let getData = () => ({})
     const dialogId = openDialog({
@@ -429,7 +464,6 @@ const Payment = () => {
           onClick: async () => {
             const formData = getData()
             const rs = await executeFnc('fnc_partner', 'i', formData)
-            //oj_data.partner_id
             const newData = await executeFnc('fnc_partner', 's', [[1, 'pag', 1]])
             const dataUpdate = newData.oj_data.map((item: any) => {
               if (item.partner_id === rs.oj_data.partner_id) {
@@ -441,7 +475,7 @@ const Payment = () => {
               return item
             })
             setModalData(dataUpdate)
-            setFinalCustomer(dataUpdate.find((item: any) => item.selected === true))
+            setFinalCustomerPg(dataUpdate.find((item: any) => item.selected === true))
             closeDialogWithData(dialogId, {})
           },
         },
@@ -453,6 +487,7 @@ const Payment = () => {
       ],
     })
   }
+
   const fnc_open_contact_modal = async () => {
     const localCustomers = await offlineCache.getOfflineContacts()
     if (modalData.length === 0) setModalData(localCustomers)
@@ -463,17 +498,16 @@ const Payment = () => {
         <ModalBase
           config={contactsConfig}
           onRowClick={(row) => {
-            if (row.partner_id === finalCustomer.partner_id) {
-              setFinalCustomer({})
+            if (row.partner_id === finalCustomerPg.partner_id) {
+              setFinalCustomerPg({})
               setIsChange(true)
-              setHandleChange(true)
+              setHandleChangePg(true)
               closeDialogWithData(dialogId, row)
               return
             }
             setIsChange(true)
-            updateOrderPartner(selectedOrder, row.partner_id, row.name)
-            //setFinalCustomer(row)
-            setHandleChange(true)
+            updateOrderPartnerPg(selectedOrderPg, row.partner_id, row.name)
+            setHandleChangePg(true)
             closeDialogWithData(dialogId, row)
           }}
           contactModal={true}
@@ -488,9 +522,9 @@ const Payment = () => {
           text: 'Descartar',
           type: 'cancel',
           onClick: () => {
-            setFinalCustomer({
-              partner_id: defaultPosSessionData.partner_id,
-              partner_name: defaultPosSessionData.name,
+            setFinalCustomerPg({
+              partner_id: defaultPosSessionDataPg.partner_id,
+              partner_name: defaultPosSessionDataPg.name,
             })
             closeDialogWithData(dialogId, {})
           },
@@ -498,12 +532,12 @@ const Payment = () => {
       ],
     })
   }
+
   const fnc_edit_client = async (client: any) => {
     const { oj_data } = await executeFnc('fnc_partner', 's1', [client.partner_id.toString()])
     let getData = () => ({})
     const dialogId = openDialog({
       title: 'Editar Cliente',
-
       dialogContent: () => (
         <FrmBaseDialog
           config={clientConfig}
@@ -520,7 +554,7 @@ const Payment = () => {
               const formData = getData() as any
               await executeFnc('fnc_partner', 'u', formData)
               const rs = await executeFnc('fnc_partner', 's', [[1, 'pag', 1]])
-              if (finalCustomer) {
+              if (finalCustomerPg) {
                 const newData = rs.oj_data.map((item: any) => {
                   if (item.partner_id === finalCustomerRef.current?.partner_id) {
                     return {
@@ -552,24 +586,15 @@ const Payment = () => {
   }
 
   const handleSymbolsClick = () => {
-    if (!selectedOrder || !selectedPaymentId) return
-
-    // Encontrar el pago seleccionado en la orden actual
+    if (!selectedOrderPg || !selectedPaymentId) return
     const currentPayment = payments.find((p) => p.payment_id === selectedPaymentId)
     if (!currentPayment) return
-
-    // Cambiar el signo del monto
     const newAmount = currentPayment.amount * -1
-
-    // Actualizar el pago con el nuevo monto
     const updatedPayment = {
       ...currentPayment,
       amount: newAmount,
     }
-
-    updatePaymentInOrder(selectedOrder, updatedPayment)
-
-    // Actualizar el input para mostrar el nuevo valor
+    updatePaymentInOrderPg(selectedOrderPg, updatedPayment)
     setInputAmount(Math.abs(newAmount).toString())
   }
 
@@ -578,64 +603,18 @@ const Payment = () => {
       <div className="product-screen">
         <div className="leftpanel">
           <div className="payment-methods-container">
-            {/* <div className="paymentmethods-container mb-3 flex-grow-1"> */}
             <div className="payment-methods flex flex-col gap-2">
-              {paymentMethods.map((method) => (
+              {paymentMethodsPg.map((method) => (
                 <PaymentMethodCard
                   key={method.payment_method_id}
                   method={method}
-                  onClick={!frmLoading ? handlePaymentMethodClick : () => { }}
+                  onClick={!frmLoading ? handlePaymentMethodClick : () => {}}
                 />
               ))}
             </div>
-            {/* </div> */}
           </div>
 
-          {/*
-          <div className="order-container">
-
-            <div className="flex flex-col items-center justify-center h-full">
-              <div className="text-6xl mb-4">
-                <svg
-                  fill="#858585"
-                  height="70px"
-                  width="70px"
-                  version="1.1"
-                  id="Capa_1"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 60.013 60.013"
-                >
-                  <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-                  <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
-                  <g id="SVGRepo_iconCarrier">
-                    {' '}
-                    <path d="M11.68,12.506l-0.832-5h-2.99c-0.447-1.72-1.999-3-3.858-3c-2.206,0-4,1.794-4,4s1.794,4,4,4c1.859,0,3.411-1.28,3.858-3 h1.294l0.5,3H9.624l0.222,1.161l0,0.003c0,0,0,0,0,0l2.559,13.374l1.044,5.462h0.001l1.342,7.015 c-2.468,0.186-4.525,2.084-4.768,4.475c-0.142,1.405,0.32,2.812,1.268,3.858c0.949,1.05,2.301,1.652,3.707,1.652h2 c0,3.309,2.691,6,6,6s6-2.691,6-6h11c0,3.309,2.691,6,6,6s6-2.691,6-6h4c0.553,0,1-0.447,1-1s-0.447-1-1-1h-4.35 c-0.826-2.327-3.043-4-5.65-4s-4.824,1.673-5.65,4h-11.7c-0.826-2.327-3.043-4-5.65-4s-4.824,1.673-5.65,4H15 c-0.842,0-1.652-0.362-2.224-0.993c-0.577-0.639-0.848-1.461-0.761-2.316c0.152-1.509,1.546-2.69,3.173-2.69h0.781 c0.02,0,0.038,0,0.06,0l6.128-0.002L33,41.501v-0.001l7.145-0.002L51,41.496v-0.001l4.024-0.001c2.751,0,4.988-2.237,4.988-4.987 V12.494L11.68,12.506z M4,10.506c-1.103,0-2-0.897-2-2s0.897-2,2-2s2,0.897,2,2S5.103,10.506,4,10.506z M46,45.506 c2.206,0,4,1.794,4,4s-1.794,4-4,4s-4-1.794-4-4S43.794,45.506,46,45.506z M23,45.506c2.206,0,4,1.794,4,4s-1.794,4-4,4 s-4-1.794-4-4S20.794,45.506,23,45.506z M58.013,21.506H51v-7.011l7.013-0.002V21.506z M42,39.498v-6.991h7v6.989L42,39.498z M42,30.506v-7h7v7H42z M24,39.503v-6.997h7v6.995L24,39.503z M24,30.506v-7h7v7H24z M13.765,23.506H22v7h-6.895L13.765,23.506z M49,21.506h-7v-7h7V21.506z M40,21.506h-7V14.5l7-0.002V21.506z M31,14.506v7h-7v-7H31z M33,23.506h7v7h-7V23.506z M51,23.506h7v7 h-7V23.506z M22,14.504v7.003h-8.618l-1.34-7L22,14.504z M15.487,32.506H22v6.997l-5.173,0.002L15.487,32.506z M33,32.506h7v6.992 L33,39.5V32.506z M55.024,39.494L51,39.495v-6.989h7.013v4C58.013,38.154,56.672,39.494,55.024,39.494z"></path>{' '}
-                  </g>
-                </svg>
-              </div>
-
-              <p className="text-gray-500">Comience a agregar productos</p>
-            </div>
-
-          </div>
-*/}
-
-          {/* ------------------------------------------------ ini */}
           <div className="order-bottom">
-            {/*
-            <div className="order-summary p-3">
-              <div className="flex justify-between text-gray-500">
-                <span>Impuestos</span>
-                <span>S/ 0:00</span>
-              </div>
-              <div className="flex justify-between text-lg font-bold mt-1">
-                <span>Total</span>
-                <span>S/ 333.33</span>
-              </div>
-            </div>
-             */}
-            {/*-------------*/}
-
             <div className="pads">
               <div className="control-buttons">
                 <button
@@ -644,11 +623,9 @@ const Payment = () => {
                     fnc_open_contact_modal()
                   }}
                 >
-                  {finalCustomer.name ? finalCustomer.name : defaultPosSessionData.name}
+                  {finalCustomerPg.name ? finalCustomerPg.name : defaultPosSessionDataPg.name}
                 </button>
               </div>
-
-              {/* --------------------- */}
 
               <div className="subpads">
                 <div className="numpad">
@@ -670,14 +647,12 @@ const Payment = () => {
                   >
                     3
                   </button>
-
                   <button
                     className={`numpad-button btn2 btn2-white fs-3 lh-mlg`}
                     onClick={() => handleNumpadClick('+10')}
                   >
                     +10
                   </button>
-
                   <button
                     className="numpad-button btn2 btn2-white fs-3 lh-mlg"
                     onClick={() => handleNumpadClick('4')}
@@ -696,14 +671,12 @@ const Payment = () => {
                   >
                     6
                   </button>
-
                   <button
                     className={`numpad-button btn2 btn2-white fs-3 lh-mlg `}
                     onClick={() => handleNumpadClick('+20')}
                   >
                     +20
                   </button>
-
                   <button
                     className="numpad-button btn2 btn2-white fs-3 lh-mlg"
                     onClick={() => handleNumpadClick('7')}
@@ -722,14 +695,12 @@ const Payment = () => {
                   >
                     9
                   </button>
-
                   <button
                     className={`numpad-button btn2 btn2-white fs-3 lh-mlg`}
                     onClick={() => handleNumpadClick('+50')}
                   >
                     +50
                   </button>
-
                   <button
                     className="numpad-button btn2 btn2-white fs-3 lh-mlg o_colorlist_item_numpad_color_3"
                     onClick={() => {
@@ -738,43 +709,37 @@ const Payment = () => {
                   >
                     +/-
                   </button>
-
                   <button
                     className="numpad-button btn2 btn2-white fs-3 lh-mlg"
                     onClick={() => handleNumpadClick('0')}
                   >
                     0
                   </button>
-
                   <button
                     className="numpad-button btn2 btn2-white fs-3 lh-mlg o_colorlist_item_numpad_color_2"
                     onClick={() => handleNumpadClick('.')}
                   >
                     .
                   </button>
-
                   <button
                     className="numpad-button btn2 btn2-white fs-3 lh-mlg justify-items-center o_colorlist_item_numpad_color_1"
                     onClick={() => handleNumpadClick('backspace')}
                   >
                     <HiOutlineBackspace style={{ fontSize: '28px' }} />
-                    {/* <LiaBackspaceSolid style={{ fontSize: '30px' }} /> */}
                   </button>
                 </div>
 
                 <div className="actionpad d-flex flex-row gap-2">
                   <button
-                    // className="btn2 btn2-white btn-lg flex-auto touch-lh-l"
                     className="btn2 btn2-white btn-lg flex-auto min-h-[70px]"
                     onClick={() => {
-                      setScreen('products')
-                      setBackToProducts(true)
+                      setScreenPg('products')
+                      setBackToProductsPg(true)
                     }}
                   >
                     Regresar
                   </button>
                   <button
-                    // className="btn btn-primary btn-lg flex-auto touch-lh-l"
                     className="btn btn-primary btn-lg flex-auto min-h-[70px]"
                     onClick={() => modalValidateMethod()}
                     disabled={frmLoading}
@@ -785,20 +750,15 @@ const Payment = () => {
               </div>
             </div>
           </div>
-
-          {/* ------------------------------------------------ fin */}
         </div>
-        {/* ---------------------------------------- derecho ini */}
 
-        {/* Panel central con resumen de pagos */}
         <div className="center-content flex flex-col flex-grow-1 gap-4 p-4">
-          {/* Total a pagar */}
           <section className="paymentlines-container">
-            {/* <div className="text-[100px] text-center text-[RGBA(17,34,29,1)]"> */}
             <div className="text-[100px] text-center text-[#283833]">
-              {/* S/ {adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted.toFixed(2)} */}
               <span className="text-[60%] opacity-[0.7]">S/ </span>
-              <span className="">{adjustTotal(getTotalPriceByOrder(selectedOrder)).adjusted}</span>
+              <span className="">
+                {adjustTotal(getTotalPriceByOrderPg(selectedOrderPg)).adjusted}
+              </span>
             </div>
           </section>
 
@@ -808,8 +768,9 @@ const Payment = () => {
                 payments.map((payment) => (
                   <div
                     key={payment.payment_id}
-                    className={`payment-line ${selectedPaymentId === payment.payment_id ? 'select' : ''
-                      }`}
+                    className={`payment-line ${
+                      selectedPaymentId === payment.payment_id ? 'select' : ''
+                    }`}
                     onClick={() => handleSelectPayment(payment.payment_id)}
                   >
                     <div className="payment-info">
@@ -820,17 +781,10 @@ const Payment = () => {
                     <IconButton
                       onClick={(e) => handleRemovePayment(payment.payment_id, e)}
                       aria-label="close"
-                      className='!ml-3 !bg-red-100 hover:!bg-red-200'
-                    // sx={{
-                    //   position: 'absolute',
-                    //   right: 6,
-                    //   top: 6.5,
-                    //   color: (theme) => theme.palette.grey[500],
-                    // }}
+                      className="!ml-3 !bg-red-100 hover:!bg-red-200"
                     >
                       <IoClose style={{ fontSize: '30px' }} className="" />
                     </IconButton>
-
                   </div>
                 ))
               ) : (
@@ -840,7 +794,6 @@ const Payment = () => {
               )}
             </div>
 
-            {/* Saldo restante y cambio */}
             {payments.length > 0 && (
               <section className="payment-result border-top pt-3">
                 {getRemainingAmount() > 0 ? (
@@ -875,8 +828,6 @@ const Payment = () => {
             )}
           </div>
         </div>
-
-        {/* ---------------------------------------- derecho fin */}
       </div>
     </>
   )
