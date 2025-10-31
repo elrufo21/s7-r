@@ -1,5 +1,23 @@
+import { PosOrder } from '@/lib/offlineCache'
 import { ListFilterItem } from '../shared.types'
+import { CustomerAccountItem } from '@/modules/invoicing/components/customerAccountStatementReport'
+interface PosOrderLine {
+  name: string
+  quantity: number
+  price_unit: number
+  amount_untaxed_total?: number
+}
 
+interface Payment {
+  date: string
+  name: string
+  type: string
+  state: string
+  amount: number
+  detail: string
+  payment_method_name: string
+  partner_name: string
+}
 export function getShortUUID(length = 8) {
   return crypto.randomUUID().replace(/-/g, '').slice(0, length)
 }
@@ -74,4 +92,127 @@ export const getLastMonths = (count: number = 3): ListFilterItem[] => {
   }
 
   return months
+}
+
+export function codePayment(fecha = null) {
+  const ahora = fecha ? new Date(fecha) : new Date()
+
+  const dia = String(ahora.getDate()).padStart(2, '0')
+  const mes = String(ahora.getMonth() + 1).padStart(2, '0')
+  const anio = String(ahora.getFullYear()).slice(-2)
+  const hora = String(ahora.getHours()).padStart(2, '0')
+  const minuto = String(ahora.getMinutes()).padStart(2, '0')
+  const segundo = String(ahora.getSeconds()).padStart(2, '0')
+
+  return `pg-${dia}${mes}${anio}${hora}${minuto}${segundo}`
+}
+
+export const transformOrders = (orders: PosOrder[]) => {
+  let runningBalance = 0
+
+  const records = orders.flatMap((order) => {
+    const total_pagado = order.payments
+      ? order.payments.reduce((sum, p) => sum + (p.amount || 0), 0)
+      : 0
+
+    const total_pendiente = (order.amount_withtaxed || 0) - total_pagado
+
+    const orderRecords = order.lines.map((line, index, arr) => {
+      const total = line.amount_untaxed_total || line.price_unit * line.quantity
+      runningBalance += total
+
+      const isLastLine = index === arr.length - 1
+
+      return {
+        date: order.order_date,
+        document_number: order.receipt_number,
+        type: line.name,
+        quantity: line.quantity,
+        detail: order.partner_name,
+        price: line.price_unit,
+        total,
+        total_balance: isLastLine ? runningBalance : '',
+      }
+    })
+
+    return orderRecords
+  })
+
+  return records
+}
+export const transformOrdersWithPayments = (
+  orders: PosOrder[],
+  payments: Payment[]
+): CustomerAccountItem[] => {
+  let runningBalance = 0
+
+  // 1. Transformar órdenes en registros
+  const orderRecords = orders.flatMap((order) => {
+    return order.lines.map((line, index, arr) => {
+      const total = line.amount_untaxed_total || line.price_unit * line.quantity
+      const isLastLine = index === arr.length - 1
+
+      return {
+        date: order.order_date,
+        document_number: order.receipt_number,
+        type: line.name,
+        quantity: line.quantity,
+        detail: null,
+        price: line.price_unit,
+        total,
+        total_balance: '',
+        in_payments: '',
+        isPayment: false,
+        isLastOfOrder: isLastLine,
+        sortDate: new Date(order.order_date).getTime(),
+      }
+    })
+  })
+
+  // 2. Transformar pagos en registros
+  const paymentRecords = payments.map((payment) => ({
+    date: payment.date,
+    document_number: payment.detail.includes('Orden') ? payment.detail : codePayment(payment.date),
+    type: payment.payment_method_name,
+    quantity: '',
+    detail: payment.detail,
+    price: '',
+    total: '',
+    total_balance: '',
+    in_payments: payment.amount,
+    isPayment: true,
+    isLastOfOrder: true,
+    sortDate: new Date(payment.date).getTime(),
+  }))
+
+  // 3. Combinar y ordenar por fecha
+  const allRecords = [...orderRecords, ...paymentRecords].sort((a, b) => a.sortDate - b.sortDate)
+
+  // 4. Calcular saldo acumulado
+  const result: any[] = []
+
+  for (let i = 0; i < allRecords.length; i++) {
+    const record = allRecords[i]
+
+    if (record.isPayment) {
+      runningBalance -= record.in_payments as number
+      result.push({
+        ...record,
+        total_balance: runningBalance,
+      })
+    } else {
+      runningBalance += record.total as number
+
+      const isLastOfDocument =
+        i === allRecords.length - 1 || allRecords[i + 1].document_number !== record.document_number
+
+      result.push({
+        ...record,
+        total_balance: isLastOfDocument ? runningBalance : '',
+      })
+    }
+  }
+
+  // 5. Retornar manteniendo isLastOfOrder
+  return result.map(({ isPayment, sortDate, ...record }) => record) as CustomerAccountItem[]
 }

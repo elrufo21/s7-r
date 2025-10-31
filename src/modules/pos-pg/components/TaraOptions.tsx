@@ -12,6 +12,8 @@ import { usePosActionsPg } from '@/modules/pos/hooks/usePosActionsPg'
 import { Type_pos_payment_origin, TypePayment } from '../types'
 import { now } from '@/shared/utils/dateUtils'
 import PosModalPaymentListConfig from '../views/modal-payment-list/config'
+import { usePWA } from '@/hooks/usePWA'
+import { codePayment } from '@/shared/helpers/helpers'
 
 const TaraOptions = () => {
   const {
@@ -24,7 +26,6 @@ const TaraOptions = () => {
     getProductTaraQuantityPg,
     setOperationPg,
     operationPg,
-    containersPg,
     getProductPricePg,
     weightValuePg,
     resetSelectedItemPg,
@@ -36,14 +37,17 @@ const TaraOptions = () => {
     setScreenPg,
     openDialog,
     closeDialogWithData,
-    defaultPosSessionDataPg,
     getTotalPriceByOrderPg,
     setBackToProductsPg,
     changeToPaymentLocalPg,
     executeFnc,
     getProductQuantityInOrderPg,
     session_idPg,
+    setPayment,
+    setPrevWeight,
+    setChangePricePg,
   } = useAppStore()
+  const { isOnline } = usePWA()
   const { saveCurrentOrder } = usePosActionsPg()
   const [cart, setCart] = useState<Product[]>([])
   const { state } = JSON.parse(localStorage.getItem('session-store') ?? '{}')
@@ -129,7 +133,15 @@ const TaraOptions = () => {
     let getData = () => ({})
     const dialogId = openDialog({
       title: 'PAGOS',
-
+      /** const sampleData = {
+    name: 'OKAMI',
+    order_date: new Date('2025-10-29'),
+    receipt_number: 'PG-291020251016640',
+    point_id: '1',
+    payments: [{ payment_method_name: 'TRANSFERENCIA', amount: 2295.4 }],
+    amount_total: 2295.4,
+    amount_residual: 0,
+  } */
       dialogContent: () => (
         <FrmBaseDialog
           initialValues={{
@@ -180,12 +192,30 @@ const TaraOptions = () => {
               })
               return
             }
-            const { oj_data } = await executeFnc('fnc_pos_payment', 'i', data)
+            setPayment({
+              name: formData.partner_name || null,
+              order_date: now().toPlainDateTime().toString(),
+              receipt_number: codePayment(),
+              point_id: formData.point_id,
+              payments: [
+                { payment_method_name: formData.payment_method_name, amount: formData.amount },
+              ],
+              amount_total: formData.amount,
+              amount_residual: '',
+              type: TypePayment.INPUT,
+              origin: Type_pos_payment_origin.PAY_DEBT,
+            })
+            if (!isOnline) {
+              await offlineCache.saveOfflinePayment(data)
+            } else {
+              const { oj_data } = await executeFnc('fnc_pos_payment', 'i', data)
+            }
             CustomToast({
               title: 'Exito',
               description: `¡Se creo el pago de S/ ${data.amount} correctamente!`,
               type: 'success',
             })
+            setScreenPg('invoice')
             closeDialogWithData(dialogId, null)
           },
         },
@@ -213,7 +243,7 @@ const TaraOptions = () => {
         <FrmBaseDialog
           config={PosModalPaymentListConfig}
           viewType={ViewTypeEnum.LIBRE}
-          initialValues={{ typeForm: 'pg_payments_list' }}
+          initialValues={{ typeForm: 'pg_payments_list', session_id: session_idPg }}
         />
       ),
       buttons: [
@@ -260,6 +290,7 @@ const TaraOptions = () => {
               if (selectedItemPg) {
                 setOperationPg(Operation.QUANTITY)
                 openCalculatorModal({ operation: Operation.QUANTITY })
+                setChangePricePg(false)
               }
             }}
             // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
@@ -273,6 +304,7 @@ const TaraOptions = () => {
               if (selectedItemPg) {
                 setOperationPg(Operation.PRICE)
                 openCalculatorModal({ operation: Operation.PRICE })
+                setChangePricePg(false)
               }
             }}
             // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
@@ -286,6 +318,7 @@ const TaraOptions = () => {
               if (selectedItemPg) {
                 setOperationPg(Operation.TARA_QUANTITY)
                 openCalculatorModal({ operation: Operation.TARA_QUANTITY })
+                setChangePricePg(false)
               }
             }}
             // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
@@ -299,6 +332,7 @@ const TaraOptions = () => {
               if (selectedItemPg) {
                 setOperationPg(Operation.TARA_VALUE)
                 openCalculatorModal({ operation: Operation.TARA_VALUE })
+                setChangePricePg(false)
               }
             }}
             // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
@@ -306,7 +340,7 @@ const TaraOptions = () => {
             <span>TARA peso</span>
           </button>
         </div>
-
+        {/*
         <div className="mt-2 d-flex flex-wrap gap-2 numpad">
           {containersPg.map((value: { weight: number; name: string }) => (
             <button
@@ -329,6 +363,7 @@ const TaraOptions = () => {
             <div key={`ghost-${index}`} style={{ minWidth: '60px', flex: '1 0 60px', height: 0 }} />
           ))}
         </div>
+        */}
       </div>
 
       <div className="d-flex flex-column" style={{ minWidth: '160px', maxWidth: '180px' }}>
@@ -377,6 +412,8 @@ const TaraOptions = () => {
             fontSize: '13px',
           }}
           onClick={() => {
+            setPrevWeight(weightValuePg)
+            return
             if (!selectedItemPg || !selectedOrderPg) return
             const currentTaraQuantity = getProductTaraQuantityPg(
               selectedOrderPg,

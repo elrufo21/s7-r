@@ -90,6 +90,12 @@ const PointOfSale = () => {
     localStorage.setItem(key, JSON.stringify(updated))
   }
   useEffect(() => {
+    if (isOnline) {
+      const syncOfflineData = async () => {
+        await offlineCache.syncPayments(executeFnc, session_id, setSyncDataPg)
+      }
+      syncOfflineData()
+    }
     if (isOnline && !localModePg) {
       const getPosOrders = async () => {
         offlineCache.syncOfflineData(

@@ -193,7 +193,7 @@ const VirtualKeyboard = ({ onKeyPress, onClose, capsLock, onCapsLockToggle, posi
             <button
               key={key}
               type="button"
-              className="px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-300 text-base font-medium min-w-[55px]"
+              className="px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-300 text-base font-medium min-w-[90px] min-h-[70px]"
               onMouseDown={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
@@ -210,7 +210,7 @@ const VirtualKeyboard = ({ onKeyPress, onClose, capsLock, onCapsLockToggle, posi
             <button
               key={key}
               type="button"
-              className="px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-300 text-base font-medium min-w-[55px]"
+              className="px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-300 text-base font-medium min-w-[90px] min-h-[70px]"
               onMouseDown={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
@@ -227,7 +227,7 @@ const VirtualKeyboard = ({ onKeyPress, onClose, capsLock, onCapsLockToggle, posi
             <button
               key={key}
               type="button"
-              className="px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-300 text-base font-medium min-w-[55px]"
+              className="px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-300 text-base font-medium min-w-[90px] min-h-[70px]"
               onMouseDown={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
@@ -242,7 +242,7 @@ const VirtualKeyboard = ({ onKeyPress, onClose, capsLock, onCapsLockToggle, posi
         <div className="flex gap-2 justify-center">
           <button
             type="button"
-            className={`px-4 py-3 rounded-lg border border-gray-300 text-base font-medium min-w-[85px] ${
+            className={`px-4 py-3 rounded-lg border border-gray-300 text-base font-medium min-w-[140px] min-h-[70px] ${
               capsLock ? 'bg-teal-500 text-white' : 'bg-gray-100 hover:bg-gray-200'
             }`}
             onMouseDown={(e) => {
@@ -257,7 +257,7 @@ const VirtualKeyboard = ({ onKeyPress, onClose, capsLock, onCapsLockToggle, posi
             <button
               key={key}
               type="button"
-              className="px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-300 text-base font-medium min-w-[55px]"
+              className="px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-300 text-base font-medium min-w-[90px] min-h-[70px]"
               onMouseDown={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
@@ -269,7 +269,7 @@ const VirtualKeyboard = ({ onKeyPress, onClose, capsLock, onCapsLockToggle, posi
           ))}
           <button
             type="button"
-            className="px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-300 text-base font-medium min-w-[85px]"
+            className="px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-300 text-base font-medium min-w-[140px] min-h-[70px]"
             onMouseDown={(e) => {
               e.preventDefault()
               e.stopPropagation()
@@ -283,7 +283,7 @@ const VirtualKeyboard = ({ onKeyPress, onClose, capsLock, onCapsLockToggle, posi
         <div className="flex gap-2 justify-center w-full">
           <button
             type="button"
-            className="px-4 py-3 bg-red-100 hover:bg-red-200 rounded-lg border border-red-300 text-base font-medium min-w-[100px]"
+            className="px-4 py-3 bg-red-100 hover:bg-red-200 rounded-lg border border-red-300 text-base font-medium min-w-[250px] min-h-[70px]"
             onMouseDown={(e) => {
               e.preventDefault()
               e.stopPropagation()
@@ -294,7 +294,7 @@ const VirtualKeyboard = ({ onKeyPress, onClose, capsLock, onCapsLockToggle, posi
           </button>
           <button
             type="button"
-            className="px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-300 text-base font-medium flex-1"
+            className="px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-300 text-base font-medium flex-1 min-h-[70px]"
             onMouseDown={(e) => {
               e.preventDefault()
               e.stopPropagation()
@@ -305,7 +305,7 @@ const VirtualKeyboard = ({ onKeyPress, onClose, capsLock, onCapsLockToggle, posi
           </button>
           <button
             type="button"
-            className="px-4 py-3 bg-teal-100 hover:bg-teal-200 rounded-lg border border-teal-300 text-base font-medium min-w-[100px]"
+            className="px-4 py-3 bg-teal-100 hover:bg-teal-200 rounded-lg border border-teal-300 text-base font-medium min-w-[250px] min-h-[70px]"
             onMouseDown={(e) => {
               e.preventDefault()
               e.stopPropagation()

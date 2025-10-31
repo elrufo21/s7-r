@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BiCheckCircle } from 'react-icons/bi'
 import useAppStore from '@/store/app/appStore'
@@ -6,20 +6,27 @@ import { usePWA } from '@/hooks/usePWA'
 import { offlineCache } from '@/lib/offlineCache'
 import { RiPrinterLine } from 'react-icons/ri'
 import TicketHTML from './TicketHtml'
+import { TypeStateOrder } from '../types'
+import { renderToString } from 'react-dom/server'
+import { printHTML } from '@/lib/qzPrinter'
+import PaymentTicketHtml from './PaymentTicketHtml'
 
 const Invoice = () => {
   const {
     orderDataPg,
     selectedOrderPg,
-    addNewOrderPg,
+    setSelectedOrderPg,
     executeFnc,
     localModePg,
     setScreenPg,
-    ensureFourOrdersPg, // Nueva función que crearemos
+    ensureFourOrdersPg,
+    payment,
+    setPayment,
   } = useAppStore()
-  const [order, setOrder] = useState({})
-  const { isOnline } = usePWA()
 
+  const [order, setOrder] = useState({})
+  const orderDataRef = useRef(orderDataPg)
+  const { isOnline } = usePWA()
   useEffect(() => {
     const fetchOrder = async () => {
       if (!isOnline || localModePg) {
@@ -35,7 +42,28 @@ const Invoice = () => {
     }
     fetchOrder()
   }, [orderDataPg])
+
+  useEffect(() => {
+    orderDataRef.current = orderDataPg
+  }, [orderDataPg])
+
+  useEffect(() => {
+    return () => {
+      if (!window.isPrinting) {
+        setSelectedOrderPg(
+          orderDataRef.current.filter(
+            (o) => o.state === TypeStateOrder.IN_PROGRESS || o.state === TypeStateOrder.PAY
+          )[0]?.order_id
+        )
+        setPayment(null)
+      }
+    }
+  }, [])
   const info = { ...order, lines: (order as any)?.lines || [] }
+  const handlePrint = async () => {
+    const html = renderToString(<TicketHTML info={info} />)
+    await printHTML(html, 'EPSON TM-T20III Receipt')
+  }
 
   const fnc_printTicket = () => {
     const printContainer = document.createElement('div')
@@ -68,7 +96,11 @@ const Invoice = () => {
     document.body.appendChild(printContainer)
 
     const root = createRoot(printContainer)
-    root.render(<TicketHTML info={info} />)
+    if (payment) {
+      root.render(<PaymentTicketHtml info={payment} />)
+    } else {
+      root.render(<TicketHTML info={info} />)
+    }
 
     setTimeout(() => {
       window.print()
@@ -93,7 +125,11 @@ const Invoice = () => {
                 </i>
                 <span className="fs-3 fw-bolder">Pago exitoso</span>
                 <div className="fs-4 fw-bold d-flex justify-content-center align-items-center gap-2">
-                  <span>S/&nbsp;{(order as any)?.amount_total?.toFixed(2)}</span>
+                  {payment ? (
+                    <span>S/&nbsp;{Number(payment.amount_total)?.toFixed(2)}</span>
+                  ) : (
+                    <span>S/&nbsp;{(order as any)?.amount_total?.toFixed(2)}</span>
+                  )}
                   <span className="bg-green-600 edit-order-payment badge bg-success text-white rounded cursor-pointer pt-1">
                     Editar pago
                   </span>
@@ -105,7 +141,10 @@ const Invoice = () => {
                   <button
                     className="button print btn btn-lg btn-secondary w-100 py-3 lh-xlg"
                     type="button"
-                    onClick={fnc_printTicket}
+                    onClick={
+                      //handlePrint
+                      fnc_printTicket
+                    }
                   >
                     <div className="flex justify-center">
                       <i className="fa fa-print me-3 self-center">
@@ -154,7 +193,7 @@ const Invoice = () => {
           <div className="pos-receipt-container d-flex flex-grow-1 flex-lg-grow-0 w-100 w-lg-50 user-select-none justify-content-center bg-200 text-center overflow-hidden">
             <div className="w-full d-inline-block m-2 m-lg-3 p-3 text-start overflow-y-auto overflow-x-hidden">
               <div className="w-full h-full flex items-center align-middle justify-center scale-125">
-                <TicketHTML info={info} />
+                {payment ? <PaymentTicketHtml info={payment} /> : <TicketHTML info={info} />}
               </div>
             </div>
           </div>

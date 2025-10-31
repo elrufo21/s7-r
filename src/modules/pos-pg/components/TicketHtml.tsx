@@ -14,6 +14,7 @@ interface TicketHTMLProps {
 }
 
 const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
+  console.log('info', info)
   const sessions = JSON.parse(localStorage.getItem('sessions') || '[]')
   const session = sessions.find((s: any) => s.point_id === info.point_id)
 

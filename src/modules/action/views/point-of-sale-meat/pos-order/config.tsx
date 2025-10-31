@@ -56,7 +56,6 @@ export interface PosOrderData {
 const PosOrderConfig: FormConfig = {
   form_id: 201,
   aditionalFilters: [
-    
     [
       0,
       'multi_filter_in',
@@ -132,14 +131,14 @@ const PosOrderConfig: FormConfig = {
 
     const errors: { message: string }[] = []
 
-      ; (data.payments || []).forEach((p: any, i: number) => {
-        if (!p.payment_method_id || p.payment_method_id === 0) {
-          errors.push({ message: `Seleccione un método de pago.` })
-        }
-        if (!p.amount || Number(p.amount) === 0) {
-          errors.push({ message: `El importe no debe ser 0.` })
-        }
-      })
+    ;(data.payments || []).forEach((p: any, i: number) => {
+      if (!p.payment_method_id || p.payment_method_id === 0) {
+        errors.push({ message: `Seleccione un método de pago.` })
+      }
+      if (!p.amount || Number(p.amount) === 0) {
+        errors.push({ message: `El importe no debe ser 0.` })
+      }
+    })
 
     if (errors.length > 0) {
       CustomToast({
@@ -422,7 +421,7 @@ const PosOrderConfig: FormConfig = {
           key: 'T',
           key_db: 'order_date',
           value: 'T',
-          type: 'check'
+          type: 'check',
         },
         {
           group: 'date',

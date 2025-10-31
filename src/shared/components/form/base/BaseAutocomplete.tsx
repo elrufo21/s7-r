@@ -238,6 +238,7 @@ const BaseAutocomplete = ({
   return (
     <AutocompleteControlled
       name={name}
+      labelName={label}
       control={control}
       errors={errors}
       options={options}
@@ -252,6 +253,7 @@ const BaseAutocomplete = ({
       disableFrmIsChanged={disableFrmIsChanged}
       className={className}
       enableVirtualKeyboard={activateVirtualKeyboard}
+      setValue={setValue}
       // useNumericKeyboard
       // isInsideModal
     />

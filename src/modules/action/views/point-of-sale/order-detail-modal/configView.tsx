@@ -1,5 +1,5 @@
 import { frmElementsProps } from '@/shared/shared.types'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import useAppStore from '@/store/app/appStore'
 import { DatepickerControlled, MultiSelectObject, SelectControlled } from '@/shared/ui'
 import FormRow from '@/shared/components/form/base/FormRow'
@@ -7,8 +7,13 @@ import { Chip } from '@mui/material'
 import { ModalBase } from '@/shared/components/modals/ModalBase'
 import CustomerConfig from '@/modules/contacts/views/contact-index/config'
 import ProductConfig from '@/modules/action/views/inventory/products_variant/config'
+import BaseAutocomplete from '@/shared/components/form/base/BaseAutocomplete'
 
-export function Subtitle({ control, errors, editConfig }: frmElementsProps) {
+export function Subtitle({ control, errors, editConfig, setValue }: frmElementsProps) {
+  useEffect(() => {
+    setValue('date_start', new Date())
+    setValue('date_end', new Date())
+  }, [])
   return (
     <div className="flex flex-col gap-4 w-full">
       <div className="flex items-center gap-4">
@@ -20,6 +25,7 @@ export function Subtitle({ control, errors, editConfig }: frmElementsProps) {
             control={control}
             errors={errors}
             editConfig={{ config: editConfig }}
+            startToday
           />
         </div>
       </div>
@@ -33,6 +39,7 @@ export function Subtitle({ control, errors, editConfig }: frmElementsProps) {
             control={control}
             errors={errors}
             editConfig={{ config: editConfig }}
+            startToday
           />
         </div>
       </div>
@@ -41,8 +48,14 @@ export function Subtitle({ control, errors, editConfig }: frmElementsProps) {
 }
 
 export function FrmMiddle({ control, errors, editConfig, watch, setValue }: frmElementsProps) {
-  const { createOptions, openDialog, setNewAppDialogs, setFrmIsChanged, closeDialogWithData } =
-    useAppStore()
+  const {
+    createOptions,
+    formItem,
+    openDialog,
+    setNewAppDialogs,
+    setFrmIsChanged,
+    closeDialogWithData,
+  } = useAppStore()
   const [pointsOfSale, setPointsOfSale] = useState([])
   const [customers, setCustomers] = useState([])
   const [products, setProducts] = useState([])
@@ -206,7 +219,7 @@ export function FrmMiddle({ control, errors, editConfig, watch, setValue }: frmE
 
   return (
     <>
-      <FormRow label="Punto de venta" fieldName="pos_id" className="w-[500px]">
+      {/**  <FormRow label="Punto de venta" fieldName="pos_id" className="w-[500px]">
         <MultiSelectObject
           name="pos_id"
           control={control}
@@ -217,7 +230,7 @@ export function FrmMiddle({ control, errors, editConfig, watch, setValue }: frmE
           createOpt={true}
           searchOpt={true}
           editConfig={{ config: editConfig }}
-        />
+        /> 
       </FormRow>
 
       <FormRow label="Tipo" fieldName="type" className="w-[500px]">
@@ -231,23 +244,39 @@ export function FrmMiddle({ control, errors, editConfig, watch, setValue }: frmE
           ]}
         />
       </FormRow>
-
-      {watch('type') === 'C' && (
-        <FormRow label="Cliente" fieldName="partner_id" className="w-[500px]">
-          <MultiSelectObject
-            name="partner_id"
-            control={control}
-            options={customers}
-            errors={errors}
-            fnc_loadOptions={loadCustomer}
-            renderTags={fnc_renderImps}
-            createOpt={true}
-            searchOpt={true}
-            editConfig={{ config: editConfig }}
-            handleSearchOpt={handleSearchContacts}
-          />
-        </FormRow>
-      )}
+      */}
+      <FormRow label="Cliente" fieldName="partner_id" className="w-[500px]">
+        {/** <MultiSelectObject
+          name="partner_id"
+          control={control}
+          options={customers}
+          errors={errors}
+          fnc_loadOptions={loadCustomer}
+          renderTags={fnc_renderImps}
+          createOpt={true}
+          searchOpt={true}
+          editConfig={{ config: editConfig }}
+          handleSearchOpt={handleSearchContacts}
+        /> */}
+        <BaseAutocomplete
+          control={control}
+          errors={errors}
+          setValue={setValue}
+          editConfig={{ config: editConfig }}
+          formItem={watch()}
+          name={'partner_id'}
+          label={'partner_name'}
+          rulers={true}
+          filters={[]}
+          allowSearchMore={true}
+          config={{
+            modalTitle: 'Clientes',
+            primaryKey: 'partner_id',
+            fncName: 'fnc_partner',
+          }}
+          className=""
+        />
+      </FormRow>
 
       {watch('type') === 'P' && (
         <FormRow label="Producto" fieldName="product_id" className="w-[500px]">

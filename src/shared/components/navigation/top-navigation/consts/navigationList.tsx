@@ -5,6 +5,10 @@ import PosReportSessionConfig from '@/modules/action/views/point-of-sale/report-
 import { generateExcel } from '@/modules/pos-carnes/views/modal-payment-list/components/ExcelReport'
 import * as XLSX from 'xlsx'
 import { downloadAccountsReportPDF } from '@/modules/invoicing/components/AcountsReport'
+import { downloadCustomerAccountsReportPDF } from '@/modules/invoicing/components/customerAccountStatementReport'
+import { Type_pos_payment_origin, TypeStateOrder, TypeStatePayment } from '@/modules/pos-pg/types'
+import { transformOrders, transformOrdersWithPayments } from '@/shared/helpers/helpers'
+import { CustomToast } from '@/components/toast/CustomToast'
 
 export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
   [ModulesEnum.BASE]: null,
@@ -1270,6 +1274,119 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
               } catch (error) {
                 console.error('Error al descargar PDF:', error)
               }
+            },
+          },
+          {
+            title: 'Reporte de estado de la cuenta',
+            key: 'report-state',
+
+            openAsModal: true,
+            modalConfig: {
+              size: 'medium',
+              title: 'Detalle de la Sesión',
+              config: Frm_894_config,
+              customButtons: [
+                {
+                  text: 'Descargar PDF',
+                  type: 'confirm',
+                  onClick: async (id, close, fncExecute, getData) => {
+                    const formData = getData()
+                    const errors: { message: string }[] = []
+                    if (!formData.partner_id) errors.push({ message: 'Seleccione un cliente.' })
+                    if (!formData.date_start)
+                      errors.push({ message: 'Seleccione una fecha de inicio.' })
+                    if (!formData.date_end)
+                      errors.push({ message: 'Seleccione una fecha de finalizacion.' })
+                    if (errors.length > 0) {
+                      CustomToast({
+                        title: 'Falta completar campos',
+                        items: errors,
+                        type: 'error',
+                      })
+                      return null
+                    }
+                    const { oj_data } = await fncExecute('fnc_pos_order ', 's_pos', [
+                      [
+                        0,
+                        'fbetween',
+                        'order_date',
+                        formData.date_start.toLocaleString(),
+                        formData.date_end.toLocaleString(),
+                      ],
+                      [0, 'fequal', 'partner_id', formData.partner_id],
+                      [0, 'fequal', 'state', TypeStateOrder.REGISTERED],
+                      [2, 'list_select_all'],
+                    ])
+                    const { oj_data: payments } = await fncExecute('fnc_pos_payment', 's', [
+                      [
+                        0,
+                        'fbetween',
+                        'date',
+                        formData.date_start.toLocaleString(),
+                        formData.date_end.toLocaleString(),
+                      ],
+                      [0, 'fequal', 'report_partner_id', formData.partner_id],
+                      [0, 'fequal', 'state', TypeStateOrder.REGISTERED],
+                      [
+                        0,
+                        'multi_filter_in',
+                        [
+                          { key_db: 'origin', value: Type_pos_payment_origin.DOCUMENT },
+                          { key_db: 'origin', value: Type_pos_payment_origin.PAY_DEBT },
+                        ],
+                      ],
+                    ])
+
+                    downloadCustomerAccountsReportPDF({
+                      data: {
+                        customer: {
+                          name: formData.partner_name,
+                          document: 'DNI 45879632',
+                          date: `${formData.date_start.toLocaleString().split(',')[0]} A ${formData.date_end.toLocaleString().split(',')[0]}`,
+                        },
+                        records: transformOrdersWithPayments(oj_data, payments),
+                      },
+                    })
+                    /* import(
+                      '@/modules/pos-carnes/views/modal-payment-list/components/SalesByClientPDF.tsx'
+                    ).then((module) => {
+                      const OrdersReportPDF = module.default
+
+                      import('@react-pdf/renderer').then((pdfModule) => {
+                        const { pdf } = pdfModule
+
+                        const orders = oj_data
+
+                        import('react').then((React) => {
+                          pdf(React.createElement(OrdersReportPDF, { orders }))
+                            .toBlob()
+                            .then((blob) => {
+                              const url = URL.createObjectURL(blob)
+                              const link = document.createElement('a')
+                              link.href = url
+                              link.download = 'detalle-ventas.pdf'
+                              link.click()
+                              URL.revokeObjectURL(url)
+                            })
+                        })
+                      })
+                    })*/
+                  },
+                },
+                {
+                  text: 'Descargar Excel',
+                  type: 'confirm',
+                  onClick: async (id, close, fncExecute) => {
+                    if (!fncExecute) return
+                    const { oj_data } = await fncExecute('fnc_pos_order ', 's', [
+                      [2, 'list_select_all'],
+                    ])
+
+                    const wb = generateExcel(oj_data)
+                    XLSX.writeFile(wb, `pedido_123.xlsx`)
+                  },
+                },
+              ],
             },
           },
           /*

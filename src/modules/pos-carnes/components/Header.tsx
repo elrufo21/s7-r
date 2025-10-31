@@ -100,7 +100,11 @@ export default function Header({ pointId }: { pointId: string }) {
     const dialogId = openDialog({
       title: 'Lista de pagos',
       dialogContent: () => (
-        <FrmBaseDialog config={PosModalPaymentListConfig} viewType={ViewTypeEnum.LIBRE} />
+        <FrmBaseDialog
+          config={PosModalPaymentListConfig}
+          initialValues={{ session_id: session_id }}
+          viewType={ViewTypeEnum.LIBRE}
+        />
       ),
       buttons: [
         {

@@ -38,7 +38,6 @@ const styles = StyleSheet.create({
     borderBottom: '1px solid #f5f5f5',
   },
 
-  
   colTotalPartner: { flex: 2.4, textAlign: 'left' }, // nuevo
 
   colDate: { flex: 1.2, textAlign: 'center' },
@@ -221,7 +220,8 @@ const SalesByClientPDF = ({ orders }: { orders: OrderData[] }) => {
                     <Text style={styles.colDate}>{formatDate(order.order_date)}</Text>
                     <Text style={styles.colDate}>{order.receipt_number}</Text> {/* nuevo */}
                     <Text style={styles.colTotal}>{formatAmount(order.amount_withtaxed)}</Text>
-                    <Text style={styles.colTotal}>{formatAmount(order.amount_payment)}</Text> {/* nuevo */}
+                    <Text style={styles.colTotal}>{formatAmount(order.amount_payment)}</Text>{' '}
+                    {/* nuevo */}
                     <Text style={styles.colResidual}>
                       {formatAmount((order as any).computed_residual)}
                     </Text>
@@ -233,10 +233,8 @@ const SalesByClientPDF = ({ orders }: { orders: OrderData[] }) => {
 
                 {/* TOTAL DEL MES */}
                 <View style={styles.totalRow}>
-                  
                   {/* <Text style={styles.colDate}>TOTAL {month.month}</Text> */}
                   <Text style={styles.colDate}>{month.month}</Text>
-
                   <Text style={styles.colDate}></Text> {/* nuevo */}
                   <Text style={styles.colTotal}>{formatAmount(month.total)}</Text>
                   <Text style={styles.colTotal}>{formatAmount(month.payment)}</Text> {/* nuevo */}
@@ -249,11 +247,9 @@ const SalesByClientPDF = ({ orders }: { orders: OrderData[] }) => {
 
             {/* TOTAL DEL CLIENTE */}
             <View style={styles.clientGrandTotal} wrap={false}>
-              
               {/* <Text style={styles.colDate}>TOTAL {group.clientName}</Text> */}
               <Text style={styles.colTotalPartner}>{group.clientName}</Text>
               {/*<Text style={styles.colDate}></Text> */}
-              
               <Text style={styles.colTotal}>{formatAmount(group.total)}</Text>
               <Text style={styles.colTotal}>{formatAmount(group.payment)}</Text> {/* nuevo */}
               <Text style={styles.colResidual}>{formatAmount(group.residual)}</Text>
@@ -265,10 +261,8 @@ const SalesByClientPDF = ({ orders }: { orders: OrderData[] }) => {
 
         {/* TOTAL GENERAL */}
         <View style={styles.grandTotalRow}>
-          
           {/* <Text style={styles.colDate}>TOTAL GENERAL</Text> */}
           <Text style={styles.colDate}>Total informe</Text>
-
           <Text style={styles.colDate}></Text> {/* nuevo */}
           <Text style={styles.colTotal}>{formatAmount(grandTotals.total)}</Text>
           <Text style={styles.colTotal}>{formatAmount(grandTotals.payment)}</Text> {/* nuevo */}

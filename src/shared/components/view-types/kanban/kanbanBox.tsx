@@ -217,7 +217,7 @@ export const KanbanBox = ({ item, fnc, index, fnc_name }: KanbanBoxProps) => {
               </div>
 
               <div className="w-full">
-                {item?.variants.map((variant: any) => (
+                {item?.variants?.map((variant: any) => (
                   <Chip
                     key={variant.attribute_value_id}
                     label={variant.name}

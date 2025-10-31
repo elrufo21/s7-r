@@ -7,24 +7,34 @@ import { formatShortDate, getHour } from '@/shared/utils/dateUtils'
 import { GrTrash } from 'react-icons/gr'
 import { DataTable } from '../../components/ListView'
 import { frmElementsProps } from '@/shared/shared.types'
+import { usePWA } from '@/hooks/usePWA'
+import { offlineCache } from '@/lib/offlineCache'
 
 export function FrmMiddle({ watch }: frmElementsProps) {
+  const { isOnline } = usePWA()
   const { executeFnc } = useAppStore()
   const getPayments = async () => {
-    const today = new Date()
-    const formattedDate = today.toLocaleDateString('es-PE')
-    const { oj_data } = await executeFnc('fnc_pos_payment', 's', [
-      [
-        0,
-        'fequal',
-        'origin',
+    if (isOnline) {
+      const { oj_data } = await executeFnc('fnc_pos_payment', 's', [
+        ['0', 'fequal', 'session_id', watch('session_id')],
+        [
+          0,
+          'fequal',
+          'origin',
+          watch('typeForm') === 'pg_payments_list'
+            ? Type_pos_payment_origin.PAY_DEBT
+            : Type_pos_payment_origin.DIRECT_PAYMENT,
+        ],
+      ])
+      setData(oj_data || [])
+    } else {
+      const offlinePayments = await offlineCache.getOfflinePaymentsByOrigin(
         watch('typeForm') === 'pg_payments_list'
           ? Type_pos_payment_origin.PAY_DEBT
-          : Type_pos_payment_origin.DIRECT_PAYMENT,
-      ],
-      [0, 'fbetween', 'date', formattedDate, formattedDate],
-    ])
-    setData(oj_data || [])
+          : Type_pos_payment_origin.DIRECT_PAYMENT
+      )
+      setData(offlinePayments || [])
+    }
   }
   const [data, setData] = useState([])
   useEffect(() => {

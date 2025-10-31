@@ -202,7 +202,7 @@ export const KanbanView = ({ config }: KanbanViewProps) => {
                               (p: any) => p?.point_id === item.point_id
                             )
 
-                            if (!isOpen) {
+                            /**    if (!isOpen) {
                               CustomToast({
                                 title: 'No se puede seguir vendiendo',
                                 description: `Otro usuario está en el punto de venta.`,
@@ -211,8 +211,8 @@ export const KanbanView = ({ config }: KanbanViewProps) => {
                               console.warn(
                                 `Punto ${item.point_id} no está en local_pos_open. No se abrirá.`
                               )
-                              return // ❌ Evita continuar si no está abierto
-                            }
+                              return
+                            } */
 
                             const sessions = JSON.parse(localStorage.getItem('sessions') || '[]')
 

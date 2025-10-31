@@ -4,4 +4,5 @@ export enum Operation {
   //DISCOUNT = 'discount',
   TARA_QUANTITY = 'tara_quantity',
   TARA_VALUE = 'tara_value',
+  CHANGE_PRICE = 'change_price',
 }

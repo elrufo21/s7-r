@@ -1,5 +1,4 @@
 import CartPanel from './CartPanel'
-import CategorySelector from './CategorySelector'
 import ProductGrid from './ProductGrid'
 import { OrderList } from './OrderList'
 import CartItem from './CartItem'
@@ -39,7 +38,7 @@ const Screens = () => {
     setOrderDataPg,
     setSyncDataPg,
     setSyncLoading,
-    session_id: session_idPg,
+    session_idPg,
     setSelectedOrderInListPg,
     selectedOrderInListPg,
     getSortedActiveOrdersPg,
@@ -127,7 +126,7 @@ const Screens = () => {
       orderDataPg?.find((item) => item.order_id === selectedOrderPg)?.state === 'Y' &&
       backToProductsPg === false
     ) {
-    //  setScreenPg('payment')
+      //  setScreenPg('payment')
     }
     if (screenPg === 'payment' && backToProductsPg === true) {
       setScreenPg('products')
@@ -146,7 +145,7 @@ const Screens = () => {
   const fnc_detailsModal = async (order_id: string | number) => {
     let orderID = order_id
     let data
-    if (!Number(order_id)) {
+    if (!Number(orderID)) {
       const { selectedOr } = await offlineCache.syncOfflineData(
         executeFnc,
         pointId,
@@ -226,7 +225,7 @@ const Screens = () => {
           <div className="rightpanel">
             <div className="rightpanel-sub-1 overflow-auto">
               <TaraOptions />
-              <CategorySelector />
+              {/* <CategorySelector /> */}
               <ProductGrid />
             </div>
           </div>

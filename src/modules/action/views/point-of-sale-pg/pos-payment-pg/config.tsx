@@ -2,7 +2,8 @@ import { ViewTypeEnum, FormConfig, ModulesEnum, ItemStatusTypeEnum } from '@/sha
 import { FrmMiddle } from './configView'
 import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
 import { formatPlain } from '@/shared/utils/dateUtils'
-import { Type_pos_payment_origin } from '@/modules/pos-pg/types'
+import { Type_pos_payment_origin, TypeStatePayment } from '@/modules/pos-pg/types'
+import { Frm_bar_buttons } from './components/frmBarButtons'
 
 const PosPaymentConfig: FormConfig = {
   form_id: 402,
@@ -155,11 +156,25 @@ const PosPaymentConfig: FormConfig = {
       ],
     },
   ],
+  statusBarConfig: {
+    visibleStates: [
+      { state: 'R', label: 'Registrado' },
+      { state: 'C', label: 'Cancelado' },
+    ],
+  },
 
   form_inputs: {
     imagenFields: [],
     auditoria: false,
-
+    frm_bar_buttons: ({ watch, control, errors, editConfig = {}, setValue }) => (
+      <Frm_bar_buttons
+        watch={watch}
+        control={control}
+        errors={errors}
+        editConfig={editConfig}
+        setValue={setValue}
+      />
+    ),
     frm_middle: ({ control, errors, editConfig = {}, setValue, watch }) => (
       <FrmMiddle
         control={control}

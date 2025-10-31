@@ -4,7 +4,7 @@ import { GroupedItemsType } from '@/shared/components/view-types/viewTypes.types
 import { FormActionEnum, ViewTypeEnum } from '@/shared/shared.types'
 import { ExpandedState, Row, Table } from '@tanstack/react-table'
 import React, { ReactNode } from 'react'
-import { Operation } from '@/modules/pos/context/CalculatorContext'
+import { Operation } from '@/modules/pos-pg/context/CalculatorContext'
 
 interface DialogProps {
   title: string
@@ -550,7 +550,12 @@ export interface PointsOfSaleSliceState {
   getProductQuantityInProducts: (product_id: string, order_id: string) => number
 }
 export interface PointsOfSaleSliceStatePg {
-  
+  prevWeight: number
+  setPrevWeight: (prevWeight: number) => void
+  payment: any
+  setPayment: (payment: any) => void
+  changePricePg: boolean
+  setChangePricePg: (changePricePg: boolean) => void
   closeSession: boolean
   setCloseSession: (closeSession: boolean) => void
   completedOrderPg: any
@@ -711,7 +716,7 @@ export interface PointsOfSaleSliceStatePg {
   initializePointOfSalePg: (
     pointId: string,
     isOnline: boolean,
-    session_id: string | null,
+    session_id: string | null
   ) => Promise<void>
   getOrSetLocalStoragePg: <T>(key: string, fetchFn: () => Promise<T>) => Promise<T>
   clearPosCachePg: () => void

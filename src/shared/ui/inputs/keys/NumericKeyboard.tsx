@@ -1,12 +1,12 @@
-import React, { useEffect, useRef, useCallback } from 'react'
+import { useRef, useEffect, useCallback } from 'react'
 
-interface NumericKeyboardProps {
+type NumericKeyboardProps = {
   onKeyPress: (key: string) => void
   onClose: () => void
-  position: { position: 'top' | 'bottom' }
+  position?: { position: 'top' | 'bottom' }
 }
 
-const NumericKeyboard: React.FC<NumericKeyboardProps> = ({ onKeyPress, onClose, position }) => {
+export const NumericKeyboard = ({ onKeyPress, onClose, position }: NumericKeyboardProps) => {
   const keyboardRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -36,7 +36,7 @@ const NumericKeyboard: React.FC<NumericKeyboardProps> = ({ onKeyPress, onClose, 
   )
 
   const baseKeyStyle =
-    'px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-300 text-base font-medium min-w-[55px] flex items-center justify-center'
+    'px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-300 text-base font-medium min-w-[90px] min-h-[70px] flex items-center justify-center'
 
   const isTop = position?.position === 'top'
 
@@ -48,7 +48,7 @@ const NumericKeyboard: React.FC<NumericKeyboardProps> = ({ onKeyPress, onClose, 
       }`}
     >
       <div className="flex flex-col gap-2 w-auto items-center">
-        {/* Fila 1 */}
+        {/* Primera fila - 1, 2, 3 */}
         <div className="flex gap-2">
           {['1', '2', '3'].map((key) => (
             <button
@@ -66,7 +66,7 @@ const NumericKeyboard: React.FC<NumericKeyboardProps> = ({ onKeyPress, onClose, 
           ))}
         </div>
 
-        {/* Fila 2 */}
+        {/* Segunda fila - 4, 5, 6 */}
         <div className="flex gap-2">
           {['4', '5', '6'].map((key) => (
             <button
@@ -84,7 +84,7 @@ const NumericKeyboard: React.FC<NumericKeyboardProps> = ({ onKeyPress, onClose, 
           ))}
         </div>
 
-        {/* Fila 3 */}
+        {/* Tercera fila - 7, 8, 9 */}
         <div className="flex gap-2">
           {['7', '8', '9'].map((key) => (
             <button
@@ -102,7 +102,7 @@ const NumericKeyboard: React.FC<NumericKeyboardProps> = ({ onKeyPress, onClose, 
           ))}
         </div>
 
-        {/* Fila 4 */}
+        {/* Cuarta fila - +/-, 0, . */}
         <div className="flex gap-2">
           {['+/-', '0', '.'].map((key) => (
             <button
@@ -120,19 +120,8 @@ const NumericKeyboard: React.FC<NumericKeyboardProps> = ({ onKeyPress, onClose, 
           ))}
         </div>
 
-        {/* Fila 5 */}
+        {/* Quinta fila - Borrar y Cerrar */}
         <div className="flex gap-2 w-full">
-          <button
-            type="button"
-            className={`${baseKeyStyle} flex-1 min-w-[100px]`}
-            onMouseDown={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              handleKeyClick('Backspace')
-            }}
-          >
-            ← Borrar
-          </button>
           <button
             type="button"
             className={`${baseKeyStyle} flex-1 min-w-[100px]`}
@@ -144,10 +133,19 @@ const NumericKeyboard: React.FC<NumericKeyboardProps> = ({ onKeyPress, onClose, 
           >
             Cerrar
           </button>
+          <button
+            type="button"
+            className={`${baseKeyStyle} flex-1 min-w-[100px]`}
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              handleKeyClick('Backspace')
+            }}
+          >
+            ← Borrar
+          </button>
         </div>
       </div>
     </div>
   )
 }
-
-export default NumericKeyboard

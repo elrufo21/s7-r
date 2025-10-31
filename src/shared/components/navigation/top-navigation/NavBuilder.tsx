@@ -108,6 +108,7 @@ const NavBuilder: FC = () => {
                 key={`${subSubItem.key}-${ind}`}
                 onClick={async () => {
                   // Ejecutar onClick personalizado si existe
+                  let getData = {}
                   if (subSubItem.onClick) {
                     await subSubItem.onClick(navigate, executeFnc)
                   }
@@ -128,6 +129,7 @@ const NavBuilder: FC = () => {
                           <FrmBaseDialog
                             config={subSubItem.modalConfig.config}
                             initialValues={initialValues}
+                            setGetData={(fn: any) => (getData = fn)}
                           />
                         ) : (
                           <div>No hay configuración disponible</div>
@@ -137,7 +139,8 @@ const NavBuilder: FC = () => {
                         ...(subSubItem.modalConfig?.customButtons || []).map((button: any) => ({
                           text: button.text,
                           type: button.type,
-                          onClick: () => button.onClick(dialogId, closeDialogWithData, executeFnc),
+                          onClick: () =>
+                            button.onClick(dialogId, closeDialogWithData, executeFnc, getData),
                         })),
                         // Botón cerrar siempre presente
                         {
@@ -165,13 +168,13 @@ const NavBuilder: FC = () => {
         <MenuItem
           key={subItem.key}
           onClick={async () => {
-            // Ejecutar onClick personalizado si existe
             if (subItem.onClick) {
               await subItem.onClick(navigate, executeFnc)
             }
 
             if (subItem.openAsModal) {
               let initialValues = {}
+              let getData = {}
               const values = subItem.modalConfig?.initialValues
               if (subItem.modalConfig?.initialValues) {
                 const { oj_data } =
@@ -185,13 +188,15 @@ const NavBuilder: FC = () => {
                   <FrmBaseDialog
                     config={subItem.modalConfig?.config}
                     initialValues={{ orderLines: initialValues }}
+                    setGetData={(fn: any) => (getData = fn)}
                   />
                 ),
                 buttons: [
                   ...(subItem.modalConfig?.customButtons || []).map((button: any) => ({
                     text: button.text,
                     type: button.type,
-                    onClick: () => button.onClick(dialogId, closeDialogWithData, executeFnc),
+                    onClick: () =>
+                      button.onClick(dialogId, closeDialogWithData, executeFnc, getData),
                   })),
                   {
                     text: 'Cerrar',

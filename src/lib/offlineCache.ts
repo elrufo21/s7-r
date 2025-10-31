@@ -1,8 +1,40 @@
+import { Type_pos_payment_origin } from '@/modules/pos-pg/types'
 import { now } from '@/shared/utils/dateUtils'
 import useAppStore from '@/store/app/appStore'
 import { openDB, IDBPDatabase } from 'idb'
 
-// Tipos para las entidades principales
+export type OfflinePayment = {
+  payment_id: string | number
+  amount: string | number
+  reason?: string
+  type: string
+  payment_method_id: number
+  date: string
+  origin: string
+  currency_id: number
+  state: string
+  company_id: number
+  user_id: number
+  session_id: number
+  partner_id?: number | null
+
+  name?: string
+  detail?: string
+  order_id?: number | null
+  parent_id?: number | null
+  user_name?: string
+  order_name?: string | null
+  partner_name?: string
+  payment_method_name?: string
+  state_description?: string
+  amount_in_currency?: string
+
+  synced?: boolean | number
+  is_new?: boolean
+  created_at?: string
+  synced_at?: string
+}
+
 export type Product = { product_id: number; [key: string]: any }
 export type Category = { category_id: number; [key: string]: any }
 export type PaymentMethod = { payment_method_id: number; [key: string]: any }
@@ -25,7 +57,7 @@ export type EntityName =
   | 'container'
   | 'product_images'
   | 'sync_orders_queue'
-
+  | 'offline_payments'
 interface OfflineCacheOptions {
   dbName?: string
   version?: number
@@ -42,7 +74,7 @@ export class OfflineCache {
 
   constructor(options?: OfflineCacheOptions) {
     this.dbName = options?.dbName || 's7-offline-cache'
-    this.version = options?.version || 4 // Subimos la versión a 3
+    this.version = options?.version || 5 // ← Incrementar a 5
   }
 
   /** Inicializa la base de datos y los object stores necesarios. */
@@ -79,11 +111,378 @@ export class OfflineCache {
             db.createObjectStore('permissions', { keyPath: 'permission_id' })
           }
         }
+        if (oldVersion < 5) {
+          if (!db.objectStoreNames.contains('offline_payments')) {
+            const store = db.createObjectStore('offline_payments', {
+              keyPath: 'payment_id',
+            })
+            store.createIndex('by_synced', 'synced', { unique: false })
+            store.createIndex('by_session', 'session_id', { unique: false })
+          }
+        }
       },
     })
   }
 
-  /** Devuelve la instancia de la base de datos, inicializándola si es necesario. */
+  async cachePayments(executeFnc: any, session_id: number) {
+    const result = await executeFnc('fnc_pos_payment', 's', [
+      ['0', 'fequal', 'session_id', session_id],
+      [
+        0,
+        'multi_filter_in',
+        [
+          { key_db: 'origin', value: Type_pos_payment_origin.DIRECT_PAYMENT },
+          { key_db: 'origin', value: Type_pos_payment_origin.PAY_DEBT },
+        ],
+      ],
+    ])
+
+    if (!result?.oj_data || result.oj_data.length === 0) {
+      return
+    }
+
+    const db = await this.getDB()
+    const tx = db.transaction('offline_payments', 'readwrite')
+    const store = tx.objectStore('offline_payments')
+
+    const existingPayments = await store.getAll()
+    const existingIds = new Set(existingPayments.map((p) => p.payment_id))
+
+    let addedCount = 0
+    let updatedCount = 0
+    let skippedCount = 0
+
+    for (const payment of result.oj_data) {
+      if (existingIds.has(payment.payment_id)) {
+        const existing = existingPayments.find((p) => p.payment_id === payment.payment_id)
+
+        if (existing && !existing.is_new) {
+          const offlinePayment: OfflinePayment = {
+            ...payment,
+            synced: true,
+            is_new: false,
+            created_at: existing.created_at || new Date().toISOString(),
+            synced_at: new Date().toISOString(),
+          }
+          await store.put(offlinePayment)
+          updatedCount++
+        } else {
+          skippedCount++
+        }
+      } else {
+        const offlinePayment: OfflinePayment = {
+          ...payment,
+          synced: true,
+          is_new: false,
+          created_at: payment.date || new Date().toISOString(),
+        }
+        await store.put(offlinePayment)
+        addedCount++
+      }
+    }
+
+    await tx.done
+  }
+
+  async saveOfflinePayment(payment: {
+    amount: string
+    reason?: string
+    type: string
+    payment_method_id: number
+    date: string
+    origin: string
+    currency_id: number
+    state: string
+    company_id: number
+    user_id: number
+    session_id: number
+    partner_id?: number
+    payment_id?: string | number
+  }): Promise<OfflinePayment> {
+    const db = await this.getDB()
+
+    const offlinePayment: OfflinePayment = {
+      payment_id: payment.payment_id || crypto.randomUUID(),
+      amount: payment.amount,
+      reason: payment.reason,
+      type: payment.type,
+      payment_method_id: payment.payment_method_id,
+      date: payment.date,
+      origin: payment.origin,
+      currency_id: payment.currency_id,
+      state: payment.state,
+      company_id: payment.company_id,
+      user_id: payment.user_id,
+      session_id: payment.session_id,
+      ...(payment.partner_id && { partner_id: payment.partner_id }),
+      synced: payment.payment_id ? true : false,
+      is_new: !payment.payment_id,
+      created_at: new Date().toISOString(),
+    }
+
+    const tx = db.transaction('offline_payments', 'readwrite')
+    await tx.objectStore('offline_payments').put(offlinePayment)
+    await tx.done
+
+    return offlinePayment
+  }
+  async syncOfflinePayments(executeFnc: any) {
+    const pendingPayments = await this.getPendingOfflinePayments()
+
+    if (pendingPayments.length === 0) {
+      return { success: 0, failed: 0, results: [] }
+    }
+
+    let successCount = 0
+    let failedCount = 0
+    const results = []
+
+    for (const payment of pendingPayments) {
+      try {
+        const paymentData: any = {
+          amount: payment.amount,
+          reason: payment.reason,
+          type: payment.type,
+          payment_method_id: payment.payment_method_id,
+          date: payment.date,
+          origin: payment.origin,
+          currency_id: payment.currency_id,
+          state: payment.state,
+          company_id: payment.company_id,
+          user_id: payment.user_id,
+          session_id: payment.session_id,
+        }
+
+        if (payment.partner_id) {
+          paymentData.partner_id = payment.partner_id
+        }
+
+        const result = await executeFnc('fnc_pos_payment', 'i', paymentData)
+
+        if (result?.oj_data) {
+          const serverPaymentId = result.oj_data.payment_id || result.oj_data.id
+
+          let fullPaymentDetail = result.oj_data
+
+          try {
+            const detailResult = await executeFnc('fnc_pos_payment', 's1', [serverPaymentId])
+            if (detailResult?.oj_data?.[0]) {
+              fullPaymentDetail = detailResult.oj_data[0]
+            }
+          } catch (detailError) {
+            console.warn(detailError)
+          }
+
+          const db = await this.getDB()
+          const tx = db.transaction('offline_payments', 'readwrite')
+          const store = tx.objectStore('offline_payments')
+
+          await store.delete(payment.payment_id)
+
+          const syncedPayment: OfflinePayment = {
+            ...fullPaymentDetail,
+            payment_id: serverPaymentId,
+            synced: true,
+            is_new: false,
+            synced_at: new Date().toISOString(),
+          }
+          await store.put(syncedPayment)
+          await tx.done
+
+          successCount++
+          results.push({
+            local_id: payment.payment_id,
+            server_id: serverPaymentId,
+            origin: payment.origin,
+            status: 'success',
+            has_full_detail: detailResult?.oj_data?.[0] ? true : false,
+          })
+        } else {
+          failedCount++
+          results.push({
+            payment_id: payment.payment_id,
+            origin: payment.origin,
+            status: 'failed',
+            error: 'No data returned',
+          })
+        }
+      } catch (error) {
+        failedCount++
+        results.push({
+          payment_id: payment.payment_id,
+          origin: payment.origin,
+          status: 'failed',
+          error: error instanceof Error ? error.message : 'Unknown error',
+        })
+      }
+    }
+
+    return { success: successCount, failed: failedCount, results }
+  }
+
+  async getOfflinePayments(): Promise<OfflinePayment[]> {
+    return this.getAll<OfflinePayment>('offline_payments')
+  }
+  async getPendingOfflinePayments(): Promise<OfflinePayment[]> {
+    const allPayments = await this.getOfflinePayments()
+    return allPayments.filter((payment) => payment.synced === false || payment.synced === undefined)
+  }
+  async getOfflinePaymentsByOrigin(
+    origin: string,
+    onlyPending?: boolean
+  ): Promise<OfflinePayment[]> {
+    const allPayments = await this.getOfflinePayments()
+
+    let filtered = allPayments.filter((payment) => payment.origin === origin)
+
+    if (onlyPending) {
+      filtered = filtered.filter((payment) => payment.synced === false || payment.synced === 0)
+    }
+
+    return filtered
+  }
+
+  async syncPayments(
+    executeFnc: any,
+    session_id: number,
+    setSyncLoading?: (loading: boolean) => void
+  ) {
+    if (setSyncLoading) setSyncLoading(true)
+
+    try {
+      const pendingPayments = await this.getPendingOfflinePayments()
+
+      let successCount = 0
+      let failedCount = 0
+      const results = []
+
+      for (const payment of pendingPayments) {
+        try {
+          const paymentData: any = {
+            amount: payment.amount,
+            reason: payment.reason,
+            type: payment.type,
+            payment_method_id: payment.payment_method_id,
+            date: payment.date,
+            origin: payment.origin,
+            currency_id: payment.currency_id,
+            state: payment.state,
+            company_id: payment.company_id,
+            user_id: payment.user_id,
+            session_id: payment.session_id,
+          }
+
+          if (payment.partner_id) {
+            paymentData.partner_id = payment.partner_id
+          }
+
+          const result = await executeFnc('fnc_pos_payment', 'i', paymentData)
+
+          if (result?.oj_data) {
+            const serverPaymentId = result.oj_data.payment_id || result.oj_data.id
+            successCount++
+            results.push({
+              local_id: payment.payment_id,
+              server_id: serverPaymentId,
+              origin: payment.origin,
+              status: 'success',
+            })
+          } else {
+            failedCount++
+            results.push({
+              payment_id: payment.payment_id,
+              origin: payment.origin,
+              status: 'failed',
+              error: 'No data returned',
+            })
+          }
+        } catch (error) {
+          failedCount++
+          results.push({
+            payment_id: payment.payment_id,
+            origin: payment.origin,
+            status: 'failed',
+            error: error instanceof Error ? error.message : 'Unknown error',
+          })
+        }
+      }
+
+      const db = await this.getDB()
+      const txClear = db.transaction('offline_payments', 'readwrite')
+      await txClear.objectStore('offline_payments').clear()
+      await txClear.done
+
+      const result = await executeFnc('fnc_pos_payment', 's', [
+        ['0', 'fequal', 'session_id', session_id],
+        [
+          0,
+          'multi_filter_in',
+          [
+            { key_db: 'origin', value: Type_pos_payment_origin.DIRECT_PAYMENT },
+            { key_db: 'origin', value: Type_pos_payment_origin.PAY_DEBT },
+          ],
+        ],
+        [1, 'pag', 1],
+      ])
+
+      if (result?.oj_data && result.oj_data.length > 0) {
+        const tx = db.transaction('offline_payments', 'readwrite')
+        const store = tx.objectStore('offline_payments')
+
+        for (const payment of result.oj_data) {
+          const offlinePayment: OfflinePayment = {
+            ...payment,
+            synced: true,
+            is_new: false,
+            created_at: payment.date || new Date().toISOString(),
+          }
+          await store.put(offlinePayment)
+        }
+
+        await tx.done
+      }
+
+      return {
+        success: true,
+        synced: successCount,
+        failed: failedCount,
+        results: results,
+        reloaded: result?.oj_data?.length || 0,
+        message: `Sincronización completada: ${successCount} pagos sincronizados${
+          failedCount > 0 ? `, ${failedCount} fallidos` : ''
+        }, ${result?.oj_data?.length || 0} pagos recargados`,
+      }
+    } catch (error) {
+      console.error('Error durante la sincronización de pagos:', error)
+      return {
+        success: false,
+        synced: 0,
+        failed: 0,
+        results: [],
+        reloaded: 0,
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        message: 'Error durante la sincronización de pagos',
+      }
+    } finally {
+      if (setSyncLoading) setSyncLoading(false)
+    }
+  }
+
+  async markPaymentAsSynced(payment_id: string) {
+    const db = await this.getDB()
+    const tx = db.transaction('offline_payments', 'readwrite')
+    const store = tx.objectStore('offline_payments')
+
+    const payment = await store.get(payment_id)
+    if (payment) {
+      payment.synced = true
+      payment.synced_at = new Date().toISOString()
+      await store.put(payment)
+    }
+
+    await tx.done
+  }
+
   private async getDB(): Promise<IDBPDatabase> {
     if (!this.db) {
       await this.init()
@@ -92,7 +491,6 @@ export class OfflineCache {
     return this.db
   }
 
-  /** Guarda una lista de entidades en el store correspondiente. */
   private async putEntities<T>(storeName: EntityName, entities: T[]) {
     const db = await this.getDB()
     const tx = db.transaction(storeName, 'readwrite')
@@ -635,6 +1033,7 @@ export class OfflineCache {
     } = useAppStore.getState()
     if (setSyncLoading) setSyncLoading(true)
     let selectedOrderInListRT
+
     try {
       const ordersQueue = await this.getSyncOrdersQueue()
       const orders = await this.getOfflinePosOrders()
@@ -803,6 +1202,7 @@ export class OfflineCache {
           }
         } else {
           setSelectedOrder(selectedOrder)
+
           setSelectedItem(null)
           setSelectedOrderPg(selectedOrder)
           setSelectedItemPg(null)
@@ -823,7 +1223,6 @@ export class OfflineCache {
     } catch (error) {
       console.error('Error general durante la sincronización:', error)
     } finally {
-      console.log('Finalizando')
       if (setSyncLoading) setSyncLoading(false)
     }
     return {
@@ -832,8 +1231,104 @@ export class OfflineCache {
   }
 
   /**
+   * Borra y recarga los productos del cache desde la base de datos
+   */
+
+  async recacheProducts(executeFnc: any) {
+    const { setProducts, setProductsPg, setSyncDataPg, setSyncData } = useAppStore.getState()
+    setSyncDataPg(true)
+    setSyncData(true)
+    try {
+      const db = await this.getDB()
+      const tx = db.transaction('products', 'readwrite')
+      await tx.objectStore('products').clear()
+      await tx.done
+
+      const txImages = db.transaction('product_images', 'readwrite')
+      await txImages.objectStore('product_images').clear()
+      await txImages.done
+
+      const result = await executeFnc('fnc_product_template', 's', [
+        [
+          1,
+          'fcon',
+          ['Disponible en PdV'],
+          '2',
+          [{ key: '2.1', key_db: 'available_in_pos', value: '1' }],
+        ],
+        [1, 'pag', 1],
+      ])
+
+      if (result?.oj_data) {
+        await this.putEntities('products', result.oj_data)
+
+        for (const product of result.oj_data) {
+          const publicUrl = product?.files?.[0]?.publicUrl
+          if (publicUrl) {
+            const imageBlob = await this.fetchImageAsBlob(publicUrl)
+            if (imageBlob) {
+              await this.saveProductImage(product.product_id, imageBlob)
+            }
+          }
+        }
+
+        setProducts(result.oj_data)
+        setProductsPg(result.oj_data)
+
+        return result.oj_data
+      } else {
+        return []
+      }
+    } catch (error) {
+      console.error('Error recargando productos:', error)
+      throw error
+    } finally {
+      // ✅ SIEMPRE se ejecuta, incluso si hay error
+      setSyncDataPg(false)
+      setSyncData(false)
+    }
+  }
+  /**
    * Devuelve las órdenes y contactos offline que tengan la propiedad 'action' para sincronizar.
    */
+
+  async updateProductPrice(product_id: number, newPrice: number): Promise<Product | null> {
+    try {
+      const db = await this.getDB()
+
+      // Obtener el producto actual
+      const txGet = db.transaction('products', 'readonly')
+      const product = await txGet.objectStore('products').get(product_id)
+      await txGet.done
+
+      if (!product) {
+        console.warn(`Producto con ID ${product_id} no encontrado`)
+        return null
+      }
+
+      // Actualizar el precio
+      const updatedProduct = {
+        ...product,
+        sale_price: newPrice,
+      }
+
+      // Guardar el producto actualizado
+      const txUpdate = db.transaction('products', 'readwrite')
+      await txUpdate.objectStore('products').put(updatedProduct)
+      await txUpdate.done
+
+      // Actualizar en el estado global si es necesario
+      const { setProducts, setProductsPg } = useAppStore.getState()
+      const allProducts = await this.getOfflineProducts()
+      setProducts(allProducts)
+      setProductsPg(allProducts)
+
+      return updatedProduct
+    } catch (error) {
+      console.error(`Error actualizando precio del producto ${product_id}:`, error)
+      throw error
+    }
+  }
   async getOfflineDataToSync() {
     const orders = await this.getOfflinePosOrders()
     const contacts = await this.getOfflineContacts()

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Operation, Product } from '@/modules/pos/types'
+import { Product } from '@/modules/pos/types'
 import useAppStore from '@/store/app/appStore'
 import { AiOutlineTag } from 'react-icons/ai'
-import { Divider } from '@mui/material'
+import { Operation } from '@/modules/pos-pg/context/CalculatorContext'
+import { offlineCache } from '@/lib/offlineCache'
 
 interface Props {
   product: Product
@@ -42,8 +43,8 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
     containersPg,
     setTaraValuePg,
     selectedItemPg,
-    weightValuePg,
-    getProductPricePg,
+    setChangePricePg,
+    executeFnc,
   } = useAppStore()
 
   const [localProduct, setLocalProduct] = useState<Product>({ ...product })
@@ -53,6 +54,7 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
     [Operation.PRICE]: 'price_unit',
     [Operation.TARA_VALUE]: 'tara_value',
     [Operation.TARA_QUANTITY]: 'tara_quantity',
+    [Operation.CHANGE_PRICE]: 'price_unit',
   }
   const currentFieldKey = fieldMap[activeField]
   const [inputValue, setInputValue] = useState<string>(String(localProduct[currentFieldKey] ?? ''))
@@ -189,7 +191,26 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
     applyInput(next)
   }
 
-  const handleOk = () => {
+  const handleOk = async () => {
+    if (activeField === Operation.CHANGE_PRICE) {
+      const { oj_data } = await executeFnc('fnc_product', 'u', {
+        product_id: product.product_id,
+        data: [
+          {
+            product_id: product.product_template_id,
+            sale_price: localProduct.price_unit?.toFixed(2),
+            product_template_id: product.product_template_id,
+          },
+          {
+            product_id: product.product_id,
+          },
+        ],
+      })
+      await offlineCache.updateProductPrice(product.product_id, localProduct.price_unit || 0)
+      setChangePricePg(false)
+      closeDialogWithData(dialogId, {})
+      return
+    }
     applyInput(inputValue)
     setHandleChangePg(true)
     updateOrderLinePg(localProduct)
@@ -197,261 +218,285 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
   }
 
   const showTaraInfo = (localProduct.tara_value ?? 0) > 0 || (localProduct.tara_quantity ?? 0) > 0
-  console.log('containersPg', containersPg)
   return (
     <div className="flex flex-row p-[15px]">
       {/* {activeField === Operation.TARA_VALUE && */}
-      <div className="pr-3">
-        <div className="grid grid-cols-2 gap-3">
-          {containersPg.map((value: { weight: number; name: string }) => (
-            <button
-              key={value.weight}
-              // className="numpad-button btn2 btn2-white fs-3 lh-mlg"
-              className="bg-gray-100 hover:bg-gray-200 transition-colors duration-200 
+      {selectedField !== Operation.CHANGE_PRICE && (
+        <>
+          <div className="pr-3">
+            <div className="grid grid-cols-2 gap-3">
+              {containersPg.map((value: { weight: number; name: string }) => (
+                <button
+                  key={value.weight}
+                  // className="numpad-button btn2 btn2-white fs-3 lh-mlg"
+                  className="bg-gray-100 hover:bg-gray-200 transition-colors duration-200 
               rounded-lg text-gray-700 font-medium text-center w-[100px] h-[90px]"
-              onClick={() => {
-                setHandleChangePg(true)
-                setTaraValuePg(selectedOrderPg, selectedItemPg || 0, value.weight)
-              }}
-            >
-              {value.name}
-            </button>
-          ))}
-
-          {/* Si quieres que la última fila mantenga la alineación cuando hay un número impar de botones */}
-          {containersPg.length % 2 !== 0 && <div className="w-full h-[90px]" aria-hidden="true" />}
-        </div>
-      </div>
-      {/* } */}
-
-      {/*
-      <div className="pr-3">
-        <div className=" h-full">
-          <div className="d-flex flex-column" style={{ minWidth: '160px', maxWidth: '180px' }}>
-            <div
-              className="rounded-3 p-3 shadow-sm d-flex flex-column"
-              style={{ backgroundColor: '#1f2937', height: '104px' }}
-            >
-              <div className="text-center flex-grow-1 d-flex flex-column justify-content-center">
-                <div
-                  className="fw-bold mb-0"
-                  style={{ color: '#60a5fa', fontSize: '40px', lineHeight: '1.1' }}
+                  onClick={() => {
+                    setHandleChangePg(true)
+                    setLocalProduct((prev) => {
+                      const updated = recalc({
+                        ...prev,
+                        tara_value: value.weight,
+                      })
+                      return updated
+                    })
+                  }}
                 >
-                  {weightValuePg.toFixed(2)}
-                </div>
-                <Divider component="div" style={{ height: '2px', backgroundColor: '#60a5fa' }} />
-                <div
-                  className="text-truncate"
-                  style={{ color: '#fbbf24', fontSize: '14px', fontWeight: '600' }}
-                >
-                  S/ {getProductPricePg(selectedItemPg || '', selectedOrderPg || '').toFixed(2)}
-                </div>
-              </div>
+                  {value.name}
+                </button>
+              ))}
+
+              {/* Si quieres que la última fila mantenga la alineación cuando hay un número impar de botones */}
+              {containersPg.length % 2 !== 0 && (
+                <div className="w-full h-[90px]" aria-hidden="true" />
+              )}
             </div>
           </div>
-          <button
-            className="btn fw-semibold rounded-3 h-[200px] shadow-sm d-flex align-items-center justify-content-center w-full text-white mt-2"
-            style={{
-              backgroundColor: '#3b82f6',
-              borderColor: '#3b82f6',
-              flex: '2',
-              height: '100px',
-              fontSize: '13px',
-            }}
-            onClick={() => {
-              //setProductQuantityInOrder(selectedOrder, selectedItem || 0, weightValue || 0)
-              //  const currentTaraQuantity = getProductTaraQuantity(selectedOrder, selectedItem || 0)
-              //if (currentTaraQuantity === 0) {
-              //      setTaraQuantity(selectedOrder, selectedItem || 0, 0)
-              //  }
-            }}
-          >
-            <span>CAPTURAR</span>
-          </button>
-          <button
-            className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center mt-2 w-full text-white"
-            style={{
-              backgroundColor: '#f97316',
-              borderColor: '#f97316',
-              flex: '1',
-              height: '100px',
-              fontSize: '13px',
-            }}
-            onClick={() => {
-              if (selectedItemPg && selectedOrderPg) {
-                //  setProductQuantityInOrder(selectedOrder, selectedItem || 0, -weightValue || 0)
-              }
-            }}
-          >
-            DEVOLVER
-          </button>
-        </div>
-      </div>
-      */}
+          {/* } */}
 
-      <div className="pr-3">
-        <div className="grid-container2">
-          <div className="grid-item2">
-            <button
-              className={`btn-style-1 flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 
+          {/*
+            <div className="pr-3">
+              <div className=" h-full">
+                <div className="d-flex flex-column" style={{ minWidth: '160px', maxWidth: '180px' }}>
+                  <div
+                    className="rounded-3 p-3 shadow-sm d-flex flex-column"
+                    style={{ backgroundColor: '#1f2937', height: '104px' }}
+                  >
+                    <div className="text-center flex-grow-1 d-flex flex-column justify-content-center">
+                      <div
+                        className="fw-bold mb-0"
+                        style={{ color: '#60a5fa', fontSize: '40px', lineHeight: '1.1' }}
+                      >
+                        {weightValuePg.toFixed(2)}
+                      </div>
+                      <Divider component="div" style={{ height: '2px', backgroundColor: '#60a5fa' }} />
+                      <div
+                        className="text-truncate"
+                        style={{ color: '#fbbf24', fontSize: '14px', fontWeight: '600' }}
+                      >
+                        S/ {getProductPricePg(selectedItemPg || '', selectedOrderPg || '').toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  className="btn fw-semibold rounded-3 h-[200px] shadow-sm d-flex align-items-center justify-content-center w-full text-white mt-2"
+                  style={{
+                    backgroundColor: '#3b82f6',
+                    borderColor: '#3b82f6',
+                    flex: '2',
+                    height: '100px',
+                    fontSize: '13px',
+                  }}
+                  onClick={() => {
+                    //setProductQuantityInOrder(selectedOrder, selectedItem || 0, weightValue || 0)
+                    //  const currentTaraQuantity = getProductTaraQuantity(selectedOrder, selectedItem || 0)
+                    //if (currentTaraQuantity === 0) {
+                    //      setTaraQuantity(selectedOrder, selectedItem || 0, 0)
+                    //  }
+                  }}
+                >
+                  <span>CAPTURAR</span>
+                </button>
+                <button
+                  className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center mt-2 w-full text-white"
+                  style={{
+                    backgroundColor: '#f97316',
+                    borderColor: '#f97316',
+                    flex: '1',
+                    height: '100px',
+                    fontSize: '13px',
+                  }}
+                  onClick={() => {
+                    if (selectedItemPg && selectedOrderPg) {
+                      //  setProductQuantityInOrder(selectedOrder, selectedItem || 0, -weightValue || 0)
+                    }
+                  }}
+                >
+                  DEVOLVER
+                </button>
+              </div>
+            </div>
+            */}
+
+          <div className="pr-3">
+            <div className="grid-container2">
+              <div className="grid-item2">
+                <button
+                  className={`btn-style-1 flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 
         rounded-lg text-gray-700 font-medium text-center h-full ${
           activeField === Operation.QUANTITY ? 'abc' : ''
         }`}
-              onClick={() => setActiveField(Operation.QUANTITY)}
-            >
-              <div className="pt-1">
-                <div className="text-[1.09375rem]">Cantidad</div>
+                  onClick={() => setActiveField(Operation.QUANTITY)}
+                >
+                  <div className="pt-1">
+                    <div className="text-[1.09375rem]">Cantidad</div>
+                  </div>
+                </button>
               </div>
-            </button>
-          </div>
-          <div className="grid-item2">
-            <button
-              className={`btn-style-1 flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 
+              <div className="grid-item2">
+                <button
+                  className={`btn-style-1 flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 
         rounded-lg text-gray-700 font-medium text-center h-full ${
           activeField === Operation.PRICE ? 'abc' : ''
         }`}
-              onClick={() => setActiveField(Operation.PRICE)}
-            >
-              <div className="pt-1">
-                <div className="">
-                  <AiOutlineTag style={{ fontSize: '24px' }} className="mb-[3px]" />
-                </div>
-                <div className="text-[1.09375rem]">Precio</div>
+                  onClick={() => setActiveField(Operation.PRICE)}
+                >
+                  <div className="pt-1">
+                    <div className="">
+                      <AiOutlineTag style={{ fontSize: '24px' }} className="mb-[3px]" />
+                    </div>
+                    <div className="text-[1.09375rem]">Precio</div>
+                  </div>
+                </button>
               </div>
-            </button>
-          </div>
-          <div className="grid-item2">
-            <button
-              className={`btn-style-1 flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 
+              <div className="grid-item2">
+                <button
+                  className={`btn-style-1 flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 
         rounded-lg text-gray-700 font-medium text-center h-full ${
           activeField === Operation.TARA_QUANTITY ? 'abc' : ''
         }`}
-              onClick={() => setActiveField(Operation.TARA_QUANTITY)}
-            >
-              <div className="pt-1">
-                <div className="text-[1.09375rem]">Tara cantidad</div>
+                  onClick={() => setActiveField(Operation.TARA_QUANTITY)}
+                >
+                  <div className="pt-1">
+                    <div className="text-[1.09375rem]">Tara cantidad</div>
+                  </div>
+                </button>
               </div>
-            </button>
-          </div>
-          <div className="grid-item2">
-            <button
-              className={`btn-style-1 flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 
+              <div className="grid-item2">
+                <button
+                  className={`btn-style-1 flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 
         rounded-lg text-gray-700 font-medium text-center h-full ${
           activeField === Operation.TARA_VALUE ? 'abc' : ''
         }`}
-              onClick={() => setActiveField(Operation.TARA_VALUE)}
-            >
-              <div className="pt-1">
-                <div className="text-[1.09375rem]">Tara peso</div>
+                  onClick={() => setActiveField(Operation.TARA_VALUE)}
+                >
+                  <div className="pt-1">
+                    <div className="text-[1.09375rem]">Tara peso</div>
+                  </div>
+                </button>
               </div>
-            </button>
-          </div>
 
-          <div className="grid-item2">
-            <button
-              className="btn-style-1 flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 
+              <div className="grid-item2">
+                <button
+                  className="btn-style-1 flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 
         rounded-lg text-gray-700 font-medium text-center h-full"
-              onClick={() => {
-                closeDialogWithData(dialogId, {})
-                deleteProductInOrderPg(selectedOrderPg, product?.line_id)
-              }}
-            >
-              <div className="pt-1">
-                <div className="text-red-600">
-                  {/* <GrTrash style={{ fontSize: '20px' }} className="mb-[3px]" /> */}
-                  <svg
-                    width="34"
-                    height="34"
-                    viewBox="0 0 48 48"
-                    fill="none"
-                    stroke="currentColor"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path d="M 24 15 V 8" stroke-width="2.5" />
-                    <path d="M 8 15 H 40" stroke-width="2.5" />
-                    <path d="M 35 16 V 38 H 13 V 16" stroke-width="2.5" />
-                    <path d="M 21 21 V 32" stroke-width="2.5" />
-                    <path d="M 27 21 V 32" stroke-width="2.5" />
-                  </svg>
-                </div>
-                <div className="text-red-600 text-[1.09375rem]">Eliminar</div>
+                  onClick={() => {
+                    closeDialogWithData(dialogId, {})
+                    deleteProductInOrderPg(selectedOrderPg, product?.line_id)
+                  }}
+                >
+                  <div className="pt-1">
+                    <div className="text-red-600">
+                      {/* <GrTrash style={{ fontSize: '20px' }} className="mb-[3px]" /> */}
+                      <svg
+                        width="34"
+                        height="34"
+                        viewBox="0 0 48 48"
+                        fill="none"
+                        stroke="currentColor"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path d="M 24 15 V 8" stroke-width="2.5" />
+                        <path d="M 8 15 H 40" stroke-width="2.5" />
+                        <path d="M 35 16 V 38 H 13 V 16" stroke-width="2.5" />
+                        <path d="M 21 21 V 32" stroke-width="2.5" />
+                        <path d="M 27 21 V 32" stroke-width="2.5" />
+                      </svg>
+                    </div>
+                    <div className="text-red-600 text-[1.09375rem]">Eliminar</div>
+                  </div>
+                </button>
               </div>
-            </button>
+            </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
       <div className="">
-        <div className="pb-3">
-          {showTaraInfo && (
-            <>
-              <div className="flex justify-between text-gray-700 text-xl">
-                <span
-                  className={`${activeField === Operation.QUANTITY ? 'text-red-500 font-bold' : ''}`}
-                >
-                  Peso bruto:
-                </span>
-                <span
-                  className={`${activeField === Operation.QUANTITY ? 'text-red-500 font-bold' : ''}`}
-                >
-                  {to2(localProduct.price_unit).toFixed(2)} {localProduct.uom_name}
-                </span>
-              </div>
-              <div className="flex justify-between text-gray-700 text-xl">
-                <span
-                  className={`${activeField === Operation.TARA_QUANTITY || activeField === Operation.TARA_VALUE ? 'text-red-500 font-bold' : ''}`}
-                >
-                  Tara:
-                </span>
-                <span>
+        {activeField !== Operation.CHANGE_PRICE ? (
+          <div className="pb-3">
+            {showTaraInfo && (
+              <>
+                <div className="flex justify-between text-gray-700 text-xl">
                   <span
-                    className={`${activeField === Operation.TARA_QUANTITY ? 'text-red-500 font-bold' : ''}`}
+                    className={`${activeField === Operation.QUANTITY ? 'text-red-500 font-bold' : ''}`}
                   >
-                    {to2(localProduct.tara_quantity)} und
-                  </span>{' '}
-                  ×{' '}
+                    Peso bruto:
+                  </span>
                   <span
-                    className={`${activeField === Operation.TARA_VALUE ? 'text-red-500 font-bold' : ''}`}
+                    className={`${activeField === Operation.QUANTITY ? 'text-red-500 font-bold' : ''}`}
                   >
-                    {to2(localProduct.tara_value)} {localProduct.uom_name}
-                  </span>{' '}
-                  = {to2(localProduct.tara_total)} {localProduct.uom_name}
-                </span>
-              </div>
-            </>
-          )}
+                    {to2(localProduct.price_unit).toFixed(2)} {localProduct.uom_name}
+                  </span>
+                </div>
+                <div className="flex justify-between text-gray-700 text-xl">
+                  <span
+                    className={`${activeField === Operation.TARA_QUANTITY || activeField === Operation.TARA_VALUE ? 'text-red-500 font-bold' : ''}`}
+                  >
+                    Tara:
+                  </span>
+                  <span>
+                    <span
+                      className={`${activeField === Operation.TARA_QUANTITY ? 'text-red-500 font-bold' : ''}`}
+                    >
+                      {to2(localProduct.tara_quantity)} und
+                    </span>{' '}
+                    ×{' '}
+                    <span
+                      className={`${activeField === Operation.TARA_VALUE ? 'text-red-500 font-bold' : ''}`}
+                    >
+                      {to2(localProduct.tara_value)} {localProduct.uom_name}
+                    </span>{' '}
+                    = {to2(localProduct.tara_total)} {localProduct.uom_name}
+                  </span>
+                </div>
+              </>
+            )}
 
-          <div className="flex justify-between text-gray-700 text-xl">
-            <span
-              className={`${activeField === Operation.QUANTITY && !showTaraInfo ? 'text-red-500 font-bold' : ''}`}
+            <div className="flex justify-between text-gray-700 text-xl">
+              <span
+                className={`${activeField === Operation.QUANTITY && !showTaraInfo ? 'text-red-500 font-bold' : ''}`}
+              >
+                Peso neto:
+              </span>
+              <span
+                className={`${activeField === Operation.QUANTITY && !showTaraInfo ? 'text-red-500 font-bold' : ''}`}
+              >
+                {to2(localProduct.quantity)} {localProduct.uom_name}
+              </span>
+            </div>
+
+            <div
+              className="flex justify-between text-gray-700 text-xl"
+              style={{ borderBottom: '1px solid #000' }}
             >
-              Peso neto:
-            </span>
-            <span
-              className={`${activeField === Operation.QUANTITY && !showTaraInfo ? 'text-red-500 font-bold' : ''}`}
-            >
-              {to2(localProduct.quantity)} {localProduct.uom_name}
-            </span>
-          </div>
+              <span
+                className={`${activeField === Operation.PRICE ? 'text-red-500 font-bold' : ''}`}
+              >
+                {' '}
+                Precio:
+              </span>
+              <span
+                className={`${activeField === Operation.PRICE ? 'text-red-500 font-bold' : ''}`}
+              >
+                S/ {to2(localProduct.price_unit).toFixed(2)}
+              </span>
+            </div>
 
-          <div
-            className="flex justify-between text-gray-700 text-xl"
-            style={{ borderBottom: '1px solid #000' }}
-          >
-            <span className={`${activeField === Operation.PRICE ? 'text-red-500 font-bold' : ''}`}>
-              {' '}
-              Precio:
-            </span>
-            <span className={`${activeField === Operation.PRICE ? 'text-red-500 font-bold' : ''}`}>
-              S/ {to2(localProduct.price_unit).toFixed(2)}
-            </span>
+            <div className="flex justify-between text-xl font-bold">
+              <span>Importe total:</span>
+              <span>S/ {to2(localProduct.amount_untaxed).toFixed(2)}</span>
+            </div>
           </div>
-
-          <div className="flex justify-between text-xl font-bold">
-            <span>Importe total:</span>
-            <span>S/ {to2(localProduct.amount_untaxed).toFixed(2)}</span>
+        ) : (
+          <div className="pb-3">
+            <div className="flex justify-between text-xl font-bold">
+              <span>Nuevo precio:</span>
+              <span>S/ {to2(localProduct.price_unit).toFixed(2)}</span>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="pads">
           <div className="subpads">

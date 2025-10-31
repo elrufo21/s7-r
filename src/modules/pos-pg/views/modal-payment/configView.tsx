@@ -25,48 +25,6 @@ export function FrmMiddle({ control, errors, setValue, watch }: frmElementsProps
   useEffect(() => {
     setSelected(watch('type'))
   }, [])
-  const fnc_create_customer = () => {
-    let getData = () => ({})
-    const dialogId = openDialog({
-      title: 'Crear cliente',
-      contactModal: true,
-      dialogContent: () => (
-        <FrmBaseDialog config={contactsConfig} setGetData={(fn: any) => (getData = fn)} />
-      ),
-      buttons: [
-        {
-          text: 'Guardar',
-          type: 'confirm',
-          onClick: async () => {
-            const formData = getData()
-
-            const rs = await executeFnc('fnc_partner', 'i', formData)
-            //oj_data.partner_id
-            const newData = await executeFnc('fnc_partner', 's', [[1, 'pag', 1]])
-            const dataUpdate = newData.oj_data.map((item: any) => {
-              if (item.partner_id === rs.oj_data.partner_id) {
-                return {
-                  ...item,
-                  selected: true,
-                }
-              }
-              return item
-            })
-            const partner = newData.oj_data.find((n) => n.partner_id === rs.oj_data.partner_id)
-            setModalData(dataUpdate)
-            setValue('partner_id', rs.oj_data.partner_id)
-            setValue('partner_name', partner.name)
-            closeDialogWithData(dialogId, {})
-          },
-        },
-        {
-          text: 'Cerrar',
-          type: 'cancel',
-          onClick: () => closeDialogWithData(dialogId, {}),
-        },
-      ],
-    })
-  }
 
   const fnc_open_contact_modal = async () => {
     const localCustomers = watch('customers')
@@ -113,6 +71,7 @@ export function FrmMiddle({ control, errors, setValue, watch }: frmElementsProps
                 method={method}
                 onClick={() => {
                   setValue('payment_method_id', method.payment_method_id)
+                  setValue('payment_method_name', method.name)
                 }}
                 bg={
                   watch('payment_method_id') === method.payment_method_id

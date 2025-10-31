@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { offlineCache } from '@/lib/offlineCache'
 import { Product } from '../types'
 import useAppStore from '@/store/app/appStore'
+import { Operation } from '../context/CalculatorContext'
+import CalculatorPanel from './modal/components/ModalCalculatorPanel'
 
 interface ProductCardProps {
   product: Product
@@ -10,11 +12,14 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   const {
     addProductToOrderPg,
-    //getProductQuantityInOrder,
     selectedOrderPg,
-    //PC_multipleSimilarProducts,
-    // isWeightMode,
     getProductQuantityInProductsPg,
+    openDialog,
+    closeDialogWithData,
+    changePricePg,
+    prevWeight,
+    setPrevWeight,
+    weightValue,
   } = useAppStore()
   /*
   const quantity =
@@ -46,12 +51,35 @@ export default function ProductCard({ product }: ProductCardProps) {
     }
   }, [product.product_id, product?.files])
 
+  const openCalculatorModal = ({ operation }: { operation: Operation }) => {
+    const dialogId = openDialog({
+      title: product.name,
+      dialogContent: () => (
+        <CalculatorPanel product={product} selectedField={operation} dialogId={dialogId} />
+      ),
+      buttons: [
+        {
+          text: 'Cerrar',
+          type: 'cancel',
+          onClick: () => {
+            closeDialogWithData(dialogId, {})
+          },
+        },
+      ],
+    })
+  }
+
   return (
     <article
       className="card_article"
       onClick={async () => {
-        if (product.product_id) {
-          addProductToOrderPg(selectedOrderPg, product as any, 1)
+        if (changePricePg) {
+          openCalculatorModal({ operation: Operation.CHANGE_PRICE })
+          return
+        }
+        if (product.product_id ) {
+          addProductToOrderPg(selectedOrderPg, product as any, prevWeight)
+          setPrevWeight(0)
         }
       }}
     >

@@ -1,10 +1,8 @@
 import React from 'react'
 import { Document, Page, Text, View, StyleSheet, pdf } from '@react-pdf/renderer'
 
-// 🔹 Datos de ejemplo con tus nuevos campos
 const sampleData = []
 
-// 🔹 Genera el archivo PDF descargable
 export const downloadAccountsReportPDF = async (data: any[]) => {
   const blob = await pdf(<AccountsReport data={data} />).toBlob()
   const url = URL.createObjectURL(blob)
@@ -15,7 +13,6 @@ export const downloadAccountsReportPDF = async (data: any[]) => {
   URL.revokeObjectURL(url)
 }
 
-// 🔹 Cálculo de totales
 const calculateTotals = (data) => {
   return data.reduce(
     (acc, item) => ({
@@ -200,7 +197,7 @@ const AccountsReport = ({ data, reportDate = new Date() }) => {
                 <Text style={styles.totalValue}>{formatNumber(totals.debt_d)}</Text>
               </View>
               <View style={styles.totalCell}>
-                <Text style={styles.totalValue}>{formatNumber(totals.debt_total)}</Text>
+                <Text style={styles.totalValue}>{formatNumber(totals.debt_total_d)}</Text>
               </View>
               <View style={styles.totalCell}>
                 <Text style={[styles.totalValue, styles.redText]}>
@@ -209,7 +206,7 @@ const AccountsReport = ({ data, reportDate = new Date() }) => {
               </View>
               <View style={[styles.totalCell, styles.totalCellLast]}>
                 <Text style={[styles.totalValue, styles.blueText]}>
-                  {formatNumber(totals.debt_total_d)}
+                  {formatNumber(totals.debt_total)}
                 </Text>
               </View>
             </View>
@@ -232,10 +229,10 @@ const AccountsReport = ({ data, reportDate = new Date() }) => {
             <Text style={styles.dataCustomerCell}>{item.partner_name}</Text>
             <Text style={styles.dataCell}>{formatNumber(item.debt_d_1)}</Text>
             <Text style={styles.dataCell}>{formatNumber(item.debt_d)}</Text>
-            <Text style={styles.dataCell}>{formatNumber(item.debt_total)}</Text>
+            <Text style={styles.dataCell}>{formatNumber(item.debt_total_d)}</Text>
             <Text style={[styles.dataCell, styles.redText]}>{formatNumber(item.payments_d)}</Text>
             <Text style={[styles.dataCell, styles.dataCellLast, styles.blueText]}>
-              {formatNumber(item.debt_total_d)}
+              {formatNumber(item.debt_total)}
             </Text>
           </View>
         ))}

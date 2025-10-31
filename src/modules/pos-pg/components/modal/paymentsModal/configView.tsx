@@ -82,7 +82,7 @@ export function FrmMiddle({ control, errors, setValue, watch, editConfig }: frmE
                   editConfig={{ config: editConfig }}
                   formItem={watch()}
                   name={'partner_id'}
-                  label="partner_name"
+                  label={'partner_name'}
                   rulers={true}
                   filters={[]}
                   allowSearchMore={true}

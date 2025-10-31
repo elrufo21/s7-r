@@ -1,4 +1,3 @@
-import contactsConfig from '@/modules/pos/views/contact-index/config.tsx'
 import { frmElementsProps } from '@/shared/shared.types'
 import { PosTextControlled } from '@/shared/ui/inputs/PosTextControlled'
 import useAppStore from '@/store/app/appStore'
@@ -6,7 +5,6 @@ import { ColumnDef } from '@tanstack/react-table'
 import { useEffect, useMemo, useState } from 'react'
 import { DataTable } from '../../components/ListView'
 import { PaymentMethodCard } from '@/modules/pos-carnes/components/Payment'
-import { FrmBaseDialog } from '@/shared/components/core'
 import { Type_pos_payment_origin, TypePayment } from '../../types'
 import { formatShortDate, getHour } from '@/shared/utils/dateUtils'
 import { GrTrash } from 'react-icons/gr'
@@ -17,54 +15,11 @@ enum buttonType {
 }
 
 export function FrmMiddle({ control, errors, setValue, watch }: frmElementsProps) {
-  const { modalData, setModalData, openDialog, closeDialogWithData, executeFnc } = useAppStore()
   const [selected, setSelected] = useState(buttonType.CASH_IN)
   const paymentMethods = watch('paymentMethods') || []
   useEffect(() => {
     setSelected(watch('type'))
   }, [])
-  const fnc_create_customer = () => {
-    let getData = () => ({})
-    const dialogId = openDialog({
-      title: 'Crear cliente',
-      contactModal: true,
-      dialogContent: () => (
-        <FrmBaseDialog config={contactsConfig} setGetData={(fn: any) => (getData = fn)} />
-      ),
-      buttons: [
-        {
-          text: 'Guardar',
-          type: 'confirm',
-          onClick: async () => {
-            const formData = getData()
-
-            const rs = await executeFnc('fnc_partner', 'i', formData)
-            //oj_data.partner_id
-            const newData = await executeFnc('fnc_partner', 's', [[1, 'pag', 1]])
-            const dataUpdate = newData.oj_data.map((item: any) => {
-              if (item.partner_id === rs.oj_data.partner_id) {
-                return {
-                  ...item,
-                  selected: true,
-                }
-              }
-              return item
-            })
-            const partner = newData.oj_data.find((n) => n.partner_id === rs.oj_data.partner_id)
-            setModalData(dataUpdate)
-            setValue('partner_id', rs.oj_data.partner_id)
-            setValue('partner_name', partner.name)
-            closeDialogWithData(dialogId, {})
-          },
-        },
-        {
-          text: 'Cerrar',
-          type: 'cancel',
-          onClick: () => closeDialogWithData(dialogId, {}),
-        },
-      ],
-    })
-  }
 
   /*
   const fnc_open_contact_modal = async () => {
@@ -105,7 +60,6 @@ export function FrmMiddle({ control, errors, setValue, watch }: frmElementsProps
     })
   }
   */
-
   return (
     <div className="min-w-[700px] max-w-[700px] min-h-[290px] max-h-[290px]">
       <div className="flex flex-row gap-4">
@@ -147,6 +101,7 @@ export function FrmMiddle({ control, errors, setValue, watch }: frmElementsProps
                 method={method}
                 onClick={() => {
                   setValue('payment_method_id', method.payment_method_id)
+                  setValue('payment_method_name', method.name)
                 }}
                 bg={
                   watch('payment_method_id') === method.payment_method_id

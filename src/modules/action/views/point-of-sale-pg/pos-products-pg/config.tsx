@@ -12,19 +12,18 @@ import {
   Subtitle,
 } from '@/modules/action/views/inventory/products/configView'
 import { Chip } from '@mui/material'
-import { compareArrays } from '@/modules/action/views/inventory/utils'
-import AttributesVariantsTable from '../../inventory/products/components/attributesVariants'
+import AttributesVariantsTable from '@/modules/action/views/inventory/products/components/attributesVariants'
 import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.types'
+import { compareArrays } from '../../inventory/utils'
 
 const ProductsConfig: FormConfig = {
-  fnc_name: 'fnc_product',
-  title: 'Producto',
+  fnc_name: 'fnc_product_template',
+  title: 'Productos',
   dsc: 'Producto',
   dsc_view: 'name',
-  formTitle: 'Producto',
   module: ModulesEnum.POINTS_OF_SALE_PG,
   views: [ViewTypeEnum.KANBAN, ViewTypeEnum.LIST],
-  view_default: ViewTypeEnum.LIST,
+  view_default: ViewTypeEnum.KANBAN,
   module_url: '/action/404',
   item_url: '/action/404/detail',
   new_url: '/action/404/detail/new',

@@ -1,5 +1,4 @@
-import { useEffect, useCallback, useMemo } from 'react'
-import { MdAddCircleOutline } from 'react-icons/md'
+import { useEffect, useCallback, useMemo, useState } from 'react'
 import PosModalPaymentListConfig from '../views/modal-payment-list/config'
 // import { WiCloudUp } from 'react-icons/wi'
 // import { IoMdArrowDropdown } from 'react-icons/io'
@@ -8,9 +7,9 @@ import { useNavigate } from 'react-router-dom'
 import PosCloseCashConfig from '../views/modal-close-cash-register/config'
 import { FrmBaseDialog } from '@/shared/components/core'
 import PosModalCashinAndOut from '../views/modal-cash-in-and-out/config'
-import { ViewTypeEnum } from '@/shared/shared.types'
+import { ActionTypeEnum, ViewTypeEnum } from '@/shared/shared.types'
 import ModalButtons from './modal/components/ModalButtons'
-import { offlineCache } from '@/lib/offlineCache'
+import { offlineCache, Product } from '@/lib/offlineCache'
 import { usePWA } from '@/hooks/usePWA'
 import { now } from '@/shared/utils/dateUtils'
 import { Type_pos_payment_origin, TypePayment, TypeStateOrder } from '../types'
@@ -18,6 +17,9 @@ import { FiAlertTriangle } from 'react-icons/fi'
 import { CustomToast } from '@/components/toast/CustomToast'
 import { usePosActionsPg } from '@/modules/pos/hooks/usePosActionsPg'
 import { InputWithKeyboard } from '@/shared/ui/inputs/InputWithKeyboard'
+import { Operation } from '../context/CalculatorContext'
+import CalculatorPanel from './modal/components/ModalCalculatorPanel'
+import { codePayment } from '@/shared/helpers/helpers'
 
 export default function Header({ pointId }: { pointId: string }) {
   const {
@@ -41,10 +43,16 @@ export default function Header({ pointId }: { pointId: string }) {
     setSyncLoading,
     deleteOrderPg,
     setHandleChangePg,
-    defaultPosSessionDataPg,
-    getTotalPriceByOrderPg,
+    changePricePg,
+    setChangePricePg,
     setCloseSession,
+    setOperationPg,
+    selectedItemPg,
+    operationPg,
+    backToProductsPg,
+    setPayment,
   } = useAppStore()
+  const [cart, setCart] = useState<Product[]>([])
   const { saveCurrentOrder } = usePosActionsPg()
   const { isOnline } = usePWA()
   const { state } = JSON.parse(localStorage.getItem('session-store') ?? '{}')
@@ -69,6 +77,17 @@ export default function Header({ pointId }: { pointId: string }) {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [handleVisibilityChange])
+
+  useEffect(() => {
+    const pos_Status = orderDataPg?.find((item) => item?.order_id === selectedOrderPg)?.pos_status
+    if (pos_Status === 'P' && backToProductsPg === false) setScreenPg('payment')
+
+    setCart(
+      orderDataPg
+        ?.find((item) => item.order_id === selectedOrderPg)
+        ?.lines?.filter((item: any) => item.action !== ActionTypeEnum.DELETE) || []
+    )
+  }, [orderDataPg, selectedOrderPg])
 
   const handleClick = () => {
     const dialogId = openDialog({
@@ -100,7 +119,11 @@ export default function Header({ pointId }: { pointId: string }) {
     const dialogId = openDialog({
       title: 'Lista de pagos',
       dialogContent: () => (
-        <FrmBaseDialog config={PosModalPaymentListConfig} viewType={ViewTypeEnum.LIBRE} />
+        <FrmBaseDialog
+          config={PosModalPaymentListConfig}
+          viewType={ViewTypeEnum.LIBRE}
+          initialValues={{ session_id: session_id }}
+        />
       ),
       buttons: [
         {
@@ -165,12 +188,29 @@ export default function Header({ pointId }: { pointId: string }) {
               })
               return
             }
-            const { oj_data } = await executeFnc('fnc_pos_payment', 'i', data)
+            setPayment({
+              order_date: now().toPlainDateTime().toString(),
+              receipt_number: codePayment(),
+              point_id: formData.point_id,
+              payments: [
+                { payment_method_name: formData.payment_method_name, amount: formData.amount },
+              ],
+              amount_total: formData.amount,
+              amount_residual: '',
+              type: TypePayment.INPUT,
+              origin: Type_pos_payment_origin.DIRECT_PAYMENT,
+            })
+            if (!isOnline) {
+              await offlineCache.saveOfflinePayment(data)
+            } else {
+              const { oj_data } = await executeFnc('fnc_pos_payment', 'i', data)
+            }
             CustomToast({
               title: 'Exito',
               description: `¡Se creo el pago de S/ ${data.amount} correctamente!`,
               type: 'success',
             })
+            setScreenPg('invoice')
             closeDialogWithData(dialogId, null)
           },
         },
@@ -393,7 +433,20 @@ export default function Header({ pointId }: { pointId: string }) {
           session_id,
         ])
         const { oj_data: sessionData } = await executeFnc('fnc_pos_session', 's1', [session_id])
+        const { oj_data: payments } = await executeFnc('fnc_pos_payment', 's', [
+          ['0', 'fequal', 'report_session_id', session_id],
 
+          [
+            '0',
+            'multi_filter_in',
+            [
+              { key_db: 'origin', value: Type_pos_payment_origin.DOCUMENT },
+              { key_db: 'origin', value: Type_pos_payment_origin.PAY_DEBT },
+              { key_db: 'origin', value: Type_pos_payment_origin.DIRECT_PAYMENT },
+            ],
+          ],
+        ])
+        console.log('payments', payments)
         let getData = () => ({})
         const dialogId = openDialog({
           title: 'Cerrando la caja registradora',
@@ -594,6 +647,28 @@ export default function Header({ pointId }: { pointId: string }) {
   useEffect(() => {
     saveCurrentOrder()
   }, [orderDataPg])
+
+  const openCalculatorModal = ({ operation }: { operation: Operation }) => {
+    const dialogId = openDialog({
+      title: cart.find((c) => c.line_id === selectedItemPg)?.name || '',
+      dialogContent: () => (
+        <CalculatorPanel
+          product={cart.find((c) => c.line_id === selectedItemPg)}
+          selectedField={operation}
+          dialogId={dialogId}
+        />
+      ),
+      buttons: [
+        {
+          text: 'Cerrar',
+          type: 'cancel',
+          onClick: () => {
+            closeDialogWithData(dialogId, {})
+          },
+        },
+      ],
+    })
+  }
   return (
     <header className="pos-header">
       <div className="pos-header-left">
@@ -751,6 +826,82 @@ export default function Header({ pointId }: { pointId: string }) {
       </div>
 
       <div className="pos-header-right">
+        {/**
+         * <div className="flex-fill">
+          <div className="flex numpad">
+            <button
+              className={`btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] mr-4  ${operationPg === Operation.QUANTITY ? 'active' : ''}`}
+              onClick={() => {
+                if (selectedItemPg) {
+                  setOperationPg(Operation.QUANTITY)
+                  openCalculatorModal({ operation: Operation.QUANTITY })
+                }
+              }}
+              // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
+            >
+              <span>Cantidad</span>
+            </button>
+
+            <button
+              className={`numpad-button btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] mr-4 ${operationPg === Operation.PRICE ? 'active' : ''}`}
+              onClick={() => {
+                if (selectedItemPg) {
+                  setOperationPg(Operation.PRICE)
+                  openCalculatorModal({ operation: Operation.PRICE })
+                }
+              }}
+              // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
+            >
+              <span>Precio</span>
+            </button>
+
+            <button
+              className={`btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] mr-4  ${operationPg === Operation.TARA_QUANTITY ? 'active' : ''}`}
+              onClick={() => {
+                if (selectedItemPg) {
+                  setOperationPg(Operation.TARA_QUANTITY)
+                  openCalculatorModal({ operation: Operation.TARA_QUANTITY })
+                }
+              }}
+              // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
+            >
+              <span>TARA cantidad</span>
+            </button>
+
+            <button
+              className={`btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] mr-4  ${operationPg === Operation.TARA_VALUE ? 'active' : ''}`}
+              onClick={() => {
+                if (selectedItemPg) {
+                  setOperationPg(Operation.TARA_VALUE)
+                  openCalculatorModal({ operation: Operation.TARA_VALUE })
+                }
+              }}
+              // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
+            >
+              <span>TARA peso</span>
+            </button>
+          </div>
+        </div>
+         * 
+         */}
+        {isOnline && screenPg === 'products' && (
+          <div>
+            <button
+              className={`btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] mr-4 ${
+                changePricePg ? 'active' : ''
+              }`}
+              disabled={frmLoading}
+              onClick={() => {
+                setOperationPg(Operation.CHANGE_PRICE)
+                setChangePricePg(!changePricePg)
+                //openCalculatorModal({ operation: Operation.CHANGE_PRICE })
+              }}
+              style={{ paddingLeft: '2px', paddingRight: '2px' }}
+            >
+              Cambiar precio
+            </button>
+          </div>
+        )}
         <div
           className={`relative  w-[20rem] pl-5 py-2 border rounded-md bg-white text-[16px] ${screenPg === 'ticket' || screenPg === 'payment' || screenPg === 'invoice' ? 'hidden' : ''}`}
         >

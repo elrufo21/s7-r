@@ -64,6 +64,7 @@ export enum Operation {
   QUANTITY = 'quantity',
   PRICE = 'price',
   DISCOUNT = 'discount',
+  CHANGE_PRICE = 'change_price',
 }
 
 export enum Type_pos_payment_origin {

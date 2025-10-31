@@ -9,6 +9,12 @@ const createPosPg = (
   set: SetState<PointsOfSaleSliceStatePg>,
   get: () => AppStoreProps
 ): PointsOfSaleSliceStatePg => ({
+  prevWeight: 0,
+  setPrevWeight: (prevWeight) => set({ prevWeight }),
+  payment: null,
+  setPayment: (payment) => set({ payment }),
+  changePricePg: false,
+  setChangePricePg: (changePricePg) => set({ changePricePg }),
   closeSession: false,
   setCloseSession: (closeSession) => set({ closeSession }),
   selectedOrderInListPg: 0,
@@ -293,7 +299,7 @@ const createPosPg = (
             {
               ...product,
               base_quantity: 0,
-              quantity: 0,
+              quantity: added_quantity,
               price_unit: product.sale_price,
               tara_value: 0,
               tara_quantity: 0,
@@ -852,7 +858,7 @@ const createPosPg = (
   },
 
   forceReloadPosDataPg: async (pointId, isOnline = true, session_id) => {
-    await offlineCache.syncOfflineData(
+    const id = await offlineCache.syncOfflineData(
       get().executeFnc,
       pointId,
       get().setOrderDataPg,
@@ -877,7 +883,7 @@ const createPosPg = (
       await cache.init()
 
       const offlineOrders = await cache.getOfflinePosOrders()
-
+      await cache.cachePayments(executeFnc, session_id)
       if (!isOnline) {
         return
       }
