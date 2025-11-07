@@ -120,7 +120,6 @@ const Payment = () => {
   const currentOrder = orderDataPg?.find((o) => o.order_id === selectedOrderPg)
   const payments = currentOrder?.payments || []
 
-  // Efecto para precargar el primer método de pago automáticamente al entrar a la vista
   useEffect(() => {
     if (
       payments.length === 0 &&
@@ -410,6 +409,7 @@ const Payment = () => {
         state: 'R',
         origin: Type_pos_payment_origin.DOCUMENT,
         type: TypePayment.INPUT,
+        date: now().toPlainDateTime().toString(),
       })),
       amount_untaxed: adjustTotal(getTotalPriceByOrderPg(selectedOrderPg)).adjusted,
       amount_withtaxed: adjustTotal(getTotalPriceByOrderPg(selectedOrderPg)).adjusted,
@@ -597,7 +597,15 @@ const Payment = () => {
     updatePaymentInOrderPg(selectedOrderPg, updatedPayment)
     setInputAmount(Math.abs(newAmount).toString())
   }
+  useEffect(() => {
+    if (!selectedPaymentId && payments.length > 0) {
+      const lastPayment = payments[payments.length - 1]
+      setSelectedPaymentId(lastPayment.payment_id)
 
+      setInputAmount(Math.abs(lastPayment.amount).toFixed(2))
+      setIsFirstDigit(true)
+    }
+  }, [payments, selectedPaymentId])
   return (
     <>
       <div className="product-screen">

@@ -2,7 +2,13 @@ import { Type_pos_payment_origin } from '@/modules/pos-pg/types'
 import { now } from '@/shared/utils/dateUtils'
 import useAppStore from '@/store/app/appStore'
 import { openDB, IDBPDatabase } from 'idb'
-
+const CACHE_CONFIG = {
+  IMAGE_TIMEOUT: 5000,
+  MAX_CONCURRENT_IMAGES: 5,
+  RETRY_ATTEMPTS: 2,
+  BATCH_SIZE: 100,
+  SKIP_IMAGES_ON_RECACHE: false,
+}
 export type OfflinePayment = {
   payment_id: string | number
   amount: string | number
@@ -120,8 +126,40 @@ export class OfflineCache {
             store.createIndex('by_session', 'session_id', { unique: false })
           }
         }
+        if (oldVersion < 6) {
+          if (!db.objectStoreNames.contains('qz_security')) {
+            const store = db.createObjectStore('qz_security', { keyPath: 'id' })
+            store.createIndex('by_id', 'id', { unique: true })
+          }
+        }
       },
     })
+  }
+  // Guarda configuración de QZ (certificado + clave privada)
+  async saveQZKeys(certText: string, privateKeyText: string) {
+    if (!this.db) await this.init()
+    const tx = this.db.transaction('qz_security', 'readwrite')
+    const store = tx.objectStore('qz_security')
+
+    await store.put({
+      id: 'default',
+      cert: certText,
+      privateKey: privateKeyText,
+      updatedAt: new Date().toISOString(),
+    })
+
+    await tx.done
+    console.log('💾 Claves QZ guardadas localmente.')
+  }
+
+  // Obtiene configuración QZ
+  async getQZKeys() {
+    if (!this.db) await this.init()
+    const tx = this.db.transaction('qz_security', 'readonly')
+    const store = tx.objectStore('qz_security')
+    const result = await store.get('default')
+    await tx.done
+    return result
   }
 
   async cachePayments(executeFnc: any, session_id: number) {
@@ -631,20 +669,30 @@ export class OfflineCache {
   }
 
   /** Refresca el cache de productos, categorías y métodos de pago. */
-  async refreshCache(executeFnc: any) {
+  async refreshCache(executeFnc: any, options?: { skipImages?: boolean }) {
     const { setSyncLoading } = useAppStore.getState()
     setSyncLoading(true)
+
     try {
-      //await this.syncOfflineData(executeFnc, 0, () => {})
+      // Limpiar todo excepto imágenes si se van a reusar
       await this.clearAll()
-      await this.cacheProducts(executeFnc)
-      await this.cacheCategories(executeFnc)
-      await this.cachePaymentMethods(executeFnc)
-      await this.cachePosPoints(executeFnc)
-      await this.cacheContacts(executeFnc)
-      await this.cacheContainers(executeFnc)
+
+      // Ejecutar en paralelo las operaciones que no dependen entre sí
+      await Promise.all([
+        this.cacheProducts(executeFnc),
+        this.cacheCategories(executeFnc),
+        this.cachePaymentMethods(executeFnc),
+        this.cachePosPoints(executeFnc),
+        this.cacheContacts(executeFnc),
+        this.cacheContainers(executeFnc),
+      ])
+
+      console.log('✅ Caché actualizado exitosamente')
     } catch (error) {
-      console.error('Error actualizando cache:', error)
+      console.error('❌ Error actualizando cache:', error)
+      throw error
+    } finally {
+      setSyncLoading(false)
     }
   }
 
@@ -652,10 +700,14 @@ export class OfflineCache {
 
   async cacheProducts(executeFnc: any) {
     const { setProducts, setProductsPg } = useAppStore.getState()
+
+    // Verificar si ya hay productos en caché
     const existing = await this.getAll<Product>('products')
     if (existing.length > 0) {
+      console.log(`✅ ${existing.length} productos ya en caché`)
       return
     }
+
     const result = await executeFnc('fnc_product_template', 's', [
       [
         1,
@@ -666,21 +718,17 @@ export class OfflineCache {
       ],
       [1, 'pag', 1],
     ])
-    if (result?.oj_data) {
-      await this.putEntities('products', result.oj_data)
 
-      // Descargar y guardar imágenes
-      for (const product of result.oj_data) {
-        const publicUrl = product?.files?.[0]?.publicUrl
-        if (publicUrl) {
-          const imageBlob = await this.fetchImageAsBlob(publicUrl)
-          if (imageBlob) {
-            await this.saveProductImage(product.product_id, imageBlob)
-          }
-        }
-      }
+    if (result?.oj_data) {
+      // Guardar productos inmediatamente
+      await this.putEntities('products', result.oj_data)
       setProducts(result.oj_data)
       setProductsPg(result.oj_data)
+
+      // Descargar imágenes en segundo plano
+      this.downloadProductImagesInBackground(result.oj_data).catch((err) =>
+        console.warn('Error en descarga de imágenes:', err)
+      )
     }
   }
 
@@ -708,20 +756,40 @@ export class OfflineCache {
     if (existing.length > 0) {
       return
     }
+
     const result = await executeFnc('fnc_pos_payment_method', 's', [])
+
     if (result?.oj_data) {
+      // Guardar datos inmediatamente
       await this.putEntities('payment_method', result.oj_data)
-      for (const paymentMethod of result.oj_data) {
-        const publicUrl = paymentMethod?.files?.[0]?.publicUrl
-        if (publicUrl) {
-          const imageBlob = await this.fetchImageAsBlob(publicUrl)
-          if (imageBlob) {
-            await this.savePaymentMethodImage(paymentMethod.payment_method_id, imageBlob)
+
+      // Descargar imágenes en segundo plano
+      this.downloadPaymentMethodImagesInBackground(result.oj_data).catch((err) =>
+        console.warn('Error descargando imágenes de métodos de pago:', err)
+      )
+    }
+  }
+  private async downloadPaymentMethodImagesInBackground(paymentMethods: any[]) {
+    const methodsWithImages = paymentMethods.filter((pm) => pm?.files?.[0]?.publicUrl)
+
+    for (let i = 0; i < methodsWithImages.length; i += CACHE_CONFIG.MAX_CONCURRENT_IMAGES) {
+      const batch = methodsWithImages.slice(i, i + CACHE_CONFIG.MAX_CONCURRENT_IMAGES)
+
+      await Promise.allSettled(
+        batch.map(async (method) => {
+          try {
+            const imageBlob = await this.fetchImageWithTimeout(
+              method.files[0].publicUrl,
+              CACHE_CONFIG.IMAGE_TIMEOUT
+            )
+            if (imageBlob) {
+              await this.savePaymentMethodImage(method.payment_method_id, imageBlob)
+            }
+          } catch (err) {
+            console.warn(`Error descargando imagen para método ${method.payment_method_id}`)
           }
-        }
-      }
-    } else {
-      console.log('No se obtuvieron métodos de pago para cachear')
+        })
+      )
     }
   }
 
@@ -1234,19 +1302,43 @@ export class OfflineCache {
    * Borra y recarga los productos del cache desde la base de datos
    */
 
-  async recacheProducts(executeFnc: any) {
+  async recacheProducts(
+    executeFnc: any,
+    options?: {
+      skipImages?: boolean
+      onProgress?: (progress: { current: number; total: number; phase: string }) => void
+    }
+  ) {
     const { setProducts, setProductsPg, setSyncDataPg, setSyncData } = useAppStore.getState()
     setSyncDataPg(true)
     setSyncData(true)
+
+    const skipImages = options?.skipImages ?? CACHE_CONFIG.SKIP_IMAGES_ON_RECACHE
+    const onProgress = options?.onProgress
+
     try {
       const db = await this.getDB()
-      const tx = db.transaction('products', 'readwrite')
-      await tx.objectStore('products').clear()
-      await tx.done
 
-      const txImages = db.transaction('product_images', 'readwrite')
-      await txImages.objectStore('product_images').clear()
-      await txImages.done
+      // FASE 1: Limpiar datos antiguos (paralelo)
+      onProgress?.({ current: 0, total: 100, phase: 'Limpiando caché...' })
+
+      await Promise.all([
+        db
+          .transaction('products', 'readwrite')
+          .objectStore('products')
+          .clear()
+          .then((tx) => tx.done),
+        skipImages
+          ? Promise.resolve()
+          : db
+              .transaction('product_images', 'readwrite')
+              .objectStore('product_images')
+              .clear()
+              .then((tx) => tx.done),
+      ])
+
+      // FASE 2: Obtener productos del servidor
+      onProgress?.({ current: 20, total: 100, phase: 'Descargando productos...' })
 
       const result = await executeFnc('fnc_product_template', 's', [
         [
@@ -1259,35 +1351,117 @@ export class OfflineCache {
         [1, 'pag', 1],
       ])
 
-      if (result?.oj_data) {
-        await this.putEntities('products', result.oj_data)
-
-        for (const product of result.oj_data) {
-          const publicUrl = product?.files?.[0]?.publicUrl
-          if (publicUrl) {
-            const imageBlob = await this.fetchImageAsBlob(publicUrl)
-            if (imageBlob) {
-              await this.saveProductImage(product.product_id, imageBlob)
-            }
-          }
-        }
-
-        setProducts(result.oj_data)
-        setProductsPg(result.oj_data)
-
-        return result.oj_data
-      } else {
+      if (!result?.oj_data || result.oj_data.length === 0) {
         return []
       }
+
+      const products = result.oj_data
+      onProgress?.({ current: 40, total: 100, phase: 'Guardando productos...' })
+
+      // FASE 3: Guardar productos en una sola transacción
+      await this.putEntities('products', products)
+
+      // FASE 4: Actualizar estado inmediatamente (sin esperar imágenes)
+      setProducts(products)
+      setProductsPg(products)
+
+      onProgress?.({ current: 60, total: 100, phase: 'Productos listos' })
+
+      // FASE 5: Descargar imágenes en segundo plano (opcional)
+      if (!skipImages) {
+        this.downloadProductImagesInBackground(products, onProgress).catch((err) =>
+          console.warn('Error descargando imágenes en segundo plano:', err)
+        )
+      }
+
+      return products
     } catch (error) {
       console.error('Error recargando productos:', error)
       throw error
     } finally {
-      // ✅ SIEMPRE se ejecuta, incluso si hay error
       setSyncDataPg(false)
       setSyncData(false)
     }
   }
+
+  private async downloadProductImagesInBackground(
+    products: any[],
+    onProgress?: (progress: { current: number; total: number; phase: string }) => void
+  ) {
+    const productsWithImages = products.filter((p) => p?.files?.[0]?.publicUrl)
+
+    if (productsWithImages.length === 0) return
+
+    console.log(`📸 Descargando ${productsWithImages.length} imágenes en segundo plano...`)
+
+    let downloaded = 0
+    const total = productsWithImages.length
+
+    // Procesar imágenes en lotes concurrentes
+    for (let i = 0; i < productsWithImages.length; i += CACHE_CONFIG.MAX_CONCURRENT_IMAGES) {
+      const batch = productsWithImages.slice(i, i + CACHE_CONFIG.MAX_CONCURRENT_IMAGES)
+
+      await Promise.allSettled(
+        batch.map(async (product) => {
+          try {
+            const imageBlob = await this.fetchImageWithTimeout(
+              product.files[0].publicUrl,
+              CACHE_CONFIG.IMAGE_TIMEOUT
+            )
+
+            if (imageBlob) {
+              await this.saveProductImage(product.product_id, imageBlob)
+              downloaded++
+
+              onProgress?.({
+                current: 60 + Math.floor((downloaded / total) * 40),
+                total: 100,
+                phase: `Imágenes: ${downloaded}/${total}`,
+              })
+            }
+          } catch (err) {
+            console.warn(`❌ Error descargando imagen para producto ${product.product_id}`)
+          }
+        })
+      )
+    }
+
+    console.log(`✅ Descarga de imágenes completada: ${downloaded}/${total}`)
+  }
+
+  private async fetchImageWithTimeout(
+    url: string,
+    timeout: number,
+    retries: number = CACHE_CONFIG.RETRY_ATTEMPTS
+  ): Promise<Blob | null> {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+        const response = await fetch(url, { signal: controller.signal })
+        clearTimeout(timeoutId)
+
+        if (!response.ok) {
+          if (attempt < retries) continue
+          return null
+        }
+
+        return await response.blob()
+      } catch (error) {
+        if (attempt < retries && error.name !== 'AbortError') {
+          await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)))
+          continue
+        }
+        return null
+      }
+    }
+    return null
+  }
+  async recacheProductsFast(executeFnc: any) {
+    return this.recacheProducts(executeFnc, { skipImages: true })
+  }
+
   /**
    * Devuelve las órdenes y contactos offline que tengan la propiedad 'action' para sincronizar.
    */

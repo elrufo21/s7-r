@@ -39,7 +39,6 @@ interface BaseConfig {
 
   // Botones personalizados (opcional)
   buttons?: Array<{ text: string; type: string; onClick: () => void }>
-
   // Solo requerido si allowCreateAndEdit es true
   onCreateAndEditSave?: (
     getData: () => any,

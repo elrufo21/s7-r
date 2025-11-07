@@ -1,4 +1,5 @@
 import { CustomToast } from '@/components/toast/CustomToast'
+import { Type_pos_payment_origin } from '@/modules/pos-pg/types'
 import { frmElementsProps } from '@/shared/shared.types'
 import useAppStore from '@/store/app/appStore'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -47,13 +48,41 @@ export function Frm_bar_buttons({ watch }: frmElementsProps) {
   }
 
   const detailShop = async () => {
+    const { oj_data: s_payment_method } = await executeFnc('fnc_pos_session', 's_payment_method', [
+      watch('session_id'),
+    ])
+    const { oj_data: paymentData } = await executeFnc('fnc_pos_payment', 's', [
+      ['0', 'fequal', 'report_session_id', watch('session_id')],
+      [
+        0,
+        'multi_filter_in',
+        [
+          { key_db: 'origin', value: Type_pos_payment_origin.DOCUMENT },
+          { key_db: 'origin', value: Type_pos_payment_origin.DIRECT_PAYMENT },
+          { key_db: 'origin', value: Type_pos_payment_origin.PAY_DEBT },
+        ],
+      ],
+    ])
+    function splitByOriginAndType(data, origin) {
+      const filtered = data.filter((m) => m.origin === origin)
+
+      return {
+        in: filtered.filter((m) => m.type === 'I'),
+        out: filtered.filter((m) => m.type === 'O'),
+      }
+    }
     const { oj_data: rs } = await executeFnc('fnc_pos_session_report', '', [id])
-    import('@/modules/invoicing/components/SalesReportPDF').then((module) => {
+    import('@/modules/invoicing/components/CashSessionReport').then((module) => {
       const SalesReportPDF = module.default
 
       import('@react-pdf/renderer').then((pdfModule) => {
         const { pdf } = pdfModule
-        pdf(SalesReportPDF({ data: { products: rs.result_1, control: rs.result_3 } }))
+        pdf(
+          SalesReportPDF({
+            report: s_payment_method,
+            in_out: splitByOriginAndType(paymentData, 'P'),
+          })
+        )
           .toBlob()
           .then((blob) => {
             const url = URL.createObjectURL(blob)
@@ -74,7 +103,7 @@ export function Frm_bar_buttons({ watch }: frmElementsProps) {
         </button>
       )}
       <button className="btn btn-secondary" onClick={detailShop}>
-        Detalle de ventas
+        Reporte de sesión
       </button>
     </>
   )

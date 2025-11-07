@@ -587,7 +587,7 @@ export default function CartPanel({ order }: { order: any[] }) {
       <div
         // className={`order-container cursor-pointer`}
         className={`order-container cursor-pointer ${
-          selectedOrderPg === order.order_id ? 'bg-yellow-200' : ''
+          selectedOrderPg === order.order_id ? 'bg-yellow-400' : ''
         }`}
         onClick={() => setSelectedOrderPg(order.order_id)}
       >

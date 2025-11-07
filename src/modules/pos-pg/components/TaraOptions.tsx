@@ -258,7 +258,7 @@ const TaraOptions = () => {
     })
   }
   return (
-    <div className="d-flex gap-3 py-2 w-100 align-items-start flex-wrap">
+    <>
       {!connectedPg && (
         <div className="w-100 ">
           <button
@@ -276,14 +276,23 @@ const TaraOptions = () => {
           </button>
         </div>
       )}
-      <div className="flex-fill max-w-[400px]">
-        {/*
-        <div className="d-flex gap-2 align-items-center numpad">
-        </div>
-        */}
 
-        {/* <div className="d-flex gap-2 align-items-center numpad"> */}
-        <div className="grid grid-cols-2 gap-2 numpad">
+      <div className="contenedor-flex py-2">
+
+        <div
+          className="columna-flex col1 contenedor-principal"
+          style={{
+            // height: '180px'
+          }}
+        >
+
+          <div
+            className="div-superior"
+            style={{
+              height: '50%'
+            }}
+          >
+            {/*
           <button
             className={`numpad-button btn2 btn2-white fs-3 lh-xlg ${operationPg === Operation.QUANTITY ? 'active' : ''}`}
             onClick={() => {
@@ -294,10 +303,32 @@ const TaraOptions = () => {
               }
             }}
             // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
+            style={{ width: '50%' }}
           >
             <span>Cantidad</span>
           </button>
+          */}
 
+            <button
+              className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center h-full w-full text-white"
+              onClick={() => {
+                if (selectedItemPg) {
+                  setOperationPg(Operation.QUANTITY)
+                  openCalculatorModal({ operation: Operation.QUANTITY })
+                  setChangePricePg(false)
+                }
+              }}
+              style={{
+                width: '50%',
+                backgroundColor: 'oklch(50.8% 0.118 165.612)',
+                fontSize: '1.1375rem'
+              }}
+            >
+              Cantidad
+            </button>
+
+
+            {/*
           <button
             className={`numpad-button btn2 btn2-white fs-3 lh-xlg ${operationPg === Operation.PRICE ? 'active' : ''}`}
             onClick={() => {
@@ -307,11 +338,43 @@ const TaraOptions = () => {
                 setChangePricePg(false)
               }
             }}
-            // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
+            style={{ width: '50%' }}
           >
             <span>Precio</span>
           </button>
+          */}
 
+            <button
+              className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center h-full w-full text-white"
+              onClick={() => {
+                if (selectedItemPg) {
+                  setOperationPg(Operation.PRICE)
+                  openCalculatorModal({ operation: Operation.PRICE })
+                  setChangePricePg(false)
+                }
+              }}
+              style={{
+                width: '50%',
+                backgroundColor: 'oklch(50.8% 0.118 165.612)',
+                fontSize: '1.1375rem'
+              }}
+            >
+              Precio
+            </button>
+
+
+
+          </div>
+
+
+          <div
+            className="div-inferior"
+            style={{
+              height: '50%'
+            }}
+          >
+
+            {/* 
           <button
             className={`numpad-button btn2 btn2-white fs-3 lh-xlg ${operationPg === Operation.TARA_QUANTITY ? 'active' : ''}`}
             onClick={() => {
@@ -321,11 +384,32 @@ const TaraOptions = () => {
                 setChangePricePg(false)
               }
             }}
-            // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
+            style={{ width: '50%' }}
           >
-            <span>TARA cantidad</span>
-          </button>
+            <span>TARA cant.</span>
+          </button> */}
 
+
+            <button
+              className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center h-full w-full text-white"
+              onClick={() => {
+                if (selectedItemPg) {
+                  setOperationPg(Operation.TARA_QUANTITY)
+                  openCalculatorModal({ operation: Operation.TARA_QUANTITY })
+                  setChangePricePg(false)
+                }
+              }}
+              style={{
+                width: '50%',
+                backgroundColor: 'oklch(50.8% 0.118 165.612)',
+                fontSize: '1.1375rem'
+              }}
+            >
+              TARA cant.
+            </button>
+
+
+            {/*
           <button
             className={`numpad-button btn2 btn2-white fs-3 lh-xlg ${operationPg === Operation.TARA_VALUE ? 'active' : ''}`}
             onClick={() => {
@@ -335,183 +419,263 @@ const TaraOptions = () => {
                 setChangePricePg(false)
               }
             }}
-            // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
+            style={{ width: '50%' }}
           >
             <span>TARA peso</span>
           </button>
-        </div>
-        {/*
-        <div className="mt-2 d-flex flex-wrap gap-2 numpad">
-          {containersPg.map((value: { weight: number; name: string }) => (
+          */}
+
             <button
-              key={value.weight}
-              className="numpad-button btn2 btn2-white fs-3 lh-mlg"
+              className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center h-full w-full text-white"
               onClick={() => {
                 if (selectedItemPg) {
-                  handleTaraSelect(value.weight)
-                  setHandleChangePg(true)
-                  setTaraValuePg(selectedOrderPg, selectedItemPg || 0, value.weight)
+                  setOperationPg(Operation.TARA_VALUE)
+                  openCalculatorModal({ operation: Operation.TARA_VALUE })
+                  setChangePricePg(false)
                 }
               }}
-              // style={{ minWidth: '60px', flex: '1 0 60px', height: '48px', fontSize: '14px' }}
-              style={{ minWidth: '60px' }}
+              style={{
+                width: '50%',
+                backgroundColor: 'oklch(50.8% 0.118 165.612)',
+                fontSize: '1.1375rem'
+              }}
             >
-              {value.name}
+              TARA peso
             </button>
-          ))}
-          {Array.from({ length: 5 }).map((_, index) => (
-            <div key={`ghost-${index}`} style={{ minWidth: '60px', flex: '1 0 60px', height: 0 }} />
-          ))}
-        </div>
-        */}
-      </div>
 
-      <div className="d-flex flex-column" style={{ minWidth: '160px', maxWidth: '180px' }}>
+          </div>
+
+        </div>
+
+        {/*
+      <div className="columna-flex col11 contenedor-principal">
+
         <div
-          className="rounded-3 p-3 shadow-sm d-flex flex-column"
-          style={{ backgroundColor: '#1f2937', height: '104px' }}
+          className="div-superior"
+          style={{
+            height: '50%'
+          }}
         >
-          <div className="text-center flex-grow-1 d-flex flex-column justify-content-center">
-            <div
-              className="fw-bold mb-0"
-              style={{ color: '#60a5fa', fontSize: '40px', lineHeight: '1.1' }}
-            >
-              {weightValuePg.toFixed(2)}
-            </div>
-            <Divider component="div" style={{ height: '2px', backgroundColor: '#60a5fa' }} />
-            <div
-              className="text-truncate"
-              style={{ color: '#fbbf24', fontSize: '14px', fontWeight: '600' }}
-            >
-              S/ {getProductPricePg(selectedItemPg || '', selectedOrderPg || '').toFixed(2)}
+
+        </div>
+
+
+        <div
+          className="div-inferior"
+        >
+
+        </div>
+      </div>
+       */}
+
+        <div className="columna-flex col_balance contenedor-principal">
+
+          <div
+            // className="rounded-3 p-3 shadow-sm d-flex flex-column div-superior"
+            className="div-superior"
+            style={{
+              backgroundColor: '#1f2937',
+              height: '120px'
+            }}
+          >
+
+            <div className="text-center flex-grow-1 d-flex flex-column justify-content-center">
+              <div
+                className="fw-bold mb-0"
+                style={{ color: '#60a5fa', fontSize: '40px', lineHeight: '1.1' }}
+              >
+                {weightValuePg.toFixed(2)}
+              </div>
+              <Divider component="div" style={{ height: '2px', backgroundColor: '#60a5fa' }} />
+              <div
+                className="text-truncate"
+                style={{ color: '#fbbf24', fontSize: '14px', fontWeight: '600' }}
+              >
+                S/ {getProductPricePg(selectedItemPg || '', selectedOrderPg || '').toFixed(2)}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="rounded-3 p-3 d-flex flex-column mt-2" style={{ height: '104px' }}>
+          <div
+            // className="rounded-3 d-flex flex-column mt-2 div-inferior"
+            className="div-inferior"
+            style={{
+              height: '90px'
+            }}
+          >
+
+            {/*
           <button
-            className={`numpad-button btn2 btn2-white fs-3 w-full lh-xlg ${operationPg === Operation.TARA_VALUE ? 'active' : ''}`}
+            // className={`numpad-button btn2 btn2-white fs-3 w-full ${operationPg === Operation.TARA_VALUE ? 'active' : ''}`}
+            className="numpad-button btn2 btn2-white h-full w-full bg-yellow-600 text-white"
             onClick={() => {
               openPaymentsModal()
             }}
-            // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
+          // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
           >
             <span>PAGAR DEUDA</span>
           </button>
-        </div>
-      </div>
+          */}
 
-      <div className="d-flex flex-column gap-2" style={{ minWidth: '120px' }}>
-        <button
-          className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white"
-          style={{
-            backgroundColor: '#3b82f6',
-            borderColor: '#3b82f6',
-            flex: '2',
-            height: '48px',
-            fontSize: '13px',
-          }}
-          onClick={() => {
-            setPrevWeight(weightValuePg)
-            return
-            if (!selectedItemPg || !selectedOrderPg) return
-            const currentTaraQuantity = getProductTaraQuantityPg(
-              selectedOrderPg,
-              selectedItemPg || 0
-            )
-            const quantityTotal = getProductQuantityInOrderPg(selectedOrderPg, selectedItemPg)
-            if (Number(quantityTotal) !== 0 && Number(quantityTotal) > 0) {
-              CustomToast({
-                title: '',
-                description: 'El producto ya tiene un peso asignado.',
-                type: 'warning',
-              })
-              return
-            }
-            setProductQuantityInOrderPg(selectedOrderPg, selectedItemPg || 0, weightValuePg || 0)
+            <button
+              className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center h-full w-full bg-yellow-600 text-white"
+              style={{
+                // backgroundColor: '#f97316',
+                // borderColor: '#f97316',
+                // flex: '1',
+                // height: '48px',
+                fontSize: '16px',
+              }}
+              onClick={() => {
+                openPaymentsModal()
+              }}
+            >
+              PAGAR DEUDA
+            </button>
 
-            /*const currentTaraQuantity = getProductTaraQuantityPg(
-              selectedOrderPg,
-              selectedItemPg || 0
-            )*/
-            if (currentTaraQuantity === 0) {
-              setTaraQuantityPg(selectedOrderPg, selectedItemPg || 0, 0)
-            }
-          }}
-        >
-          <span>CAPTURAR</span>
-        </button>
-        <button
-          className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white"
-          style={{
-            backgroundColor: '#f97316',
-            borderColor: '#f97316',
-            flex: '1',
-            height: '48px',
-            fontSize: '13px',
-          }}
-          onClick={() => {
-            if (selectedItemPg && selectedOrderPg) {
-              setProductQuantityInOrderPg(selectedOrderPg, selectedItemPg || 0, -weightValuePg || 0)
-            }
-          }}
-        >
-          DEVOLVER
-        </button>
-      </div>
-
-      <div className="d-flex flex-column gap-2" style={{ minWidth: '120px' }}>
-        <button
-          className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white"
-          style={{
-            backgroundColor: '#3b82f6',
-            borderColor: '#3b82f6',
-            flex: '2',
-            height: '48px',
-            fontSize: '13px',
-          }}
-          onClick={() => {
-            if (getTotalPriceByOrderPg(selectedOrderPg) === 0) {
-              CustomToast({
-                title: 'Error al continuar a pago',
-                description: 'No se puede continuar: el monto debe ser distinto de 0.',
-                type: 'error',
-              })
-
-              return
-            }
-            setBackToProductsPg(false)
-            setHandleChangePg(true)
-            fnc_to_pay()
-          }}
-        >
-          <span>FINALIZAR VENTA</span>
-        </button>
-      </div>
-
-      {/**
-       * <div className="d-flex flex-column gap-2" style={{ minWidth: '120px' }}>
-        <button
-          className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white"
-          style={{
-            backgroundColor: connected ? '#059669' : '#10b981',
-            borderColor: connected ? '#059669' : '#10b981',
-            flex: '1',
-            height: '48px',
-            fontSize: '13px',
-          }}
-          onClick={resetItem}
-          disabled={connected}
-        >
-          <div className="text-center flex-grow-1 d-flex flex-column justify-content-center items-center">
-            <IoArrowUndoSharp size={40} />
-            <div className="mt-2">DESHACER</div>
           </div>
-        </button>
+
+        </div>
+
+
+        <div className="columna-flex col_balance contenedor-principal">
+
+          <div
+            // className="rounded-3 p-3 shadow-sm d-flex flex-column div-superior"
+            className="div-superior"
+            style={{
+              // backgroundColor: '#1f2937',
+              height: '120px'
+            }}
+          >
+
+            <button
+              // className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white"
+              className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white h-full w-full"
+              style={{
+                backgroundColor: '#3b82f6',
+                borderColor: '#3b82f6',
+                // flex: '2',
+                // height: '48px',
+                fontSize: '16px',
+              }}
+              onClick={() => {
+                setPrevWeight(weightValuePg)
+                return
+                if (!selectedItemPg || !selectedOrderPg) return
+                const currentTaraQuantity = getProductTaraQuantityPg(
+                  selectedOrderPg,
+                  selectedItemPg || 0
+                )
+                const quantityTotal = getProductQuantityInOrderPg(selectedOrderPg, selectedItemPg)
+                if (Number(quantityTotal) !== 0 && Number(quantityTotal) > 0) {
+                  CustomToast({
+                    title: '',
+                    description: 'El producto ya tiene un peso asignado.',
+                    type: 'warning',
+                  })
+                  return
+                }
+                setProductQuantityInOrderPg(selectedOrderPg, selectedItemPg || 0, weightValuePg || 0)
+
+                /*const currentTaraQuantity = getProductTaraQuantityPg(
+                  selectedOrderPg,
+                  selectedItemPg || 0
+                )*/
+                if (currentTaraQuantity === 0) {
+                  setTaraQuantityPg(selectedOrderPg, selectedItemPg || 0, 0)
+                }
+              }}
+            >
+              <span>CAPTURAR</span>
+            </button>
+
+          </div>
+
+          <div
+            // className="rounded-3 d-flex flex-column mt-2 div-inferior"
+            className="div-inferior"
+            style={{
+              height: '90px'
+            }}
+          >
+
+            <button
+              className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white h-full w-full"
+              style={{
+                backgroundColor: '#f97316',
+                borderColor: '#f97316',
+                // flex: '1',
+                // height: '48px',
+                fontSize: '16px',
+              }}
+              onClick={() => {
+                if (selectedItemPg && selectedOrderPg) {
+                  setProductQuantityInOrderPg(selectedOrderPg, selectedItemPg || 0, -weightValuePg || 0)
+                }
+              }}
+            >
+              DEVOLVER
+            </button>
+
+          </div>
+
+        </div>
+
+        {/*
+      <div className="columna-flex col3 contenedor-principal">
+
+        <div
+          className="div-superior"
+          style={{
+            height: '60%'
+          }}
+        >
+
+        </div>
+
+        <div
+          className="div-inferior"
+        >
+
+        </div>
+
       </div>
-       * 
-       */}
-    </div>
+      */}
+
+        <div className="columna-flex col4 h-full">
+
+          <button
+            className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white h-full w-full"
+            style={{
+              backgroundColor: '#3b82f6',
+              borderColor: '#3b82f6',
+              // flex: '2',
+              // height: '48px',
+              fontSize: '16px',
+            }}
+            onClick={() => {
+              if (getTotalPriceByOrderPg(selectedOrderPg) === 0) {
+                CustomToast({
+                  title: 'Error al continuar a pago',
+                  description: 'No se puede continuar: el monto debe ser distinto de 0.',
+                  type: 'error',
+                })
+
+                return
+              }
+              setBackToProductsPg(false)
+              setHandleChangePg(true)
+              fnc_to_pay()
+            }}
+          >
+            <span>FINALIZAR VENTA</span>
+          </button>
+
+        </div>
+
+      </div>
+    </>
   )
 }
 

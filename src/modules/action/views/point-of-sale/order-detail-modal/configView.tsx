@@ -26,6 +26,7 @@ export function Subtitle({ control, errors, editConfig, setValue }: frmElementsP
             errors={errors}
             editConfig={{ config: editConfig }}
             startToday
+            disableFrmIsChanged
           />
         </div>
       </div>
@@ -40,6 +41,7 @@ export function Subtitle({ control, errors, editConfig, setValue }: frmElementsP
             errors={errors}
             editConfig={{ config: editConfig }}
             startToday
+            disableFrmIsChanged
           />
         </div>
       </div>
@@ -275,6 +277,7 @@ export function FrmMiddle({ control, errors, editConfig, watch, setValue }: frmE
             fncName: 'fnc_partner',
           }}
           className=""
+          disableFrmIsChanged
         />
       </FormRow>
 

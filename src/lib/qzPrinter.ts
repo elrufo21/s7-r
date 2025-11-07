@@ -1,25 +1,27 @@
 import qz from 'qz-tray'
+import { offlineCache } from './offlineCache'
 
 // ✅ Función para firmar los datos con tu clave privada
 async function signData(toSign: string, privateKeyPem: string): Promise<string> {
-  // En producción deberías usar una API segura para firmar con clave privada.
-  // Aquí solo hacemos una simulación base64 (suficiente para pruebas locales).
   console.log('✍️ Firmando datos...')
-  return btoa(toSign) // Simula la firma
+  // Aquí podrías luego usar crypto.subtle para una firma real
+  return btoa(toSign)
 }
 
-// ✅ Configura el certificado y la función de firma
+// ✅ Configura la seguridad usando claves locales (desde IndexedDB)
 async function setupSecurity() {
   try {
-    const cert = await fetch('/qz/digital-certificate.txt').then((r) => r.text())
-    const privateKey = await fetch('/qz/private-key.pem').then((r) => r.text())
+    // 🚀 Obtener claves QZ desde IndexedDB
+    const qzKeys = await offlineCache.getQZKeys()
+    if (!qzKeys) {
+      throw new Error('❌ No se encontraron claves QZ en la base de datos local (IndexedDB).')
+    }
 
+    const { cert, privateKey } = qzKeys
+
+    // 🔐 Configurar QZ Tray con los valores guardados localmente
     qz.security.setCertificatePromise(() => Promise.resolve(cert))
-
-    // ⚠️ Aquí estaba el error: NO debes envolver otra promesa dentro
-    qz.security.setSignaturePromise((toSign) => {
-      return signData(toSign, privateKey) // Esto ya devuelve una promesa válida
-    })
+    qz.security.setSignaturePromise((toSign) => signData(toSign, privateKey))
 
     console.log('🔐 Seguridad QZ configurada correctamente.')
   } catch (error) {
@@ -29,10 +31,14 @@ async function setupSecurity() {
 
 // ✅ Conexión con QZ Tray
 export async function connectQZ() {
-  if (!qz.websocket.isActive()) {
-    await setupSecurity()
-    await qz.websocket.connect()
-    console.log('🧩 Conectado con QZ Tray.')
+  try {
+    if (!qz.websocket.isActive()) {
+      await setupSecurity()
+      await qz.websocket.connect()
+      console.log('🧩 Conectado con QZ Tray.')
+    }
+  } catch (err) {
+    console.error('❌ No se pudo conectar con QZ Tray:', err)
   }
 }
 
@@ -43,12 +49,10 @@ export async function getPrinters() {
   return printers
 }
 
-// ✅ Imprimir HTML directamente
 export async function printHTML(htmlContent: string, printerName?: string) {
   try {
     await connectQZ()
 
-    // Verificar impresora
     let printer = printerName
     if (!printer) {
       printer = await qz.printers.getDefault()
@@ -58,8 +62,7 @@ export async function printHTML(htmlContent: string, printerName?: string) {
       printer = found
     }
 
-    // Crear config
-    const config = qz.configs.create('EPSON TM-T20III Receipt', {
+    const config = qz.configs.create(printer, {
       size: { width: 80, units: 'mm' },
       margins: 0,
       orientation: 'portrait',
@@ -70,7 +73,6 @@ export async function printHTML(htmlContent: string, printerName?: string) {
       colorType: 'grayscale',
     })
 
-    // Crear datos
     const data = [
       {
         type: 'html',
@@ -79,7 +81,6 @@ export async function printHTML(htmlContent: string, printerName?: string) {
       },
     ]
 
-    // Imprimir
     await qz.print(config, data)
     console.log('✅ Impresión enviada correctamente.')
   } catch (err) {

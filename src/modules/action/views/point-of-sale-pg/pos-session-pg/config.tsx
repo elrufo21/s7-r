@@ -10,6 +10,7 @@ import { Frm_bar_buttons } from './components/Frm_bar_buttons'
 import { Row } from 'primereact/row'
 import { formatPlain } from '@/shared/utils/dateUtils'
 import { BsCash, BsFillBasket2Fill } from 'react-icons/bs'
+import { StatusChip } from '@/shared/components/table/components/StatusChip'
 const PosSessionConfig: FormConfig = {
   form_id: 400,
   fnc_name: 'fnc_pos_session',
@@ -125,6 +126,25 @@ const PosSessionConfig: FormConfig = {
           cell: ({ row }: { row: Row }) => (
             <div>{row.original.state === 'R' ? row.original.final_cash : ''}</div>
           ),
+        },
+        {
+          header: 'Estado',
+          size: 120,
+          cell: ({ row }: { row: any }) => {
+            const state = row.original.state
+            const stateDescription = row.original.state_description
+
+            return (
+              <StatusChip
+                value={state}
+                description={stateDescription}
+                classesMap={{
+                  R: 'text-bg-success',
+                  I: 'text-bg-warning',
+                }}
+              />
+            )
+          },
         },
       ],
     },

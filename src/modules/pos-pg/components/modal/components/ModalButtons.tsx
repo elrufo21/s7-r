@@ -91,7 +91,8 @@ const ModalButtons = ({
           <div className="c-text">Cerrar caja registradora</div>
         </div>
       </button>
-
+      
+      {/*
       <button
         onClick={handleDownloadReport}
         className="btn-style-1 flex-1 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 p-6 rounded-lg text-gray-700 font-medium text-center"
@@ -106,6 +107,7 @@ const ModalButtons = ({
           <div className="c-text">Descargar reporte de cuentas</div>
         </div>
       </button>
+      */}
 
       <button
         onClick={async () => {

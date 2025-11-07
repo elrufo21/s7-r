@@ -1215,10 +1215,13 @@ export const navigationList: Record<ModulesEnum, MenuItemType | null> = {
                 {
                   text: 'Descargar PDF',
                   type: 'confirm',
-                  onClick: async (id, close, fncExecute) => {
+                  onClick: async (id, close, fncExecute, getData) => {
+                    const formData = getData()
                     const { oj_data } = await fncExecute('fnc_pos_order ', 's', [
                       [2, 'list_select_all'],
                       [0, 'fequal', 'state', 'R'],
+
+                      formData.partner_id && [0, 'fequal', 'partner_id', formData.partner_id],
                     ])
 
                     import(

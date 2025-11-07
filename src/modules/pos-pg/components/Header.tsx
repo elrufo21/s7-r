@@ -19,7 +19,7 @@ import { usePosActionsPg } from '@/modules/pos/hooks/usePosActionsPg'
 import { InputWithKeyboard } from '@/shared/ui/inputs/InputWithKeyboard'
 import { Operation } from '../context/CalculatorContext'
 import CalculatorPanel from './modal/components/ModalCalculatorPanel'
-import { codePayment } from '@/shared/helpers/helpers'
+import { codePayment, summarizeTransactions } from '@/shared/helpers/helpers'
 
 export default function Header({ pointId }: { pointId: string }) {
   const {
@@ -231,27 +231,160 @@ export default function Header({ pointId }: { pointId: string }) {
       ],
     })
   }
+  function buildFinalCashData(formData: any, session_id: number) {
+    const baseData = {
+      session_id,
+      state: 'R',
+      stop_at: now().toPlainDateTime().toString(),
+      final_cash: parseFloat(formData.cash_count || 0),
+      closing_note: formData.closing_note || '',
+      ...formData,
+    }
+
+    const dataWithPm = updatePmValues(baseData)
+    return dataWithPm
+  }
+  function getPaymentMethods(payments = [], sessionData = {}) {
+    const safePayments = Array.isArray(payments) ? payments : []
+    const initialCash = Number(sessionData?.initial_cash || 0)
+
+    if (safePayments.length === 0) {
+      return initialCash > 0
+        ? [
+            {
+              payment_method_id: 'cash',
+              name: 'Efectivo',
+              amount: initialCash,
+              counted: 0,
+              difference: initialCash,
+              is_cash: true,
+            },
+          ]
+        : []
+    }
+
+    const grouped = safePayments.reduce((acc, p) => {
+      if (!p || !p.payment_method_id) return acc
+
+      const id = p.payment_method_id
+      const name = p.payment_method_name || 'Desconocido'
+      if (!acc[id]) {
+        acc[id] = {
+          payment_method_id: id,
+          name,
+          total: 0,
+          is_cash: name.toLowerCase() === 'efectivo',
+        }
+      }
+
+      const amount = Number(p.amount) || 0
+      acc[id].total += p.type === 'I' ? amount : -amount
+      return acc
+    }, {})
+
+    return Object.values(grouped).map((pm) => {
+      const amount = pm.is_cash ? initialCash + pm.total : pm.total
+      return {
+        payment_method_id: pm.payment_method_id,
+        name: pm.name,
+        amount,
+        counted: 0,
+        difference: amount,
+        is_cash: pm.is_cash,
+      }
+    })
+  }
+
   function updatePmValues(data: any) {
     if (!data.pm || !Array.isArray(data.pm)) return data
-    const isCash = data.watchData?.find((pm: any) => pm.is_cash === true).payment_method_id
-    data.pm = data.pm.map((item: any) => {
-      const fieldName =
-        item.payment_method_id === isCash ? 'cash_count' : `pm_${item.payment_method_id}`
 
-      const counted = parseFloat(data[fieldName] ?? 0)
+    data.pm = data.pm.map((item: any) => {
+      // Si es efectivo, toma el campo cash_count
+      const fieldName = item.is_cash ? 'cash_count' : `pm_${item.payment_method_id}`
+      const counted = parseFloat(data[fieldName] || 0)
+
+      // Calcula la diferencia
+      const difference = parseFloat((item.amount - counted).toFixed(2))
 
       return {
         ...item,
         counted,
-        difference: parseFloat((item.amount - counted).toFixed(2)),
+        difference,
       }
     })
 
-    return data
+    // Recalcula el total final en base al efectivo
+    const finalCash = data.pm.find((pm: any) => pm.is_cash)?.counted || 0
+
+    return {
+      ...data,
+      final_cash: finalCash,
+      payment_methods: addPositions(data.pm),
+      payment_methods_change: true,
+    }
+  }
+  function getFlowByMethod(data, paymentMethodId) {
+    const movimientos = data.filter(
+      (m) => m.origin === 'P' && m.payment_method_id === paymentMethodId
+    )
+
+    let total = 0
+    const detalles = []
+
+    movimientos.forEach((m) => {
+      const value = m.type === 'O' ? -Math.abs(m.amount) : Math.abs(m.amount)
+
+      total += value
+
+      detalles.push({
+        detail: m.detail,
+        amount: value,
+        sign: value > 0 ? '+' : '-',
+      })
+    })
+
+    const sign = total > 0 ? '+' : total < 0 ? '-' : ''
+
+    return {
+      payment_method_id: paymentMethodId,
+      total,
+      sign,
+      detalles,
+    }
+  }
+
+  function getFlowByOriginAndMethod(data, origin, paymentMethodId) {
+    const movimientos = data.filter(
+      (m) => m.origin === origin && m.payment_method_id === paymentMethodId
+    )
+
+    let total = 0
+    const detalles = []
+
+    movimientos.forEach((m) => {
+      total += m.amount
+
+      detalles.push({
+        detail: m.detail,
+        amount: m.amount,
+        sign: m.amount > 0 ? '+' : '-',
+      })
+    })
+
+    return {
+      origin,
+      payment_method_id: paymentMethodId,
+      total,
+      detalles,
+    }
   }
 
   const diferenceDialog = (title: string, diferences: any) => {
     return new Promise<boolean>((resolve) => {
+      if (diferences.length === 0) {
+        resolve(true)
+        return
+      }
       const dialogId = openDialog({
         title,
         dialogContent: () => (
@@ -261,13 +394,12 @@ export default function Header({ pointId }: { pointId: string }) {
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md">
                   <FiAlertTriangle className="text-slate-900 w-6 h-6" />
                 </div>
-                <h2 className="text-xl font-semibold text-slate-900">
-                  Aún tienes cuentas sin cerrar
-                </h2>
+                <h2 className="text-xl font-semibold text-slate-900">Alerta</h2>
               </div>
 
               <p className="text-slate-800 mb-4">
-                Se encontraron diferencias en los siguientes métodos de pago:
+                El dinero contado no coincide con el esperado. ¿Desea registrar esta diferencia en
+                los libros?
               </p>
 
               <ul className="space-y-2">
@@ -331,18 +463,39 @@ export default function Header({ pointId }: { pointId: string }) {
       })
     })
   }
-  function getDiferences(data) {
-    return data?.pm
-      ?.filter((pmItem) => pmItem.difference !== 0)
-      ?.map((pmItem) => {
-        const match = data.watchData.find((w) => w.payment_method_id === pmItem.payment_method_id)
+  function getDiferences(data: any) {
+    if (!data) return []
+    const pmList = Array.isArray(data.pm)
+      ? data.pm
+      : Array.isArray(data.payment_methods)
+        ? data.payment_methods
+        : []
+    if (pmList.length === 0) return []
+
+    const watchList = Array.isArray(data.watchData)
+      ? data.watchData
+      : Array.isArray(data.payment_methods)
+        ? data.payment_methods
+        : []
+
+    return pmList
+      .filter((pmItem: any) => Number(pmItem.difference ?? 0) !== 0)
+      .map((pmItem: any) => {
+        const match =
+          watchList.find(
+            (w: any) =>
+              String(w.payment_method_id) === String(pmItem.payment_method_id) ||
+              String(w.payment_method_name) === String(pmItem.name)
+          ) || null
+
         return {
           payment_method_id: pmItem.payment_method_id,
-          name: match ? match.name : null,
-          difference: pmItem.difference || 0,
+          name: match?.payment_method_name,
+          difference: Number(pmItem.difference ?? 0),
         }
       })
   }
+
   type Payment = {
     origin: string
     amount: number
@@ -424,6 +577,19 @@ export default function Header({ pointId }: { pointId: string }) {
 
     return { rows, totalGeneral }
   }
+  function addPositions(data) {
+    return data
+      .slice()
+      .sort((a, b) => {
+        if (a.is_cash && !b.is_cash) return -1
+        if (!a.is_cash && b.is_cash) return 1
+        return 0
+      })
+      .map((item, index) => ({
+        ...item,
+        position: index + 1,
+      }))
+  }
 
   const handleCloseCashRegister = async () => {
     await offlineCache
@@ -432,6 +598,7 @@ export default function Header({ pointId }: { pointId: string }) {
         const { oj_data: sessionLogOutData } = await executeFnc('fnc_pos_session_log_out', '', [
           session_id,
         ])
+
         const { oj_data: sessionData } = await executeFnc('fnc_pos_session', 's1', [session_id])
         const { oj_data: payments } = await executeFnc('fnc_pos_payment', 's', [
           ['0', 'fequal', 'report_session_id', session_id],
@@ -446,7 +613,6 @@ export default function Header({ pointId }: { pointId: string }) {
             ],
           ],
         ])
-        console.log('payments', payments)
         let getData = () => ({})
         const dialogId = openDialog({
           title: 'Cerrando la caja registradora',
@@ -454,10 +620,12 @@ export default function Header({ pointId }: { pointId: string }) {
             <FrmBaseDialog
               config={PosCloseCashConfig}
               initialValues={{
-                watchData: sessionLogOutData.result_1,
-                pm: sessionLogOutData.payment_methods,
+                watchData: payments,
+                pm: getPaymentMethods(payments, sessionData[0]),
                 opening_note: sessionData[0]?.opening_note,
+                openingAmount: sessionData[0]?.initial_cash,
               }}
+              viewType={ViewTypeEnum.LIBRE}
               setGetData={(fn: any) => (getData = fn)}
             />
           ),
@@ -468,18 +636,27 @@ export default function Header({ pointId }: { pointId: string }) {
               onClick: async () => {
                 const formData = getData()
                 const rawData = {
-                  session_id: session_id,
+                  session_id,
                   state: 'R',
                   stop_at: now().toPlainDateTime().toString(),
-                  final_cash: 0,
-                  closing_note: '',
+                  final_cash: formData?.cash_count ?? 0,
+                  closing_note: formData?.closing_note,
                   ...formData,
                 }
-                const data = updatePmValues(rawData)
+                const data = updatePmValues(formData, session_id)
 
-                //let pass = await diferenceDialog('', getDiferences(data))
-                // if (!pass) return
-
+                let pass = await diferenceDialog('', getDiferences(data))
+                if (!pass) return
+                const newPaymentsMetho = data.pm.map((d) => {
+                  return {
+                    ...d,
+                    amount_in_out: getFlowByMethod(data.watchData, d.payment_method_id).total,
+                    amount_sales: getFlowByOriginAndMethod(data.watchData, 'D', d.payment_method_id)
+                      .total,
+                    amount_debt: getFlowByOriginAndMethod(data.watchData, 'G', d.payment_method_id)
+                      .total,
+                  }
+                })
                 //   pass = await confirmDialog('Cerrar caja', 'Se eliminarán todas las órdenes')
                 //if (!pass) return
                 setCloseSession(true)
@@ -501,17 +678,16 @@ export default function Header({ pointId }: { pointId: string }) {
                   })
                 } else {
                   await executeFnc('fnc_pos_session', 'u', {
-                    session_id: data.session_id,
+                    session_id: session_id,
                     state: 'R',
-                    stop_at: data.stop_at,
+                    stop_at: now().toPlainDateTime().toString(),
                     final_cash: data.cash_count ?? 0,
-                    closing_note: data.closing_note,
-                    payment_methods: data.pm,
+                    closing_note: formData.closing_note || '',
+                    payment_methods: addPositions(newPaymentsMetho),
                     payment_methods_change: true,
                   })
                 }
 
-                // 🔄 Actualizar posPoints offline
                 const posPoints = await offlineCache.getOfflinePosPoints()
                 const posPoint = posPoints.find((p: any) => p.point_id === Number(pointId))
                 if (posPoint) {
@@ -519,14 +695,12 @@ export default function Header({ pointId }: { pointId: string }) {
                   await offlineCache.updatePosPointOffline(posPoint)
                 }
 
-                // 🔄 Actualizar sessions en localStorage
                 const currentData = JSON.parse(localStorage.getItem('sessions') ?? '[]')
                 const newSessions = currentData.map((s: any) =>
                   s.point_id === Number(pointId) ? { ...s, session_id: null } : s
                 )
                 localStorage.setItem('sessions', JSON.stringify(newSessions))
 
-                // ✅ Remover de local_pos_open
                 const localPosOpen = JSON.parse(localStorage.getItem('local_pos_open') || '[]')
                 const filtered = localPosOpen?.filter((p: any) => p.point_id !== Number(pointId))
                 localStorage.setItem('local_pos_open', JSON.stringify(filtered))
@@ -554,15 +728,15 @@ export default function Header({ pointId }: { pointId: string }) {
                 closeDialogWithData(dialogId, null)
               },
             },
+            // {
+            //   text: 'Entrada y salida de efectivo',
+            //   type: 'cancel',
+            //   onClick: async () => {
+            //     handleCashInAndOut()
+            //   },
+            // },
             {
-              text: 'Entrada y salida de efectivo',
-              type: 'cancel',
-              onClick: async () => {
-                handleCashInAndOut()
-              },
-            },
-            {
-              text: 'Venta diaria',
+              text: 'Reporte de sesión',
               type: 'cancel',
               onClick: async () => {
                 const formData = getData()
@@ -576,9 +750,32 @@ export default function Header({ pointId }: { pointId: string }) {
                 }
                 const data = updatePmValues(rawData)
                 const today = new Date()
-                const formattedDate = today.toLocaleDateString('es-PE')
-                const filter = [0, 'fbetween', 'date', formattedDate, formattedDate]
+
+                const newPaymentsMethods = data.pm.map((d) => {
+                  return {
+                    ...d,
+                    payment_method_id: d.payment_method_id,
+                    amount_in_out: getFlowByMethod(data.watchData, d.payment_method_id).total,
+                    amount_sales: getFlowByOriginAndMethod(data.watchData, 'D', d.payment_method_id)
+                      .total,
+                    amount_debt: getFlowByOriginAndMethod(data.watchData, 'G', d.payment_method_id)
+                      .total,
+                  }
+                })
+
+                const { oj_data } = await executeFnc('fnc_pos_session', 'u', {
+                  session_id: data.session_id,
+                  closing_note: formData.closing_note || '',
+                  payment_methods: addPositions(newPaymentsMethods),
+                  payment_methods_change: true,
+                })
+                const { oj_data: s_payment_method } = await executeFnc(
+                  'fnc_pos_session',
+                  's_payment_method',
+                  [oj_data.session_id]
+                )
                 const { oj_data: paymentData } = await executeFnc('fnc_pos_payment', 's', [
+                  ['0', 'fequal', 'report_session_id', session_id],
                   [
                     0,
                     'multi_filter_in',
@@ -588,28 +785,50 @@ export default function Header({ pointId }: { pointId: string }) {
                       { key_db: 'origin', value: Type_pos_payment_origin.PAY_DEBT },
                     ],
                   ],
-                  ,
-                  filter,
                 ])
-                const { oj_data } = await executeFnc('fnc_pos_session', 'u', {
-                  session_id: data.session_id,
-                  stop_at: data.stop_at,
-                  final_cash: data.cash_count,
-                  closing_note: data.closing_note,
-                  payment_methods: data.pm,
-                  payment_methods_change: true,
-                })
-                const { oj_data: rs } = await executeFnc('fnc_pos_session_report', '', [
+                const { oj_data: session_data } = await executeFnc('fnc_pos_session', 's1', [
+                  session_id,
+                ])
+                function splitByOriginAndType(data, origin) {
+                  const filtered = data.filter((m) => m.origin === origin)
+
+                  return {
+                    in: filtered.filter((m) => m.type === 'I'),
+                    out: filtered.filter((m) => m.type === 'O'),
+                  }
+                }
+
+                /* const { oj_data: rs } = await executeFnc('fnc_pos_session_report', '', [
                   oj_data.session_id,
-                ])
-                import('@/modules/invoicing/components/paymentReport').then((module) => {
+                ])*/
+                console.log('ga', {
+                  ...s_payment_method,
+                  session_name: session_data[0].name,
+                  state: session_data[0].state,
+                  pos_name: session_data[0].point_name,
+                  user_name: session_data[0].user_name,
+                  start_at: session_data[0].start_at,
+                  stop_at: session_data[0].stop_at,
+                  final_cash: session_data[0].final_cash,
+                })
+                import('@/modules/invoicing/components/CashSessionReport').then((module) => {
                   const SalesReportPDF = module.default
 
                   import('@react-pdf/renderer').then((pdfModule) => {
                     const { pdf } = pdfModule
                     pdf(
                       SalesReportPDF({
-                        data: { ...generateDailyReport(paymentData), control: rs.result_3 },
+                        report: {
+                          ...s_payment_method,
+                          session_name: session_data[0].name,
+                          state: session_data[0].state,
+                          pos_name: session_data[0].point_name,
+                          user_name: session_data[0].user_name,
+                          start_at: session_data[0].start_at,
+                          stop_at: session_data[0].stop_at,
+                          final_cash: session_data[0].final_cash,
+                        },
+                        in_out: splitByOriginAndType(paymentData, 'P'),
                       })
                     )
                       .toBlob()
@@ -887,7 +1106,7 @@ export default function Header({ pointId }: { pointId: string }) {
         {isOnline && screenPg === 'products' && (
           <div>
             <button
-              className={`btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] mr-4 ${
+              className={`btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] mr-4 px-4 ${
                 changePricePg ? 'active' : ''
               }`}
               disabled={frmLoading}
@@ -896,7 +1115,7 @@ export default function Header({ pointId }: { pointId: string }) {
                 setChangePricePg(!changePricePg)
                 //openCalculatorModal({ operation: Operation.CHANGE_PRICE })
               }}
-              style={{ paddingLeft: '2px', paddingRight: '2px' }}
+              // style={{ paddingLeft: '2px', paddingRight: '2px' }}
             >
               Cambiar precio
             </button>

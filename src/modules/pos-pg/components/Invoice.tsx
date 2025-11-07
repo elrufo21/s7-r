@@ -23,26 +23,32 @@ const Invoice = () => {
     payment,
     setPayment,
   } = useAppStore()
-
   const [order, setOrder] = useState({})
   const orderDataRef = useRef(orderDataPg)
   const { isOnline } = usePWA()
+  const firstOrderRef = useRef(null)
+
   useEffect(() => {
     const fetchOrder = async () => {
+      let fetchedOrder = {}
+
       if (!isOnline || localModePg) {
         const orders = await offlineCache.getOfflinePosOrders()
-        setOrder(orders.find((order) => order.order_id === selectedOrderPg) || {})
-        await ensureFourOrdersPg()
-        return
+        fetchedOrder = orders.find((order) => order.order_id === selectedOrderPg) || {}
+      } else {
+        const { oj_data } = await executeFnc('fnc_pos_order', 's1', [selectedOrderPg])
+        fetchedOrder = oj_data[0] || {}
       }
-      const { oj_data } = await executeFnc('fnc_pos_order', 's1', [selectedOrderPg])
-      setOrder(oj_data[0] || {})
+
+      if (!firstOrderRef.current) {
+        firstOrderRef.current = fetchedOrder
+        setOrder(fetchedOrder)
+      }
 
       await ensureFourOrdersPg()
     }
     fetchOrder()
   }, [orderDataPg])
-
   useEffect(() => {
     orderDataRef.current = orderDataPg
   }, [orderDataPg])
@@ -142,8 +148,8 @@ const Invoice = () => {
                     className="button print btn btn-lg btn-secondary w-100 py-3 lh-xlg"
                     type="button"
                     onClick={
-                      //handlePrint
-                      fnc_printTicket
+                      handlePrint
+                      //fnc_printTicket
                     }
                   >
                     <div className="flex justify-center">

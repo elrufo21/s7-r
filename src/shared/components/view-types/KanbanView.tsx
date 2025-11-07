@@ -3,6 +3,7 @@ import { KanbanBox } from './kanban/kanbanBox'
 import { FormConfig, ModulesEnum } from '@/shared/shared.types'
 import { useNavigate } from 'react-router-dom'
 import { CustomToast } from '@/components/toast/CustomToast'
+import { offlineCache } from '@/lib/offlineCache'
 
 type KanbanViewProps = {
   config: FormConfig
@@ -192,7 +193,7 @@ export const KanbanView = ({ config }: KanbanViewProps) => {
                       {item?.session_id ? (
                         <button
                           className="btn btn-primary oe_kanban_action"
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation()
 
                             const localPosOpen = JSON.parse(
@@ -202,7 +203,7 @@ export const KanbanView = ({ config }: KanbanViewProps) => {
                               (p: any) => p?.point_id === item.point_id
                             )
 
-                            /**    if (!isOpen) {
+                            if (!isOpen) {
                               CustomToast({
                                 title: 'No se puede seguir vendiendo',
                                 description: `Otro usuario está en el punto de venta.`,
@@ -212,7 +213,7 @@ export const KanbanView = ({ config }: KanbanViewProps) => {
                                 `Punto ${item.point_id} no está en local_pos_open. No se abrirá.`
                               )
                               return
-                            } */
+                            }
 
                             const sessions = JSON.parse(localStorage.getItem('sessions') || '[]')
 
@@ -235,7 +236,6 @@ export const KanbanView = ({ config }: KanbanViewProps) => {
                             if (!prevActive || prevActive.point_id !== item.point_id) {
                               setSyncDataPg(true)
                             }
-
                             localStorage.setItem('sessions', JSON.stringify(nextSessions))
                             navigate(`/pos-pg/${item.point_id}`)
                           }}
@@ -245,7 +245,7 @@ export const KanbanView = ({ config }: KanbanViewProps) => {
                       ) : (
                         <button
                           className="btn btn-primary oe_kanban_action"
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation()
 
                             const sessions = JSON.parse(localStorage.getItem('sessions') || '[]')
@@ -269,6 +269,7 @@ export const KanbanView = ({ config }: KanbanViewProps) => {
                             if (!prevActive || prevActive.point_id !== item.point_id) {
                               setSyncDataPg(true)
                             }
+                            await offlineCache.clearOfflinePosOrders()
 
                             localStorage.setItem('sessions', JSON.stringify(nextSessions))
                             navigate(`/pos-pg/${item.point_id}`)

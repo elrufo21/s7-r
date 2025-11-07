@@ -225,7 +225,7 @@ const PointOfSale = () => {
           type: 'cancel',
           onClick: () => {
             closeDialogWithData(dialogId, {})
-            navigate('/points-of-sale')
+            navigate('/points-of-sale-pg')
           },
         },
       ],

@@ -4,6 +4,7 @@ import { StatusContactEnum } from '@/shared/components/view-types/viewTypes.type
 import { formatPlain } from '@/shared/utils/dateUtils'
 import { Type_pos_payment_origin, TypeStatePayment } from '@/modules/pos-pg/types'
 import { Frm_bar_buttons } from './components/frmBarButtons'
+import { StatusChip } from '@/shared/components/table/components/StatusChip'
 
 const PosPaymentConfig: FormConfig = {
   form_id: 402,
@@ -113,6 +114,25 @@ const PosPaymentConfig: FormConfig = {
           meta: {
             textAlign: 'text-right',
             headerAlign: 'text-right',
+          },
+        },
+        {
+          header: 'Estado',
+          size: 120,
+          cell: ({ row }: { row: any }) => {
+            const state = row.original.state
+            const stateDescription = row.original.state_description
+
+            return (
+              <StatusChip
+                value={state}
+                description={stateDescription}
+                classesMap={{
+                  R: 'text-bg-success',
+                  C: 'text-bg-danger',
+                }}
+              />
+            )
           },
         },
       ],

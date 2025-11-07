@@ -180,6 +180,9 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     padding: 4,
   },
+  textCenter: {
+    textAlign: 'center',
+  },
   dataCellBig: {
     width: '15%',
     fontSize: 9,
@@ -293,7 +296,9 @@ const CustomerAccountStatementReport = ({ data }: CustomerAccountStatementReport
             key={index}
             style={item.isLastOfOrder ? [styles.dataRow, styles.borderBottonRow] : styles.dataRow}
           >
-            <Text style={styles.dataCell}>{item.date.split('T')[0]}</Text>
+            <Text style={[styles.dataCell, styles.textCenter]}>
+              {item.date.split('T')[0].split('-').reverse().join('/')}
+            </Text>
             <Text style={styles.dataCell}>{item.document_number}</Text>
             <Text style={styles.dataCellBig}>{item.type}</Text>
             <Text style={styles.dataCell}>{item.quantity}</Text>
@@ -302,7 +307,7 @@ const CustomerAccountStatementReport = ({ data }: CustomerAccountStatementReport
             <Text style={styles.dataCell}>{item.total}</Text>
             <Text style={styles.dataCell}>{item.in_payments}</Text>
             <Text style={[styles.dataCell, styles.dataCellLast, styles.blueText]}>
-              {item.total_balance}
+              {Number(item.total_balance).toFixed(2)}
             </Text>
           </View>
         ))}

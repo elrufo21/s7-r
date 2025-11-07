@@ -16,6 +16,7 @@ import { IoSearch } from 'react-icons/io5'
 import { ModalBase } from '@/shared/components/modals/ModalBase'
 // import { TbArrowNarrowRight } from 'react-icons/tb'
 import { ViewTypeEnum } from '@/shared/shared.types'
+import QZKeyUploader from '../keyuploader'
 
 const tabs = [
   {
@@ -436,6 +437,9 @@ const TestView = () => {
                     <h2>
                       <span>Puntos de venta</span>
                     </h2>
+                    <div className="row mt-4 o_settings_container">
+                      <QZKeyUploader />
+                    </div>
                   </div>
                 </div>
               ) : null}

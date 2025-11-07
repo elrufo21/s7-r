@@ -25,7 +25,7 @@ export default function CartItem({
       //   isSelected ? 'bg-blue-50' : ''
       // }`}
 
-      className={`py-2 px-2 flex items-center justify-between cursor-pointer  ${isSelected ? 'bg-yellow-400' : ''
+      className={`py-2 px-2 flex items-center justify-between cursor-pointer  ${isSelected ? 'bg-yellow-600' : ''
         }`}
 
       onClick={onSelect}
@@ -41,10 +41,15 @@ export default function CartItem({
         </div>
 
         <div className="ml-4">
-          {/* <div className="font-medium text-gray-900">{item.name}</div> */}
+
           <div className="text-gray-900 font-bold">{item.name}</div>
-          {/* <div className="text-gray-500 text-sm">- Verde, L</div> */}
-          <div>{`S/ ${item?.price_unit} por ${item?.uom_name}`}</div>
+
+          {/* <div>{`S/ ${item?.price_unit} por ${item?.uom_name}`}</div> */}
+          <div
+            className='text-black'
+          >
+            {`S/ ${item?.price_unit} por ${item?.uom_name}`}
+          </div>
 
           {item.tara_value || item.tara_quantity ? (
             <>

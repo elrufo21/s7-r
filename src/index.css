@@ -10883,3 +10883,81 @@ body {
   /* background-color: RGBA(255, 255, 255, 1); */
   background-color: var(--btn-bg-pos);
 }
+
+
+/*-------------------------------------------------------*/
+
+.contenedor-flex {
+    display: flex;
+    /* Asegura que no haya saltos de línea, todas en una fila */
+    flex-wrap: nowrap; 
+    gap: 10px; /* Espacio opcional entre las columnas */
+    width: 100%; /* Asegura que ocupe todo el ancho disponible */
+}
+
+.columna-flex {
+    background-color: #f1f1f1;
+    /* padding: 20px; */
+    text-align: center;
+    box-sizing: border-box; /* Importante para incluir padding/border en el cálculo del ancho */
+
+    /* border: 1px solid #000; */
+}
+
+/* Columna 1: Ancho fijo de 300px */
+.col1 {
+    flex: 0 0 300px; 
+    /* flex-grow: 0 (no crece), flex-shrink: 0 (no se encoge), flex-basis: 300px (ancho fijo) */
+}
+
+.col11 {
+    flex: 0 0 120px; 
+    /* flex-grow: 0 (no crece), flex-shrink: 0 (no se encoge), flex-basis: 300px (ancho fijo) */
+}
+
+/* Columna 2: Ancho fijo de 150px */
+.col_balance {
+    flex: 0 0 180px;
+    /* flex-grow: 0 (no crece), flex-shrink: 0 (no se encoge), flex-basis: 150px (ancho fijo) */
+}
+
+/* Columna 3 y 4: Se dividen el espacio restante por igual */
+.col3,
+.col4 {
+    flex: 1 1 auto; 
+    /* flex-grow: 1 (crece para llenar el espacio restante), flex-shrink: 1, flex-basis: auto */
+}
+
+/* -----------------------------------]-- */
+
+.contenedor-principal {
+    display: flex;
+    flex-direction: column; /* Apila los divs verticalmente */
+    /*height: 400px;*/ /* Define una altura total para el contenedor principal (ajusta según necesites) */
+    /* border: 1px solid #000; */
+    gap: 10px
+}
+
+.div-superior {
+    /*height: 100px;*/ /* Altura fija de 100px */
+    /* background-color: #ff9999; */
+    /* padding: 10px; */
+
+    display: flex;
+    gap: 10px;
+
+    /* border: 1px solid red; */
+}
+
+.div-inferior {
+    flex-grow: 1; /* Esto hace que el div crezca y ocupe todo el espacio restante disponible */
+    /* background-color: #66b2ff; */
+    /* padding: 10px; */
+    /* Opcional: permite desplazamiento si el contenido es demasiado largo */
+    overflow-y: auto; 
+
+    display: flex;
+    gap: 10px;
+
+    /* border: 1px solid red; */
+}

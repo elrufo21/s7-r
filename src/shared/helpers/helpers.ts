@@ -1,11 +1,28 @@
 import { PosOrder } from '@/lib/offlineCache'
 import { ListFilterItem } from '../shared.types'
 import { CustomerAccountItem } from '@/modules/invoicing/components/customerAccountStatementReport'
-interface PosOrderLine {
+export type Transaction = {
+  date: string
   name: string
-  quantity: number
-  price_unit: number
-  amount_untaxed_total?: number
+  type: 'I' | 'O'
+  state: string
+  amount: number
+  detail: string
+  origin: 'G' | 'D' | 'P'
+  reason: string
+  user_id: number
+  partner_name: string
+  payment_method_name: string
+}
+
+export type Summary = {
+  payment_method_name: string
+  paymentsSales: number
+  paymentsDebt: number
+  income: number
+  outcome: number
+  difference: number
+  counted: number
 }
 
 interface Payment {
@@ -104,7 +121,7 @@ export function codePayment(fecha = null) {
   const minuto = String(ahora.getMinutes()).padStart(2, '0')
   const segundo = String(ahora.getSeconds()).padStart(2, '0')
 
-  return `pg-${dia}${mes}${anio}${hora}${minuto}${segundo}`
+  return `PG-${dia}${mes}${anio}${hora}${minuto}${segundo}`
 }
 
 export const transformOrders = (orders: PosOrder[]) => {
@@ -215,4 +232,31 @@ export const transformOrdersWithPayments = (
 
   // 5. Retornar manteniendo isLastOfOrder
   return result.map(({ isPayment, sortDate, ...record }) => record) as CustomerAccountItem[]
+}
+
+export const summarizeTransactions = (transactions: Transaction[]): Summary[] => {
+  const result: Record<string, Summary> = {}
+
+  transactions.forEach((tx) => {
+    const key = tx.payment_method_name
+
+    if (!result[key]) {
+      result[key] = {
+        payment_method_name: key,
+        paymentsSales: 0,
+        paymentsDebt: 0,
+        income: 0,
+        outcome: 0,
+        difference: 0,
+        counted: 0,
+      }
+    }
+
+    if (tx.origin === 'D') result[key].paymentsSales += tx.amount
+    if (tx.origin === 'G') result[key].paymentsDebt += tx.amount
+    if (tx.origin === 'P' && tx.type === 'I') result[key].income += tx.amount
+    if (tx.origin === 'P' && tx.type === 'O') result[key].outcome += tx.amount
+  })
+
+  return Object.values(result)
 }

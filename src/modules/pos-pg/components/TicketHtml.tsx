@@ -14,7 +14,6 @@ interface TicketHTMLProps {
 }
 
 const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
-  console.log('info', info)
   const sessions = JSON.parse(localStorage.getItem('sessions') || '[]')
   const session = sessions.find((s: any) => s.point_id === info.point_id)
 
@@ -133,7 +132,7 @@ const TicketHTML: React.FC<TicketHTMLProps> = ({ info }) => {
           FECHA {formatDateToDDMMYYYY(info.order_date || new Date())}
         </div>
         {/* <div style={{ fontSize: '11px', fontWeight: 'bold' }}>{session?.session_name}</div> */}
-        <div style={{ fontSize: '14px', fontWeight: 'bold' }}>TIENDA MADRUGADA</div>
+        <div style={{ fontSize: '14px', fontWeight: 'bold' }}>{info?.partner_name ?? ''}</div>
       </div>
 
       {/* Table Header */}
