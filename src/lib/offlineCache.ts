@@ -80,7 +80,7 @@ export class OfflineCache {
 
   constructor(options?: OfflineCacheOptions) {
     this.dbName = options?.dbName || 's7-offline-cache'
-    this.version = options?.version || 5 // ← Incrementar a 5
+    this.version = options?.version || 6 // ← Incrementar a 5
   }
 
   /** Inicializa la base de datos y los object stores necesarios. */
