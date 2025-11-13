@@ -11,7 +11,7 @@ import { ActionTypeEnum, ViewTypeEnum } from '@/shared/shared.types'
 import ModalButtons from './modal/components/ModalButtons'
 import { offlineCache, Product } from '@/lib/offlineCache'
 import { usePWA } from '@/hooks/usePWA'
-import { now } from '@/shared/utils/dateUtils'
+import { now, setCurrentTimeIfToday } from '@/shared/utils/dateUtils'
 import { Type_pos_payment_origin, TypePayment, TypeStateOrder } from '../types'
 import { FiAlertTriangle } from 'react-icons/fi'
 import { CustomToast } from '@/components/toast/CustomToast'
@@ -64,6 +64,7 @@ export default function Header({ pointId }: { pointId: string }) {
     convertTemporaryToReturnPg,
     connectedPg,
     connectToDevicePg,
+    dateInvoice,
   } = useAppStore()
 
   const [selectedTaraValue, setSelectedTaraValue] = useState(null)
@@ -188,7 +189,7 @@ export default function Header({ pointId }: { pointId: string }) {
               reason: formData.reason,
               type: formData.type,
               payment_method_id: formData.payment_method_id,
-              date: now().toPlainDateTime().toString(),
+              date: setCurrentTimeIfToday(dateInvoice),
               origin: Type_pos_payment_origin.DIRECT_PAYMENT,
               currency_id: 1,
               state: 'R',
@@ -211,7 +212,7 @@ export default function Header({ pointId }: { pointId: string }) {
               return
             }
             setPayment({
-              order_date: now().toPlainDateTime().toString(),
+              order_date: setCurrentTimeIfToday(dateInvoice),
               receipt_number: codePayment(),
               point_id: formData.point_id,
               payments: [
@@ -861,7 +862,6 @@ export default function Header({ pointId }: { pointId: string }) {
         })
       })
   }
-  console.log('temporaryValuesPg', temporaryValuesPg)
 
   const fnc_change_order = useCallback(
     (id_order: string) => {
@@ -916,7 +916,7 @@ export default function Header({ pointId }: { pointId: string }) {
   }
   return (
     <header className="pos-header-pg">
-      {!connectedPg && (
+      {!connectedPg && screenPg === 'products' && (
         <div className="w-full">
           <button
             className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white w-100"

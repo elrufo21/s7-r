@@ -193,3 +193,18 @@ export function setCurrentTimeIfToday(input: string | Date) {
     return ''
   }
 }
+
+export function getCurrentTimeInLima() {
+  const now = Temporal.Now.zonedDateTimeISO('America/Lima')
+  const zonedDate = Temporal.ZonedDateTime.from({
+    timeZone: 'America/Lima',
+    year: now.year,
+    month: now.month,
+    day: now.day,
+    hour: now.hour,
+    minute: now.minute,
+    second: now.second,
+  })
+
+  return zonedDate.toString().replace('[America/Lima]', '')
+}

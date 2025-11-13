@@ -189,7 +189,6 @@ const PointOfSale = () => {
           type: 'confirm',
           onClick: async () => {
             const formData = getData()
-            console.log('dateInvoice', dateInvoice)
             const data = {
               amount: formData.amount,
               partner_id: formData.partner_id,
@@ -1088,7 +1087,7 @@ const PointOfSale = () => {
                 fontSize: '1.5rem',
               }}
             >
-              {formatDateToDDMMYYYY(dateInvoice)}
+              {new Date(dateInvoice).toLocaleDateString('es-PE', { timeZone: 'America/Lima' })}
             </button>
           </div>
 

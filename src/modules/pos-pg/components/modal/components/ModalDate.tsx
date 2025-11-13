@@ -174,7 +174,6 @@ const DateCalculatorPanel = ({ dialogId }: { dialogId: string }) => {
         }
 
         // 👉 Guardar como string ISO con zona incluida (compatible con formatPlain)
-        console.log('zonedDate.toString()', zonedDate.toString())
         const formattedForDb = zonedDate.toString().replace('[America/Lima]', '')
         setDateInvoice(formattedForDb)
         closeDialogWithData(dialogId, {})

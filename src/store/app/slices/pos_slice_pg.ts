@@ -1,7 +1,7 @@
 import { Operation, TypeStateOrder } from '@/modules/pos/types'
 import { AppStoreProps, PointsOfSaleSliceStatePg, SetState } from '@/store/store.types'
 import { offlineCache, OfflineCache } from '@/lib/offlineCache'
-import { now } from '@/shared/utils/dateUtils'
+import { getCurrentTimeInLima, now } from '@/shared/utils/dateUtils'
 import { ActionTypeEnum } from '@/shared/shared.types'
 import { adjustTotal, formatNumber } from '@/shared/helpers/helpers'
 
@@ -9,7 +9,7 @@ const createPosPg = (
   set: SetState<PointsOfSaleSliceStatePg>,
   get: () => AppStoreProps
 ): PointsOfSaleSliceStatePg => ({
-  dateInvoice: new Date(),
+  dateInvoice: getCurrentTimeInLima(),
   setDateInvoice: (dateInvoice) => set({ dateInvoice }),
   //Valores temporales
   temporaryValuesPg: null,
@@ -38,7 +38,6 @@ const createPosPg = (
   convertTemporaryToReturnPg: () => {
     set((state) => {
       if (!state.temporaryValuesPg) return state
-      console.log('gaa')
 
       return {
         temporaryValuesPg: {
