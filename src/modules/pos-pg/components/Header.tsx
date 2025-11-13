@@ -66,7 +66,7 @@ export default function Header({ pointId }: { pointId: string }) {
     connectToDevicePg,
     dateInvoice,
   } = useAppStore()
-console.log("containersPg",containersPg)
+  console.log('containersPg', containersPg)
   const [selectedTaraValue, setSelectedTaraValue] = useState(null)
   const [selectedTaraQuantity, setSelectedTaraQuantity] = useState(null)
   useEffect(() => {
@@ -1086,23 +1086,28 @@ console.log("containersPg",containersPg)
               </button>
             </div>
 
-            {containersPg.map((value) => (
-              <div
-                className={`grid-item-tara-pg ${selectedTaraValue === value.container_id && 'border-1 border-red-600 shadow-[0_0_18px_rgba(250,21,21)]  rounded-md'}`}
-              >
-                <button
-                  key={value.weight}
-                  className="btn2 text-[24px] w-full h-full"
-                  style={{ backgroundColor: '#482050', color: 'white' }}
-                  onClick={() => {
-                    setSelectedTaraValue(value.container_id)
-                    setTemporaryTaraValuePg(value.weight)
-                  }}
+            {containersPg
+              .sort((a, b) => a.weight - b.weight) // 🔹 Orden ascendente por peso
+              .map((value) => (
+                <div
+                  key={value.container_id} // ✅ Usa un key único aquí
+                  className={`grid-item-tara-pg ${
+                    selectedTaraValue === value.container_id &&
+                    'border-1 border-red-600 shadow-[0_0_18px_rgba(250,21,21)] rounded-md'
+                  }`}
                 >
-                  {value.name}
-                </button>
-              </div>
-            ))}
+                  <button
+                    className="btn2 text-[24px] w-full h-full"
+                    style={{ backgroundColor: '#482050', color: 'white' }}
+                    onClick={() => {
+                      setSelectedTaraValue(value.container_id)
+                      setTemporaryTaraValuePg(value.weight)
+                    }}
+                  >
+                    {value.name}
+                  </button>
+                </div>
+              ))}
           </div>
 
           {/*
