@@ -413,7 +413,7 @@ const PointOfSale = () => {
 
   const openDateModal = () => {
     const dialogId = openDialog({
-      title: '',
+      title: 'Cambiar fecha',
       dialogContent: () => <DateCalculatorPanel dialogId={dialogId} />,
       buttons: [
         {

@@ -66,7 +66,7 @@ export default function Header({ pointId }: { pointId: string }) {
     connectToDevicePg,
     dateInvoice,
   } = useAppStore()
-
+console.log("containersPg",containersPg)
   const [selectedTaraValue, setSelectedTaraValue] = useState(null)
   const [selectedTaraQuantity, setSelectedTaraQuantity] = useState(null)
   useEffect(() => {

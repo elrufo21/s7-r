@@ -541,9 +541,13 @@ export default function CartPanel({ order }: { order: any[] }) {
     // >
 
     <div className={`flex flex-col h-full`}>
-      <div className="control-buttons mb-0 ">
+      <div className="control-buttons mb-0 pt-0">
         <button
-          className="btn2 btn2-white touch-lh-m text-truncate w-full text-action"
+          className="btn touch-lh-m text-truncate w-full text-action text-white"
+          style={{
+            backgroundColor: 'oklch(62.7% 0.194 149.214)',
+            fontSize: '1.1rem',
+          }}
           onClick={() => {
             if (!temporaryValuesPg?.product_id) {
               CustomToast({
@@ -552,6 +556,7 @@ export default function CartPanel({ order }: { order: any[] }) {
                 type: 'warning',
               })
             }
+            setSelectedOrderPg(order.order_id)
             applyTemporaryValuesToPg(order.order_id)
           }}
         >
@@ -559,11 +564,20 @@ export default function CartPanel({ order }: { order: any[] }) {
         </button>
       </div>
 
+      <div className="w-full min-h-[40px] h-[40px] flex items-center justify-center font-bold bg-white">
+        {/* Usar order.payment_state en lugar de order.payment_state */}
+        {order.payment_state === 'PE' ? 'CRÉDITO' : 'VENTA PÚBLICO'}
+      </div>
+
       <div className="pads">
         <div className="control-buttons ">
           <button
-            // className="btn2 btn2-white touch-lh-m text-truncate w-auto text-action"
-            className="btn2 btn2-white touch-lh-m text-truncate w-full text-action"
+            className="text-truncate w-full font-bold text-yellow-500"
+            style={{
+              backgroundColor: 'black',
+              fontSize: '1rem',
+              height: '50px',
+            }}
             onClick={() => {
               fnc_open_contact_modal()
             }}
@@ -573,16 +587,10 @@ export default function CartPanel({ order }: { order: any[] }) {
         </div>
       </div>
 
-      <div className="w-full min-h-[40px] h-[40px] flex items-center justify-center font-bold bg-white mb-2">
-        {/* Usar order.payment_state en lugar de order.payment_state */}
-        {order.payment_state === 'PE' ? 'CRÉDITO' : 'VENTA PÚBLICO'}
-      </div>
-
       <div
         // className={`order-container cursor-pointer`}
-        className={`order-container cursor-pointer ${
-          selectedOrderPg === order.order_id ? 'bg-yellow-400' : ''
-        }`}
+        className={`order-container cursor-pointer ${selectedOrderPg === order.order_id ? 'bg-yellow-400' : ''
+          }`}
         onClick={() => setSelectedOrderPg(order.order_id)}
       >
         {order.lines?.length === 0 ? (
@@ -615,7 +623,7 @@ export default function CartPanel({ order }: { order: any[] }) {
               <div
                 key={item.line_id}
                 ref={(el) => (itemRefs.current[item.line_id] = el)}
-                onClick={() => handleDoubleTap(item.line_id)}
+               // onClick={() => handleDoubleTap(item.line_id)}
               >
                 <CartItem
                   item={{
@@ -642,27 +650,14 @@ export default function CartPanel({ order }: { order: any[] }) {
       <div className="order-bottom mt-[8px]">
         {/* {order.lines?.length > 0 && ( */}
         {/* <div className="order-summary p-3 border-b bg-gray-50"> */}
-        <div className="order-summary p-3">
-          {/*
-            <div className="flex justify-between text-gray-500">
-              <span>Impuestos</span>
-              <span>S/ 0:00</span>
-            </div>
-            */}
-
-          <div className="flex justify-between text-lg font-bold mt-1">
-            {/*
-            <span>Total</span>
-            <span>S/ {adjustTotal(Number(total)).adjusted}</span>
-            */}
-
-            {/* <span>Total</span> */}
-            <div className="w-full text-center">
-              S/ {adjustTotal(Number(total)).adjusted.toFixed(2)}
+        <div className="order-summary px-3 py-[0.2rem] bg-black">
+          <div className="flex justify-between font-bold text-[22px]">
+            <div className="w-full text-center text-yellow-500">
+              {/* S/ {adjustTotal(Number(total)).adjusted.toFixed(2)} */}
+              {adjustTotal(Number(total)).adjusted.toFixed(2)}
             </div>
           </div>
         </div>
-        {/* )} */}
       </div>
 
       {/*
