@@ -46,6 +46,7 @@ const TaraOptions = () => {
     setPayment,
     setPrevWeight,
     setChangePricePg,
+    setTemporaryQuantityPg,
   } = useAppStore()
   const { isOnline } = usePWA()
   const { saveCurrentOrder } = usePosActionsPg()
@@ -133,15 +134,6 @@ const TaraOptions = () => {
     let getData = () => ({})
     const dialogId = openDialog({
       title: 'PAGOS',
-      /** const sampleData = {
-    name: 'OKAMI',
-    order_date: new Date('2025-10-29'),
-    receipt_number: 'PG-291020251016640',
-    point_id: '1',
-    payments: [{ payment_method_name: 'TRANSFERENCIA', amount: 2295.4 }],
-    amount_total: 2295.4,
-    amount_residual: 0,
-  } */
       dialogContent: () => (
         <FrmBaseDialog
           initialValues={{
@@ -260,7 +252,7 @@ const TaraOptions = () => {
   return (
     <>
       {!connectedPg && (
-        <div className="w-100 ">
+        <div className="w-100 hidden">
           <button
             className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white w-100"
             style={{
@@ -277,19 +269,19 @@ const TaraOptions = () => {
         </div>
       )}
 
-      <div className="contenedor-flex py-2">
-
+      <div className="contenedor-flex py-2 hidden">
         <div
           className="columna-flex col1 contenedor-principal"
-          style={{
-            // height: '180px'
-          }}
+          style={
+            {
+              // height: '180px'
+            }
+          }
         >
-
           <div
             className="div-superior"
             style={{
-              height: '50%'
+              height: '50%',
             }}
           >
             {/*
@@ -321,12 +313,11 @@ const TaraOptions = () => {
               style={{
                 width: '50%',
                 backgroundColor: 'oklch(50.8% 0.118 165.612)',
-                fontSize: '1.1375rem'
+                fontSize: '1.1375rem',
               }}
             >
               Cantidad
             </button>
-
 
             {/*
           <button
@@ -356,24 +347,19 @@ const TaraOptions = () => {
               style={{
                 width: '50%',
                 backgroundColor: 'oklch(50.8% 0.118 165.612)',
-                fontSize: '1.1375rem'
+                fontSize: '1.1375rem',
               }}
             >
               Precio
             </button>
-
-
-
           </div>
-
 
           <div
             className="div-inferior"
             style={{
-              height: '50%'
+              height: '50%',
             }}
           >
-
             {/* 
           <button
             className={`numpad-button btn2 btn2-white fs-3 lh-xlg ${operationPg === Operation.TARA_QUANTITY ? 'active' : ''}`}
@@ -389,7 +375,6 @@ const TaraOptions = () => {
             <span>TARA cant.</span>
           </button> */}
 
-
             <button
               className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center h-full w-full text-white"
               onClick={() => {
@@ -402,12 +387,11 @@ const TaraOptions = () => {
               style={{
                 width: '50%',
                 backgroundColor: 'oklch(50.8% 0.118 165.612)',
-                fontSize: '1.1375rem'
+                fontSize: '1.1375rem',
               }}
             >
               TARA cant.
             </button>
-
 
             {/*
           <button
@@ -437,14 +421,12 @@ const TaraOptions = () => {
               style={{
                 width: '50%',
                 backgroundColor: 'oklch(50.8% 0.118 165.612)',
-                fontSize: '1.1375rem'
+                fontSize: '1.1375rem',
               }}
             >
               TARA peso
             </button>
-
           </div>
-
         </div>
 
         {/*
@@ -469,16 +451,14 @@ const TaraOptions = () => {
        */}
 
         <div className="columna-flex col_balance contenedor-principal">
-
           <div
             // className="rounded-3 p-3 shadow-sm d-flex flex-column div-superior"
             className="div-superior"
             style={{
               backgroundColor: '#1f2937',
-              height: '120px'
+              height: '120px',
             }}
           >
-
             <div className="text-center flex-grow-1 d-flex flex-column justify-content-center">
               <div
                 className="fw-bold mb-0"
@@ -500,10 +480,9 @@ const TaraOptions = () => {
             // className="rounded-3 d-flex flex-column mt-2 div-inferior"
             className="div-inferior"
             style={{
-              height: '90px'
+              height: '90px',
             }}
           >
-
             {/*
           <button
             // className={`numpad-button btn2 btn2-white fs-3 w-full ${operationPg === Operation.TARA_VALUE ? 'active' : ''}`}
@@ -532,23 +511,18 @@ const TaraOptions = () => {
             >
               PAGAR DEUDA
             </button>
-
           </div>
-
         </div>
 
-
         <div className="columna-flex col_balance contenedor-principal">
-
           <div
             // className="rounded-3 p-3 shadow-sm d-flex flex-column div-superior"
             className="div-superior"
             style={{
               // backgroundColor: '#1f2937',
-              height: '120px'
+              height: '120px',
             }}
           >
-
             <button
               // className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white"
               className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white h-full w-full"
@@ -560,7 +534,8 @@ const TaraOptions = () => {
                 fontSize: '16px',
               }}
               onClick={() => {
-                setPrevWeight(weightValuePg)
+                //setPrevWeight(weightValuePg)
+                setTemporaryQuantityPg(weightValuePg)
                 return
                 if (!selectedItemPg || !selectedOrderPg) return
                 const currentTaraQuantity = getProductTaraQuantityPg(
@@ -576,7 +551,11 @@ const TaraOptions = () => {
                   })
                   return
                 }
-                setProductQuantityInOrderPg(selectedOrderPg, selectedItemPg || 0, weightValuePg || 0)
+                setProductQuantityInOrderPg(
+                  selectedOrderPg,
+                  selectedItemPg || 0,
+                  weightValuePg || 0
+                )
 
                 /*const currentTaraQuantity = getProductTaraQuantityPg(
                   selectedOrderPg,
@@ -589,17 +568,15 @@ const TaraOptions = () => {
             >
               <span>CAPTURAR</span>
             </button>
-
           </div>
 
           <div
             // className="rounded-3 d-flex flex-column mt-2 div-inferior"
             className="div-inferior"
             style={{
-              height: '90px'
+              height: '90px',
             }}
           >
-
             <button
               className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white h-full w-full"
               style={{
@@ -611,15 +588,17 @@ const TaraOptions = () => {
               }}
               onClick={() => {
                 if (selectedItemPg && selectedOrderPg) {
-                  setProductQuantityInOrderPg(selectedOrderPg, selectedItemPg || 0, -weightValuePg || 0)
+                  setProductQuantityInOrderPg(
+                    selectedOrderPg,
+                    selectedItemPg || 0,
+                    -weightValuePg || 0
+                  )
                 }
               }}
             >
               DEVOLVER
             </button>
-
           </div>
-
         </div>
 
         {/*
@@ -644,7 +623,6 @@ const TaraOptions = () => {
       */}
 
         <div className="columna-flex col4 h-full">
-
           <button
             className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white h-full w-full"
             style={{
@@ -671,9 +649,7 @@ const TaraOptions = () => {
           >
             <span>FINALIZAR VENTA</span>
           </button>
-
         </div>
-
       </div>
     </>
   )

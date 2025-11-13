@@ -550,6 +550,26 @@ export interface PointsOfSaleSliceState {
   getProductQuantityInProducts: (product_id: string, order_id: string) => number
 }
 export interface PointsOfSaleSliceStatePg {
+  dateInvoice: any
+
+  setDateInvoice: (dateInvoice: any) => void
+  temporaryValuesPg: Product | null
+  setTemporaryValuesPg: (temporaryValuesPg: Product) => void
+
+  _ensureTemporaryValuesPg: () => Product
+  setTemporaryQuantityPg: (base_quantity: number) => void
+  setTemporaryPricePg: (new_price: number) => void
+  setTemporaryTaraValuePg: (tara_value: number) => void
+  setTemporaryTaraQuantityPg: (tara_quantity: number) => void
+  setTemporaryProductPg: (product: Product) => void
+  toggleTemporaryQuantitySignPg: () => void
+  toggleTemporaryPriceSignPg: () => void
+  updateTemporaryLinePg: (updatedLine: Partial<Product>) => void
+  applyTemporaryValuesToPg: (order_id: string | number) => void
+  clearTemporaryValuesPg: () => void
+  getTemporaryTotalPricePg: () => number
+  updateTemporaryValuesPg: (updates: Partial<Product>) => void
+  hasTemporaryValuesPg: () => boolean
   prevWeight: number
   setPrevWeight: (prevWeight: number) => void
   payment: any

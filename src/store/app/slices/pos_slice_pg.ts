@@ -9,6 +9,373 @@ const createPosPg = (
   set: SetState<PointsOfSaleSliceStatePg>,
   get: () => AppStoreProps
 ): PointsOfSaleSliceStatePg => ({
+  dateInvoice: new Date(),
+  setDateInvoice: (dateInvoice) => set({ dateInvoice }),
+  //Valores temporales
+  temporaryValuesPg: null,
+  setTemporaryValuesPg: (temporaryValuesPg) => set({ temporaryValuesPg }),
+
+  _ensureTemporaryValuesPg: () => {
+    const { temporaryValuesPg } = get()
+
+    // Si ya existe temporal, retornarlo
+    if (temporaryValuesPg) return temporaryValuesPg
+
+    // Crear temporal vacío con estructura básica
+    const newTemporary = {
+      line_id: crypto.randomUUID(),
+      base_quantity: 0,
+      quantity: 0,
+      price_unit: 0,
+      tara_value: 0,
+      tara_quantity: 0,
+      tara_total: 0,
+    }
+
+    set({ temporaryValuesPg: newTemporary })
+    return newTemporary
+  },
+  convertTemporaryToReturnPg: () => {
+    set((state) => {
+      if (!state.temporaryValuesPg) return state
+      console.log('gaa')
+
+      return {
+        temporaryValuesPg: {
+          ...state.temporaryValuesPg,
+          base_quantity: Math.abs(state.temporaryValuesPg.base_quantity || 0) * -1,
+          quantity: Math.abs(state.temporaryValuesPg.quantity || 0) * -1,
+          // price_unit: Math.abs(state.temporaryValuesPg.price_unit || 0) * -1,
+        },
+      }
+    })
+  },
+  // Establecer cantidad en valores temporales (auto-crea si no existe)
+  setTemporaryQuantityPg: (base_quantity: number) => {
+    get()._ensureTemporaryValuesPg()
+
+    set((state) => {
+      if (!state.temporaryValuesPg) return state
+
+      const effectiveQuantity = get().calculateEffectiveQuantityPg(
+        base_quantity,
+        state.temporaryValuesPg.tara_value || 0,
+        state.temporaryValuesPg.tara_quantity || 0
+      )
+
+      return {
+        temporaryValuesPg: {
+          ...state.temporaryValuesPg,
+          base_quantity: formatNumber(base_quantity),
+          quantity: formatNumber(effectiveQuantity),
+        },
+      }
+    })
+  },
+
+  setTemporaryPricePg: (new_price: number) => {
+    get()._ensureTemporaryValuesPg()
+
+    set((state) => {
+      if (!state.temporaryValuesPg) return state
+
+      return {
+        temporaryValuesPg: {
+          ...state.temporaryValuesPg,
+          price_unit: new_price,
+        },
+      }
+    })
+  },
+
+  setTemporaryTaraValuePg: (tara_value: number) => {
+    get()._ensureTemporaryValuesPg()
+
+    set((state) => {
+      if (!state.temporaryValuesPg) return state
+
+      const baseQuantity =
+        state.temporaryValuesPg.base_quantity || state.temporaryValuesPg.quantity || 0
+      const tara_quantity = state.temporaryValuesPg.tara_quantity || 0
+
+      const effectiveQuantity = get().calculateEffectiveQuantityPg(
+        baseQuantity,
+        tara_value,
+        tara_quantity
+      )
+      const tara_total = get().calculateTaraTotalPg(tara_value, tara_quantity)
+
+      return {
+        temporaryValuesPg: {
+          ...state.temporaryValuesPg,
+          tara_value: tara_value,
+          tara_total: tara_total,
+          base_quantity: formatNumber(baseQuantity),
+          quantity: formatNumber(effectiveQuantity),
+        },
+      }
+    })
+  },
+
+  // Establecer cantidad de tara en valores temporales (auto-crea si no existe)
+  setTemporaryTaraQuantityPg: (tara_quantity: number) => {
+    get()._ensureTemporaryValuesPg()
+
+    set((state) => {
+      if (!state.temporaryValuesPg) return state
+
+      const baseQuantity =
+        state.temporaryValuesPg.base_quantity || state.temporaryValuesPg.quantity || 0
+      const tara_value = state.temporaryValuesPg.tara_value || 0
+
+      const effectiveQuantity = get().calculateEffectiveQuantityPg(
+        baseQuantity,
+        tara_value,
+        tara_quantity
+      )
+
+      const tara_total = get().calculateTaraTotalPg(tara_value, tara_quantity)
+
+      return {
+        temporaryValuesPg: {
+          ...state.temporaryValuesPg,
+          tara_quantity: tara_quantity,
+          tara_total: tara_total,
+          base_quantity: formatNumber(baseQuantity),
+          quantity: formatNumber(effectiveQuantity),
+        },
+      }
+    })
+  },
+
+  // Asociar producto a valores temporales (merge con datos del producto)
+  setTemporaryProductPg: (product: any) => {
+    const { temporaryValuesPg } = get()
+
+    // Si no existe temporal, crear uno nuevo con el producto
+    if (!temporaryValuesPg) {
+      set({
+        temporaryValuesPg: {
+          ...product,
+          line_id: crypto.randomUUID(),
+          base_quantity: 0,
+          quantity: 0,
+          price_unit: product.sale_price || product.price_unit || 0,
+          tara_value: 0,
+          tara_quantity: 0,
+          tara_total: 0,
+        },
+      })
+      return
+    }
+
+    // Si cambió el producto, CONSERVAR valores ingresados (cantidad, tara) pero TOMAR precio del producto
+    if (temporaryValuesPg.product_id && temporaryValuesPg.product_id !== product.product_id) {
+      set({
+        temporaryValuesPg: {
+          ...product, // Datos del nuevo producto (nombre, unidad, etc.)
+          line_id: crypto.randomUUID(), // Nuevo line_id
+          // CONSERVAR valores ya ingresados
+          base_quantity: temporaryValuesPg.base_quantity || 0,
+          quantity: temporaryValuesPg.quantity || 0,
+          tara_value: temporaryValuesPg.tara_value || 0,
+          tara_quantity: temporaryValuesPg.tara_quantity || 0,
+          tara_total: temporaryValuesPg.tara_total || 0,
+          // TOMAR precio del nuevo producto
+          price_unit: product.sale_price || product.price_unit || 0,
+        },
+      })
+      return
+    }
+
+    // Mismo producto o no tenía product_id: hacer merge manteniendo valores
+    set((state) => {
+      if (!state.temporaryValuesPg) return state
+
+      return {
+        temporaryValuesPg: {
+          ...product, // Datos del producto
+          line_id: state.temporaryValuesPg.line_id, // Mantener line_id temporal
+          // CONSERVAR valores ingresados
+          base_quantity: state.temporaryValuesPg.base_quantity || 0,
+          quantity: state.temporaryValuesPg.quantity || 0,
+          tara_value: state.temporaryValuesPg.tara_value || 0,
+          tara_quantity: state.temporaryValuesPg.tara_quantity || 0,
+          tara_total: state.temporaryValuesPg.tara_total || 0,
+          // TOMAR precio del producto
+          price_unit: product.sale_price || product.price_unit || 0,
+        },
+      }
+    })
+  },
+
+  // Cambiar signo de cantidad en valores temporales
+  toggleTemporaryQuantitySignPg: () => {
+    set((state) => {
+      if (!state.temporaryValuesPg) return state
+
+      const currentQuantity = state.temporaryValuesPg.quantity || 0
+
+      if (currentQuantity === 0) return state
+
+      const newQuantity = currentQuantity * -1
+      const newBaseQuantity = (state.temporaryValuesPg.base_quantity || 0) * -1
+
+      return {
+        temporaryValuesPg: {
+          ...state.temporaryValuesPg,
+          quantity: newQuantity,
+          base_quantity: newBaseQuantity,
+        },
+      }
+    })
+  },
+
+  // Cambiar signo de precio en valores temporales
+  toggleTemporaryPriceSignPg: () => {
+    set((state) => {
+      if (!state.temporaryValuesPg) return state
+
+      const currentPrice = state.temporaryValuesPg.price_unit || 0
+
+      if (currentPrice === 0) return state
+
+      const newPrice = currentPrice * -1
+
+      return {
+        temporaryValuesPg: {
+          ...state.temporaryValuesPg,
+          price_unit: newPrice,
+        },
+      }
+    })
+  },
+
+  // Actualizar toda la línea temporal (auto-crea si no existe)
+  updateTemporaryLinePg: (updatedLine: any) => {
+    get()._ensureTemporaryValuesPg()
+
+    set((state) => {
+      if (!state.temporaryValuesPg) return state
+
+      return {
+        temporaryValuesPg: {
+          ...state.temporaryValuesPg,
+          ...updatedLine,
+        },
+      }
+    })
+  },
+
+  // Aplicar valores temporales a la orden
+  applyTemporaryValuesToPg: (order_id: string) => {
+    const { temporaryValuesPg } = get()
+
+    if (!temporaryValuesPg) return
+
+    // Si no tiene product_id, no se puede aplicar
+    if (!temporaryValuesPg.product_id) {
+      console.warn('No se puede aplicar temporal sin product_id')
+      return
+    }
+
+    set((state) => {
+      const newOrderData = state.orderDataPg.map((order) => {
+        if (order.order_id !== order_id) return order
+
+        const existingLine = order?.lines?.find(
+          (p: any) => p.product_id === temporaryValuesPg.product_id
+        )
+
+        let updatedLines
+
+        if (state.PC_multipleSimilarProductsPg || !existingLine) {
+          // Agregar como nueva línea
+          updatedLines = [...(order?.lines ?? []), temporaryValuesPg]
+        } else {
+          // Actualizar línea existente
+          if (state.isWeightModePg) {
+            updatedLines = order.lines.map((p: any) =>
+              p.product_id === temporaryValuesPg.product_id ? { ...p, ...temporaryValuesPg } : p
+            )
+          } else {
+            updatedLines = order.lines.map((p: any) => {
+              if (p.product_id === temporaryValuesPg.product_id) {
+                const newBaseQuantity =
+                  (p.base_quantity || p.quantity || 0) +
+                  (temporaryValuesPg.base_quantity || temporaryValuesPg.quantity || 0)
+
+                const effectiveQuantity = get().calculateEffectiveQuantityPg(
+                  newBaseQuantity,
+                  p.tara_value || 0,
+                  p.tara_quantity || 0
+                )
+
+                return {
+                  ...p,
+                  base_quantity: newBaseQuantity,
+                  quantity: effectiveQuantity,
+                }
+              }
+              return p
+            })
+          }
+        }
+
+        return {
+          ...order,
+          lines_change: true,
+          lines: updatedLines,
+        }
+      })
+
+      return {
+        orderDataPg: newOrderData.filter((order) => order.state !== 'P'),
+        selectedItemPg: temporaryValuesPg.line_id,
+        temporaryValuesPg: null, // Limpiar después de aplicar
+        handleChangePg: true,
+      }
+    })
+  },
+
+  // Limpiar valores temporales
+  clearTemporaryValuesPg: () => {
+    set({ temporaryValuesPg: null })
+  },
+
+  // Obtener precio total de valores temporales
+  getTemporaryTotalPricePg: () => {
+    const { temporaryValuesPg } = get()
+
+    if (!temporaryValuesPg) return 0
+
+    const quantity = temporaryValuesPg.quantity || 0
+    const price = temporaryValuesPg.price_unit || 0
+
+    return formatNumber(quantity * price)
+  },
+
+  // Actualizar múltiples campos en valores temporales
+  updateTemporaryValuesPg: (updates: Partial<any>) => {
+    get()._ensureTemporaryValuesPg()
+
+    set((state) => {
+      if (!state.temporaryValuesPg) return state
+
+      return {
+        temporaryValuesPg: {
+          ...state.temporaryValuesPg,
+          ...updates,
+        },
+      }
+    })
+  },
+
+  // Verificar si hay valores temporales activos
+  hasTemporaryValuesPg: () => {
+    return get().temporaryValuesPg !== null
+  },
+  //fin de valores temporales
   prevWeight: 0,
   setPrevWeight: (prevWeight) => set({ prevWeight }),
   payment: null,
@@ -951,8 +1318,8 @@ const createPosPg = (
               order_sequence: sequenceCounter,
               receipt_number: receiptNumber,
               order_date: now().toPlainDateTime().toString(),
-              partner_id: get().defaultPosSessionDataPg.partner_id,
-              partner_name: get().defaultPosSessionDataPg.name,
+              partner_id: null,
+              partner_name: 'Sin cliente',
               combined_states: TypeStateOrder.IN_PROGRESS,
               point_id: pointId,
               session_id: activeSession,
@@ -992,8 +1359,8 @@ const createPosPg = (
               order_sequence: sequenceCounter,
               receipt_number: receiptNumber,
               order_date: now().toPlainDateTime().toString(),
-              partner_id: get().defaultPosSessionDataPg.partner_id,
-              partner_name: get().defaultPosSessionDataPg.name,
+              partner_id: null,
+              partner_name: 'Sin cliente',
               combined_states: TypeStateOrder.IN_PROGRESS,
               point_id: pointId,
               session_id: activeSession,
@@ -1033,6 +1400,14 @@ const createPosPg = (
       const ordersRes = await executeFnc('fnc_pos_order', 's_pos', [
         // [0, 'fequal', 'point_id', pointId],
         [0, 'fequal', 'session_id', session_id],
+        [
+          '0',
+          'multi_filter_in',
+          [
+            { key_db: 'state', value: 'I' },
+            { key_db: 'state', value: 'Y' },
+          ],
+        ],
         //    [0, 'fbetween', 'order_date', formattedDate, formattedDate],
       ])
 
@@ -1120,8 +1495,8 @@ const createPosPg = (
               order_sequence: sequenceCounter,
               receipt_number: receiptNumber,
               order_date: now().toPlainDateTime().toString(),
-              partner_id: get().defaultPosSessionDataPg.partner_id,
-              partner_name: get().defaultPosSessionDataPg.name,
+              partner_id: null,
+              partner_name: 'Sin cliente',
               combined_states: TypeStateOrder.IN_PROGRESS,
               point_id: pointId,
               session_id: activeSession,
@@ -1160,8 +1535,8 @@ const createPosPg = (
               order_sequence: sequenceCounter,
               receipt_number: receiptNumber,
               order_date: now().toPlainDateTime().toString(),
-              partner_id: get().defaultPosSessionDataPg.partner_id,
-              partner_name: get().defaultPosSessionDataPg.name,
+              partner_id: null,
+              partner_name: 'Sin cliente',
               combined_states: TypeStateOrder.IN_PROGRESS,
               point_id: pointId,
               session_id: activeSession,
@@ -1204,8 +1579,8 @@ const createPosPg = (
             order_sequence: firstSequence,
             receipt_number: firstReceiptNumber,
             order_date: now().toPlainDateTime().toString(),
-            partner_id: get().defaultPosSessionDataPg.partner_id,
-            partner_name: get().defaultPosSessionDataPg.name,
+            partner_id: null,
+            partner_name: 'Sin cliente',
             combined_states: TypeStateOrder.IN_PROGRESS,
             point_id: pointId,
             session_id: activeSession,
@@ -1365,8 +1740,8 @@ const createPosPg = (
         order_sequence: sequenceCounter,
         receipt_number: receiptNumber,
         order_date: now().toPlainDateTime().toString(),
-        partner_id: get().defaultPosSessionDataPg.partner_id,
-        partner_name: get().defaultPosSessionDataPg.name,
+        partner_id: null,
+        partner_name: 'Sin cliente',
         combined_states: TypeStateOrder.IN_PROGRESS,
         point_id: get().point_idPg,
         session_id: activeSession || get().session_idPg,
@@ -1407,8 +1782,8 @@ const createPosPg = (
         order_sequence: sequenceCounter,
         receipt_number: receiptNumber,
         order_date: now().toPlainDateTime().toString(),
-        partner_id: get().defaultPosSessionDataPg.partner_id,
-        partner_name: get().defaultPosSessionDataPg.name,
+        partner_id: null,
+        partner_name: 'Sin cliente',
         combined_states: TypeStateOrder.IN_PROGRESS,
         point_id: get().point_idPg,
         session_id: activeSession || get().session_idPg,

@@ -20,6 +20,8 @@ export default function ProductCard({ product }: ProductCardProps) {
     prevWeight,
     setPrevWeight,
     weightValue,
+    setTemporaryProductPg,
+    temporaryValuesPg,
   } = useAppStore()
   /*
   const quantity =
@@ -28,7 +30,6 @@ export default function ProductCard({ product }: ProductCardProps) {
       : getProductQuantityInOrder(selectedOrder, product.product_id || '')
 */
   const [imageUrl, setImageUrl] = useState<string | null>(null)
-
   useEffect(() => {
     let url: string | null = null
     let isMounted = true
@@ -71,14 +72,15 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <article
-      className="card_article"
+      className={`card_article ${temporaryValuesPg?.product_id === product.product_id && 'border-1 border-red-600 shadow-[0_0_18px_rgba(250,21,21)]  rounded-md'}`}
       onClick={async () => {
         if (changePricePg) {
           openCalculatorModal({ operation: Operation.CHANGE_PRICE })
           return
         }
-        if (product.product_id ) {
-          addProductToOrderPg(selectedOrderPg, product as any, prevWeight)
+        if (product.product_id) {
+          setTemporaryProductPg(product, 0)
+          //     addProductToOrderPg(selectedOrderPg, product as any, prevWeight)
           setPrevWeight(0)
         }
       }}

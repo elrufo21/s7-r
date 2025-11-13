@@ -24,11 +24,7 @@ const QZKeyUploader: React.FC<QZKeyUploaderProps> = ({
       const certText = await certificate.text()
       const keyText = await privateKey.text()
 
-      await offlineCache.saveQZKeys({
-        id: 'qz_keys',
-        certificate: certText,
-        privateKey: keyText,
-      })
+      await offlineCache.saveQZKeys(certText, keyText)
 
       setMessage('✅ Claves guardadas correctamente en el almacenamiento local.')
     } catch (error) {

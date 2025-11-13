@@ -80,7 +80,7 @@ export class OfflineCache {
 
   constructor(options?: OfflineCacheOptions) {
     this.dbName = options?.dbName || 's7-offline-cache'
-    this.version = options?.version || 5 // ← Incrementar a 5
+    this.version = options?.version || 6 // ← Incrementar a 5
   }
 
   /** Inicializa la base de datos y los object stores necesarios. */
@@ -800,7 +800,6 @@ export class OfflineCache {
   async cachePosOrders(executeFnc: any, pos_id: number) {
     if (!pos_id) return
     const today = new Date()
-    const formattedDate = today.toLocaleDateString('es-PE')
     const result = await executeFnc('fnc_pos_order', 's_pos', [
       //[0, 'fequal', 'point_id', pos_id],
       // [0, 'fbetween', 'order_date', formattedDate, formattedDate],
@@ -1232,18 +1231,17 @@ export class OfflineCache {
         const newOrders = await executeFnc('fnc_pos_order', 's_pos', [
           //  ['0', 'fequal', 'point_id', point_id],
           ['0', 'fequal', 'session_id', session_id],
-          // [0, 'fbetween', 'order_date', formattedDate, formattedDate],
-
-          /*[
+          [
             '0',
             'multi_filter_in',
-           [
+            [
               { key_db: 'state', value: 'I' },
               { key_db: 'state', value: 'Y' },
-            
-            ]
-            ,
-          ],*/
+            ],
+          ],
+          // [0, 'fbetween', 'order_date', formattedDate, formattedDate],
+
+          /**/
         ])
 
         const ordersData = newOrders.oj_data || []

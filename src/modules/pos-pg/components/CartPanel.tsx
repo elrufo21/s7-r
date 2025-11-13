@@ -19,6 +19,7 @@ import { offlineCache } from '@/lib/offlineCache'
 import { adjustTotal } from '@/shared/helpers/helpers'
 import CalculatorPanel from './modal/components/ModalCalculatorPanel'
 import { usePosActionsPg } from '@/modules/pos/hooks/usePosActionsPg'
+import { CustomToast } from '@/components/toast/CustomToast'
 
 export default function CartPanel({ order }: { order: any[] }) {
   const {
@@ -49,6 +50,8 @@ export default function CartPanel({ order }: { order: any[] }) {
     setSelectedLinePg,
     resetTriggerPg,
     setSelectedOrderPg,
+    temporaryValuesPg,
+    applyTemporaryValuesToPg,
   } = useAppStore()
   const { isOnline } = usePWA()
   const [cart, setCart] = useState<Product[]>([])
@@ -538,13 +541,26 @@ export default function CartPanel({ order }: { order: any[] }) {
     // >
 
     <div className={`flex flex-col h-full`}>
-      <div className="w-full min-h-[40px] h-[40px] flex items-center justify-center font-bold bg-white">
-        {/* Usar order.payment_state en lugar de order.payment_state */}
-        {order.payment_state === 'PE' ? 'Crédito' : 'Venta público'}
+      <div className="control-buttons mb-0 ">
+        <button
+          className="btn2 btn2-white touch-lh-m text-truncate w-full text-action"
+          onClick={() => {
+            if (!temporaryValuesPg?.product_id) {
+              CustomToast({
+                title: 'Alerta',
+                description: 'Seleccione un producto antes de agregarlo a la lista',
+                type: 'warning',
+              })
+            }
+            applyTemporaryValuesToPg(order.order_id)
+          }}
+        >
+          AGREGAR A LA LISTA
+        </button>
       </div>
 
       <div className="pads">
-        <div className="control-buttons pb-[8px]">
+        <div className="control-buttons ">
           <button
             // className="btn2 btn2-white touch-lh-m text-truncate w-auto text-action"
             className="btn2 btn2-white touch-lh-m text-truncate w-full text-action"
@@ -552,36 +568,14 @@ export default function CartPanel({ order }: { order: any[] }) {
               fnc_open_contact_modal()
             }}
           >
-            {order.partner_name}
+            {order.partner_name ?? 'Sin cliente'}
           </button>
-
-          {/*
-          <button
-            className="btn2 btn2-white touch-lh-m w-auto"
-            onClick={() => fnc_open_note_modal()}
-          >
-            Nota
-          </button>
-          */}
-
-          {/*
-          <button
-            className="btn2 btn2-white touch-lh-m text-truncate ml-auto w-[55.6px] min-w-[55.6px]"
-            onClick={() => {
-              fnc_open_more_options_modal()
-            }}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-            </svg>
-          </button>
-          */}
         </div>
+      </div>
+
+      <div className="w-full min-h-[40px] h-[40px] flex items-center justify-center font-bold bg-white mb-2">
+        {/* Usar order.payment_state en lugar de order.payment_state */}
+        {order.payment_state === 'PE' ? 'CRÉDITO' : 'VENTA PÚBLICO'}
       </div>
 
       <div

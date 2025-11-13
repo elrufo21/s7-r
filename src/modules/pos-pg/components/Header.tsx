@@ -20,6 +20,7 @@ import { InputWithKeyboard } from '@/shared/ui/inputs/InputWithKeyboard'
 import { Operation } from '../context/CalculatorContext'
 import CalculatorPanel from './modal/components/ModalCalculatorPanel'
 import { codePayment, summarizeTransactions } from '@/shared/helpers/helpers'
+import { Divider } from '@mui/material'
 
 export default function Header({ pointId }: { pointId: string }) {
   const {
@@ -51,7 +52,28 @@ export default function Header({ pointId }: { pointId: string }) {
     operationPg,
     backToProductsPg,
     setPayment,
+    containersPg,
+    weightValuePg,
+    getProductPricePg,
+    setPrevWeight,
+    setProductQuantityInOrderPg,
+    setTemporaryQuantityPg,
+    temporaryValuesPg,
+    setTemporaryTaraValuePg,
+    setTemporaryTaraQuantityPg,
+    convertTemporaryToReturnPg,
+    connectedPg,
+    connectToDevicePg,
   } = useAppStore()
+
+  const [selectedTaraValue, setSelectedTaraValue] = useState(null)
+  const [selectedTaraQuantity, setSelectedTaraQuantity] = useState(null)
+  useEffect(() => {
+    if (!temporaryValuesPg) {
+      setSelectedTaraValue(null)
+      setSelectedTaraQuantity(null)
+    }
+  }, [temporaryValuesPg])
   const [cart, setCart] = useState<Product[]>([])
   const { saveCurrentOrder } = usePosActionsPg()
   const { isOnline } = usePWA()
@@ -324,14 +346,14 @@ export default function Header({ pointId }: { pointId: string }) {
     }
   }
   function getFlowByMethod(data, paymentMethodId) {
-    const movimientos = data.filter(
+    const movimientos = data?.filter(
       (m) => m.origin === 'P' && m.payment_method_id === paymentMethodId
     )
 
     let total = 0
     const detalles = []
 
-    movimientos.forEach((m) => {
+    movimientos?.forEach((m) => {
       const value = m.type === 'O' ? -Math.abs(m.amount) : Math.abs(m.amount)
 
       total += value
@@ -354,14 +376,14 @@ export default function Header({ pointId }: { pointId: string }) {
   }
 
   function getFlowByOriginAndMethod(data, origin, paymentMethodId) {
-    const movimientos = data.filter(
+    const movimientos = data?.filter(
       (m) => m.origin === origin && m.payment_method_id === paymentMethodId
     )
 
     let total = 0
     const detalles = []
 
-    movimientos.forEach((m) => {
+    movimientos?.forEach((m) => {
       total += m.amount
 
       detalles.push({
@@ -801,16 +823,7 @@ export default function Header({ pointId }: { pointId: string }) {
                 /* const { oj_data: rs } = await executeFnc('fnc_pos_session_report', '', [
                   oj_data.session_id,
                 ])*/
-                console.log('ga', {
-                  ...s_payment_method,
-                  session_name: session_data[0].name,
-                  state: session_data[0].state,
-                  pos_name: session_data[0].point_name,
-                  user_name: session_data[0].user_name,
-                  start_at: session_data[0].start_at,
-                  stop_at: session_data[0].stop_at,
-                  final_cash: session_data[0].final_cash,
-                })
+
                 import('@/modules/invoicing/components/CashSessionReport').then((module) => {
                   const SalesReportPDF = module.default
 
@@ -848,6 +861,7 @@ export default function Header({ pointId }: { pointId: string }) {
         })
       })
   }
+  console.log('temporaryValuesPg', temporaryValuesPg)
 
   const fnc_change_order = useCallback(
     (id_order: string) => {
@@ -868,11 +882,23 @@ export default function Header({ pointId }: { pointId: string }) {
   }, [orderDataPg])
 
   const openCalculatorModal = ({ operation }: { operation: Operation }) => {
+    const title = () => {
+      switch (operation) {
+        case Operation.PRICE:
+          return 'Ingrese precio'
+        case Operation.QUANTITY:
+          return 'Ingrese cantidad'
+        case Operation.TARA_VALUE:
+          return 'Ingrese tara'
+        default:
+          return ''
+      }
+    }
     const dialogId = openDialog({
-      title: cart.find((c) => c.line_id === selectedItemPg)?.name || '',
+      title: title(),
       dialogContent: () => (
         <CalculatorPanel
-          product={cart.find((c) => c.line_id === selectedItemPg)}
+          product={temporaryValuesPg}
           selectedField={operation}
           dialogId={dialogId}
         />
@@ -889,307 +915,527 @@ export default function Header({ pointId }: { pointId: string }) {
     })
   }
   return (
-    <header className="pos-header">
-      <div className="pos-header-left">
-        <div className="navbar-menu">
+    <header className="pos-header-pg">
+      {!connectedPg && (
+        <div className="w-full">
           <button
-            // className="btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] active"
-            className={`btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] ${
-              selectedNavbarMenuPg === 'R' ? 'active' : ''
-            }`}
-            disabled={frmLoading}
-            onClick={() => {
-              if (screenPg === 'invoice') {
-                if (
-                  orderDataPg.filter(
-                    (o) => o.state === TypeStateOrder.IN_PROGRESS || o.state === TypeStateOrder.PAY
-                  ).length === 0
-                ) {
-                  addNewOrderPg({
-                    date: new Date(),
-                    user_id: userData?.user_id,
-                    point_id: Number(pointId),
-                    session_id: session_id,
-                    company_id: userData?.company_id,
-                    partner_id: finalCustomerPg?.partner_id,
-                    partner_name: finalCustomerPg?.partner_name,
-                    lines: [],
-                  })
-                  return
-                }
-                setSelectedOrderPg(
-                  orderDataPg.filter(
-                    (o) => o.state === TypeStateOrder.IN_PROGRESS || o.state === TypeStateOrder.PAY
-                  )[0].order_id
-                )
-                setSelectedNavbarMenuPg('R')
-                setScreenPg('products')
-                return
-              }
-              setSelectedNavbarMenuPg('R')
-              setScreenPg('products')
+            className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white w-100"
+            style={{
+              backgroundColor: connectedPg ? '#059669' : '#D63515',
+              borderColor: connectedPg ? '#059669' : '#D63515',
+              height: '80px',
+              fontSize: '13px',
             }}
+            onClick={() => connectToDevicePg()}
+            disabled={connectedPg}
           >
-            Registrar
-          </button>
-          <button
-            // className="btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px]"
-            // onClick={() => setScreen('ticket')}
-
-            className={`btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] ${
-              selectedNavbarMenuPg === 'O' ? 'active' : ''
-            }`}
-            disabled={frmLoading}
-            onClick={() => {
-              if (screenPg === 'invoice') {
-                if (
-                  orderDataPg.filter(
-                    (o) => o.state === TypeStateOrder.IN_PROGRESS || o.state === TypeStateOrder.PAY
-                  ).length < 5
-                ) {
-                  setScreenPg('ticket')
-                  // addNewOrderPg()
-                  setSelectedNavbarMenuPg('O')
-                  return
-                }
-                setSelectedOrderPg(
-                  orderDataPg.filter(
-                    (o) => o.state === TypeStateOrder.IN_PROGRESS || o.state === TypeStateOrder.PAY
-                  )[0].order_id
-                )
-                setSelectedNavbarMenuPg('O')
-                setScreenPg('ticket')
-                return
-              }
-              saveCurrentOrder(true)
-              setSelectedNavbarMenuPg('O')
-              setScreenPg('ticket')
-            }}
-          >
-            Órdenes
+            <span>{connectedPg ? 'CONECTADO' : 'CONECTAR BALANZA'}</span>
           </button>
         </div>
-
-        {/** <div className="navbar-orders">
-          <button
-            // className="btn2 btn2-secondary lh-lg w-auto min-h-[48px]"
-            className="btn2 btn2-secondary lh-lg min-h-[48px]"
-            disabled={frmLoading}
-            onClick={() => {
-              addNewOrderPg({
-                date: new Date(),
-                user_id: userData?.user_id,
-                point_id: Number(pointId),
-                session_id: session_id,
-                company_id: userData?.company_id,
-                partner_id: finalCustomerPg?.partner_id,
-                partner_name: finalCustomerPg?.partner_name,
-                lines: [],
-              })
-              setSelectedNavbarMenuPg('R')
-              setScreenPg('products')
-            }}
-          >
-            <MdAddCircleOutline style={{ fontSize: '24px' }} />
-          </button>
-          {/* 
-          <button
-            className="btn2 btn2-secondary lh-lg w-auto min-h-[48px]"
-            onClick={() => {
-              setSelectedItem(null)
-              saveCurrentOrder()
-            }}
-          >
-            <WiCloudUp style={{ fontSize: '34px' }} />
-          </button>
-
-         
-          <button
-            className="btn2 btn2-secondary lh-lg w-auto min-h-[48px]"
-            style={{ paddingLeft: '2px', paddingRight: '2px' }}
-          >
-            <IoMdArrowDropdown style={{ fontSize: '24px' }} />
-          </button>
-        
-
-          
-        </div> 
-        <div className="pos-orders">
-          {orderFiltered?.map((order, index) => (
+      )}
+      {/** <div className="pos-header-top-pg">
+        <div className="pos-header-left-header-pg">
+          <div className="navbar-menu">
             <button
-              key={order?.order_id}
-              className={`btn2-carnes btn2-secondary btn2-lg lh-lg min-h-[48px] ${selectedOrderPg === order.order_id ? 'btn2-light active' : ''} `}
+              className={`btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] ${
+                selectedNavbarMenuPg === 'R' ? 'active' : ''
+              }`}
               disabled={frmLoading}
               onClick={() => {
-                if (selectedOrderPg !== order.order_id || screenPg === 'ticket') {
+                if (screenPg === 'invoice') {
                   if (
                     orderDataPg.filter(
                       (o) =>
                         o.state === TypeStateOrder.IN_PROGRESS || o.state === TypeStateOrder.PAY
-                    ).length < 4
+                    ).length === 0
                   ) {
-                    addNewOrderPg()
+                    addNewOrderPg({
+                      date: new Date(),
+                      user_id: userData?.user_id,
+                      point_id: Number(pointId),
+                      session_id: session_id,
+                      company_id: userData?.company_id,
+                      partner_id: finalCustomerPg?.partner_id,
+                      partner_name: finalCustomerPg?.partner_name,
+                      lines: [],
+                    })
                     return
                   }
-                  fnc_change_order(order.order_id)
+                  setSelectedOrderPg(
+                    orderDataPg.filter(
+                      (o) =>
+                        o.state === TypeStateOrder.IN_PROGRESS || o.state === TypeStateOrder.PAY
+                    )[0].order_id
+                  )
+                  setSelectedNavbarMenuPg('R')
+                  setScreenPg('products')
+                  return
                 }
+                setSelectedNavbarMenuPg('R')
+                setScreenPg('products')
               }}
             >
-              {order.partner_name}
-              {getTotalPriceByOrderPg(order.order_id) === 0
-                ? null
-                : ' - ' + getTotalPriceByOrderPg(order.order_id)}
+              Registrar
             </button>
-          ))}
-        </div>*/}
-      </div>
-
-      <div className="pos-header-right">
-        {/**
-         * <div className="flex-fill">
-          <div className="flex numpad">
             <button
-              className={`btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] mr-4  ${operationPg === Operation.QUANTITY ? 'active' : ''}`}
-              onClick={() => {
-                if (selectedItemPg) {
-                  setOperationPg(Operation.QUANTITY)
-                  openCalculatorModal({ operation: Operation.QUANTITY })
-                }
-              }}
-              // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
-            >
-              <span>Cantidad</span>
-            </button>
-
-            <button
-              className={`numpad-button btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] mr-4 ${operationPg === Operation.PRICE ? 'active' : ''}`}
-              onClick={() => {
-                if (selectedItemPg) {
-                  setOperationPg(Operation.PRICE)
-                  openCalculatorModal({ operation: Operation.PRICE })
-                }
-              }}
-              // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
-            >
-              <span>Precio</span>
-            </button>
-
-            <button
-              className={`btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] mr-4  ${operationPg === Operation.TARA_QUANTITY ? 'active' : ''}`}
-              onClick={() => {
-                if (selectedItemPg) {
-                  setOperationPg(Operation.TARA_QUANTITY)
-                  openCalculatorModal({ operation: Operation.TARA_QUANTITY })
-                }
-              }}
-              // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
-            >
-              <span>TARA cantidad</span>
-            </button>
-
-            <button
-              className={`btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] mr-4  ${operationPg === Operation.TARA_VALUE ? 'active' : ''}`}
-              onClick={() => {
-                if (selectedItemPg) {
-                  setOperationPg(Operation.TARA_VALUE)
-                  openCalculatorModal({ operation: Operation.TARA_VALUE })
-                }
-              }}
-              // style={{ flex: 1, height: '48px', fontSize: '13px', maxWidth: '466px' }}
-            >
-              <span>TARA peso</span>
-            </button>
-          </div>
-        </div>
-         * 
-         */}
-        {isOnline && screenPg === 'products' && (
-          <div>
-            <button
-              className={`btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] mr-4 px-4 ${
-                changePricePg ? 'active' : ''
+              className={`btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] ${
+                selectedNavbarMenuPg === 'O' ? 'active' : ''
               }`}
               disabled={frmLoading}
               onClick={() => {
-                setOperationPg(Operation.CHANGE_PRICE)
-                setChangePricePg(!changePricePg)
-                //openCalculatorModal({ operation: Operation.CHANGE_PRICE })
+                if (screenPg === 'invoice') {
+                  if (
+                    orderDataPg.filter(
+                      (o) =>
+                        o.state === TypeStateOrder.IN_PROGRESS || o.state === TypeStateOrder.PAY
+                    ).length < 5
+                  ) {
+                    setScreenPg('ticket')
+                    // addNewOrderPg()
+                    setSelectedNavbarMenuPg('O')
+                    return
+                  }
+                  setSelectedOrderPg(
+                    orderDataPg.filter(
+                      (o) =>
+                        o.state === TypeStateOrder.IN_PROGRESS || o.state === TypeStateOrder.PAY
+                    )[0].order_id
+                  )
+                  setSelectedNavbarMenuPg('O')
+                  setScreenPg('ticket')
+                  return
+                }
+                saveCurrentOrder(true)
+                setSelectedNavbarMenuPg('O')
+                setScreenPg('ticket')
               }}
-              // style={{ paddingLeft: '2px', paddingRight: '2px' }}
             >
-              Cambiar precio
+              Órdenes
             </button>
           </div>
-        )}
-        <div
-          className={`relative  w-[20rem] pl-5 py-2 border rounded-md bg-white text-[16px] ${screenPg === 'ticket' || screenPg === 'payment' || screenPg === 'invoice' ? 'hidden' : ''}`}
-        >
-          <InputWithKeyboard
-            type="text"
-            className=""
-            placeholder="Buscar productos ..."
-            value={searchProductPg}
-            onChange={(e) => setSearchProductPg(e.target.value)}
-            onValueChange={(value) => setSearchProductPg(value)} // Para el teclado virtual
-            aria-label="Buscar productos"
-            enableVirtualKeyboard={true}
-
-            // useNumericKeyboard={true} // Opcional
-            // isInsideModal={true} // Opcional
-          />
         </div>
 
-        {/* 
-        <button
-          className="btn2 btn2-light lh-lg w-auto min-h-[48px]"
-          // style={{ paddingLeft: '2px', paddingRight: '2px' }}
-        >
-          <FaBarcode style={{ fontSize: '24px' }} />
-        </button>
+        <div className="pos-header-right-header-pg">
+          {isOnline && screenPg === 'products' && (
+            <div>
+              <button
+                className={`btn2 btn2-light btn2-lg lh-lg w-auto min-h-[48px] mr-4 px-4 ${
+                  changePricePg ? 'active' : ''
+                }`}
+                disabled={frmLoading}
+                onClick={() => {
+                  setOperationPg(Operation.CHANGE_PRICE)
+                  setChangePricePg(!changePricePg)
+                }}
+              >
+                Cambiar precio
+              </button>
+            </div>
+          )}
+          <div
+            className={`relative  w-[20rem] pl-5 py-2 border rounded-md bg-white text-[16px] ${screenPg === 'ticket' || screenPg === 'payment' || screenPg === 'invoice' ? 'hidden' : ''}`}
+          >
+            <InputWithKeyboard
+              type="text"
+              className=""
+              placeholder="Buscar productos ..."
+              value={searchProductPg}
+              onChange={(e) => setSearchProductPg(e.target.value)}
+              onValueChange={(value) => setSearchProductPg(value)} // Para el teclado virtual
+              aria-label="Buscar productos"
+              enableVirtualKeyboard={true}
+            />
+          </div>
+
+          <button className="btn2 btn2-light lh-lg w-auto min-h-[48px]" onClick={handleClick}>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+        </div>
+      </div> */}
+
+      {/* <div className="pos-header-bottom-pg flex grow gap-1 items-center"> */}
+      {screenPg === 'products' && (
+        <div className="pos-header-bottom-pg flex grow gap-4 !p-0">
+          <div className="grid grid-cols-4 gap-1 h-[140px]">
+            <div className="grid-item-tara-pg col-span-2 w-full">
+              <button
+                className={`btn2 w-full h-full ${selectedTaraValue === 0 && 'border-1 border-red-600 shadow-[0_0_18px_rgba(250,21,21)]  rounded-md'}`}
+                style={{ backgroundColor: '#482050', color: 'white' }}
+                onClick={() => {
+                  setSelectedTaraValue(0)
+                  setOperationPg(Operation.TARA_VALUE)
+                  openCalculatorModal({ operation: Operation.TARA_VALUE })
+                  setChangePricePg(false)
+                }}
+              >
+                TARA MANUAL
+              </button>
+            </div>
+
+            {containersPg.map((value) => (
+              <div
+                className={`grid-item-tara-pg ${selectedTaraValue === value.container_id && 'border-1 border-red-600 shadow-[0_0_18px_rgba(250,21,21)]  rounded-md'}`}
+              >
+                <button
+                  key={value.weight}
+                  className="btn2 text-[24px] w-full h-full"
+                  style={{ backgroundColor: '#482050', color: 'white' }}
+                  onClick={() => {
+                    setSelectedTaraValue(value.container_id)
+                    setTemporaryTaraValuePg(value.weight)
+                  }}
+                >
+                  {value.name}
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/*
+        <div className="flex-fill max-w-[200px]">
+
+          <div className="mt-2 flex flex-wrap gap-2 numpad">
+
+            {containersPg.map((value) => (
+              <button
+                key={value.weight}
+                className="numpad-button btn2 btn2-white lh-lg text-[14px]"
+                style={{ flex: '1 0 60px', height: '48px' }}
+                onClick={() => {
+                  setTemporaryTaraValuePg(value.weight)
+                }}
+              >
+                {value.name}
+              </button>
+            ))}
+
+            <button
+              className="numpad-button btn2 btn2-secondary lh-lg text-[14px]"
+              style={{ height: '48px' }}
+              onClick={() => {
+                setOperationPg(Operation.TARA_VALUE)
+                openCalculatorModal({ operation: Operation.TARA_VALUE })
+                setChangePricePg(false)
+              }}
+            >
+              TARA MANUAL
+            </button>
+
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div
+                key={`ghost-${index}`}
+                className="shrink-0"
+                style={{ flex: '1 0 60px', height: 0 }}
+              />
+            ))}
+
+          </div>
+        </div>
         */}
 
-        {/* 
-        <div className="ml-4 bg-teal-500 text-white rounded-full h-8 w-8 flex items-center justify-center">
-          A
-        </div> */}
+          {/* <div> */}
 
-        <button className="btn2 btn2-light lh-lg w-auto min-h-[48px]" onClick={handleClick}>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
+          <div className="grid grid-cols-3 gap-1">
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+              <div
+                className={`grid-item-tara-pg ${selectedTaraQuantity === n && 'border-1 border-red-600 shadow-[0_0_18px_rgba(250,21,21)]  rounded-md'}`}
+                key={n}
+              >
+                <button
+                  className="btn2 text-[24px] w-full h-full"
+                  style={{ backgroundColor: '#482050', color: 'white' }}
+                  onClick={() => {
+                    setSelectedTaraQuantity(n)
+                    setTemporaryTaraQuantityPg(n)
+                  }}
+                >
+                  {n}
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/*
+          <div className="pads">
+            <div className="subpads">
+              <div className="grid-container">
+                {[0, 1, 2].map((n) => (
+                  <div className="grid-item-header-pg" key={n}>
+                    <button
+                      className="numpad-button btn2 fs-3 lh-lg w-full h-full"
+                      onClick={() => {
+                        setTemporaryTaraQuantityPg(n)
+                      }}
+                    >
+                      {n}
+                    </button>
+                  </div>
+                ))}
+
+                <div className=""></div>
+
+                {[4, 5, 6, 7, 8, 9].map((n) => (
+                  <div className="grid-item-header-pg" key={n}>
+                    <button
+                      className=" btn2 fs-3 lh-lg w-full h-full"
+                      onClick={() => {
+                        setTemporaryTaraQuantityPg(n)
+                      }}
+                    >
+                      {n}
+                    </button>
+                  </div>
+                ))}
+                
+                <div className="grid-item-header-pg"></div>{' '}
+                <div className="grid-item-header-pg">
+                  <button className="numpad-button btn2 fs-3 lh-lg w-full h-full">0</button>
+                </div>{' '}
+                <div className="grid-item-header-pg"></div>
+
+              </div>
+            </div>
+          </div>
+          */}
+
+          {/* </div> */}
+
+          <div className="w-[100px] font-bold">
+            <div className="h-[70px] bg-black">
+              <div className="h-[25px] bg-red-800 text-white text-center flex items-center justify-center">
+                TARA
+              </div>
+              <div className="w-full h-[40px] text-white flex items-center justify-center text-[20px]">
+                {(temporaryValuesPg?.tara_value ? temporaryValuesPg.tara_value : 0).toFixed(2)}
+              </div>
+            </div>
+
+            <div className="h-[70px] mt-1 bg-black">
+              <div className="h-[25px] bg-red-800 text-white text-center flex items-center justify-center">
+                CANT. TARA
+              </div>
+              <div className="w-full h-[40px] text-white flex items-center justify-center text-[20px]">
+                {(temporaryValuesPg?.tara_quantity ? temporaryValuesPg.tara_quantity : 0).toFixed(
+                  2
+                )}
+              </div>
+            </div>
+
+            <div className="h-[70px] mt-1 bg-black">
+              <div className="h-[25px] bg-red-800 text-white text-center flex items-center justify-center">
+                TOTAL TARA
+              </div>
+              <div className="w-full h-[40px] text-white flex items-center justify-center text-[20px]">
+                {' '}
+                {(temporaryValuesPg?.tara_quantity || temporaryValuesPg?.tara_value
+                  ? (temporaryValuesPg.tara_quantity ?? 0) * (temporaryValuesPg?.tara_value ?? 0)
+                  : 0
+                ).toFixed(2)}
+              </div>
+            </div>
+          </div>
+
+          <div
+            // className="rounded-3 p-3 shadow-sm d-flex flex-column div-superior"
+            className="div-superior h-full"
+            style={{
+              backgroundColor: '#1f2937',
+              // height: '200px',
+              width: '300px',
+            }}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          </svg>
-        </button>
-        {/**<Menu
-          anchorEl={anchorEl}
-          open={open}
-          onClose={handleClose}
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'right',
-          }}
-          transformOrigin={{
-            vertical: 'top',
-            horizontal: 'right',
-          }}
-        >
-          <MenuItem onClick={handleCashInAndOut}>Entrada/salida de efectivo</MenuItem>
-          <MenuItem onClick={() => navigate('/points-of-sale')}>
-            Regresar a la ventana principal
-          </MenuItem>
-          <MenuItem onClick={handleCloseCashRegister}>Cerrar caja registradora</MenuItem>
-        </Menu> */}
-      </div>
+            <div className="text-center flex-grow-1 d-flex flex-column justify-content-center gap-4">
+              <div
+                className="fw-bold mb-0"
+                style={{ color: '#60a5fa', fontSize: '70px', lineHeight: '1.1' }}
+              >
+                {weightValuePg.toFixed(2)}
+              </div>
+              <Divider component="div" style={{ height: '2px', backgroundColor: '#60a5fa' }} />
+              <div
+                className="text-truncate"
+                style={{ color: '#fbbf24', fontSize: '18px', fontWeight: '600' }}
+              >
+                S/ {getProductPricePg(selectedItemPg || '', selectedOrderPg || '').toFixed(2)}
+              </div>
+            </div>
+          </div>
+
+          <div className="columna-flex col_balance contenedor-principal">
+            <div
+              // className="rounded-3 p-3 shadow-sm d-flex flex-column div-superior"
+              className="div-superior"
+              style={{
+                // backgroundColor: '#1f2937',
+                height: '140px',
+              }}
+            >
+              <button
+                // className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white"
+                className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white h-full w-full"
+                style={{
+                  backgroundColor: '#3b82f6',
+                  borderColor: '#3b82f6',
+                  // flex: '2',
+                  // height: '48px',
+                  fontSize: '16px',
+                }}
+                onClick={() => {
+                  //setPrevWeight(weightValuePg)
+                  setTemporaryQuantityPg(weightValuePg)
+                  return
+                }}
+              >
+                <span>CAPTURAR</span>
+              </button>
+            </div>
+
+            <div
+              // className="rounded-3 d-flex flex-column mt-2 div-inferior"
+              className="div-inferior"
+              style={{
+                height: '50px',
+              }}
+            >
+              <button
+                className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white h-full w-full"
+                style={{
+                  backgroundColor: '#f97316',
+                  borderColor: '#f97316',
+                  // flex: '1',
+                  // height: '48px',
+                  fontSize: '16px',
+                }}
+                onClick={() => {
+                  convertTemporaryToReturnPg()
+                }}
+              >
+                DEVOLVER
+              </button>
+            </div>
+          </div>
+
+          {/*
+          <div className="h-full w-[150px]">
+            <button
+              className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center h-full text-white w-full"
+              onClick={() => {
+                setOperationPg(Operation.QUANTITY)
+                openCalculatorModal({ operation: Operation.QUANTITY })
+                setChangePricePg(false)
+              }}
+              style={{
+                backgroundColor: 'oklch(50.8% 0.118 165.612)',
+                fontSize: '4rem',
+              }}
+            >
+              M
+            </button>
+          </div>
+          */}
+
+          <div className="columna-flex col_price contenedor-principal">
+            <div
+              className="div-superior"
+              style={{
+                // backgroundColor: '#1f2937',
+                height: '140px',
+              }}
+            >
+              <button
+                className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white h-full w-full"
+                style={{
+                  backgroundColor: 'oklch(50.8% 0.118 165.612)',
+                  fontSize: '4rem',
+                }}
+                onClick={() => {
+                  setOperationPg(Operation.QUANTITY)
+                  openCalculatorModal({ operation: Operation.QUANTITY })
+                  setChangePricePg(false)
+                }}
+              >
+                <span>M</span>
+              </button>
+            </div>
+
+            <div
+              // className="rounded-3 d-flex flex-column mt-2 div-inferior"
+              className="div-inferior"
+              style={{
+                height: '50px',
+              }}
+            >
+              <div
+                className="bg-black font-bold rounded-3 d-flex align-items-center justify-content-center h-full w-full text-white"
+                style={{
+                  fontSize: '1.1375rem',
+                  // width: '100px',
+                }}
+              >
+                {Number(temporaryValuesPg?.base_quantity ?? 0).toFixed(2)}
+              </div>
+            </div>
+          </div>
+
+          <div className="columna-flex col_price contenedor-principal">
+            <div
+              className="div-superior"
+              style={{
+                // backgroundColor: '#1f2937',
+                height: '140px',
+              }}
+            >
+              <button
+                className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center text-white h-full w-full"
+                style={{
+                  backgroundColor: '#3b82f6',
+                  borderColor: '#3b82f6',
+                  fontSize: '16px',
+                }}
+                onClick={() => {
+                  setOperationPg(Operation.PRICE)
+                  openCalculatorModal({ operation: Operation.PRICE })
+                  setChangePricePg(false)
+                }}
+              >
+                <span>PRECIO</span>
+              </button>
+            </div>
+
+            <div
+              // className="rounded-3 d-flex flex-column mt-2 div-inferior"
+              className="div-inferior"
+              style={{
+                height: '50px',
+              }}
+            >
+              <div
+                className="bg-black font-bold rounded-3 d-flex align-items-center justify-content-center h-full w-full text-white"
+                style={{
+                  fontSize: '1.1375rem',
+                  // width: '100px',
+                }}
+              >
+                {(temporaryValuesPg?.price_unit ?? 0).toFixed(2)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   )
 }

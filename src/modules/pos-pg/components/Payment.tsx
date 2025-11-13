@@ -15,7 +15,7 @@ import { offlineCache } from '@/lib/offlineCache'
 import { usePWA } from '@/hooks/usePWA'
 import { Type_pos_payment_origin, TypePayment, TypeStateOrder, TypeStatePayment } from '../types'
 import { adjustTotal } from '@/shared/helpers/helpers'
-import { now } from '@/shared/utils/dateUtils'
+import { now, setCurrentTimeIfToday } from '@/shared/utils/dateUtils'
 
 import IconButton from '@mui/material/IconButton'
 import { IoClose } from 'react-icons/io5'
@@ -110,6 +110,8 @@ const Payment = () => {
     frmLoading,
     localModePg,
     updateOrderPartnerPg,
+    dateInvoice,
+    setDateInvoice,
   } = useAppStore()
   const [is_change, setIsChange] = useState(false)
   const finalCustomerRef = useRef(finalCustomerPg)
@@ -136,7 +138,7 @@ const Payment = () => {
         company_id: userData.company_id,
         state: 'A',
         order_id: selectedOrderPg,
-        date: now().toPlainDateTime().toString(),
+        date: setCurrentTimeIfToday(dateInvoice),
         currency_id: 1,
         amount: orderTotal,
         payment_method_id: firstMethod.payment_method_id,
@@ -201,7 +203,7 @@ const Payment = () => {
       company_id: userData.company_id,
       state: 'A',
       order_id: selectedOrderPg,
-      date: now().toPlainDateTime().toString(),
+      date: setCurrentTimeIfToday(dateInvoice),
       currency_id: 1,
       amount: remaining,
       payment_method_id,
@@ -324,6 +326,8 @@ const Payment = () => {
             type: 'confirm',
             onClick: async () => {
               await handleValidatePayment()
+              setDateInvoice(new Date())
+
               closeDialogWithData(dialogId, {})
             },
           },
@@ -371,7 +375,7 @@ const Payment = () => {
       ...data,
       name: data.name,
       state: TypeStateOrder.REGISTERED,
-      order_date: now().toPlainDateTime().toString(),
+      order_date: setCurrentTimeIfToday(dateInvoice),
       session_id: typeof data.order_id === 'string' ? session_id : undefined,
       currency_id: 1,
       company_id: data.company_id,
@@ -409,7 +413,7 @@ const Payment = () => {
         state: 'R',
         origin: Type_pos_payment_origin.DOCUMENT,
         type: TypePayment.INPUT,
-        date: now().toPlainDateTime().toString(),
+        date: setCurrentTimeIfToday(dateInvoice),
       })),
       amount_untaxed: adjustTotal(getTotalPriceByOrderPg(selectedOrderPg)).adjusted,
       amount_withtaxed: adjustTotal(getTotalPriceByOrderPg(selectedOrderPg)).adjusted,
@@ -418,12 +422,14 @@ const Payment = () => {
       amount_payment: amount_payment(),
       amount_residual: getRemainingAmount().toFixed(2),
     }
+
     if (!isOnline || localModePg) {
       await offlineCache.saveOrderOffline({
         ...updatedData,
         action: typeof data.order_id === 'string' ? 'i' : 'u',
       })
       const orders = await offlineCache.getOfflinePosOrders()
+      setDateInvoice(new Date())
       setOrderDataPg(orders)
       setFrmIsChanged(true)
 
@@ -444,6 +450,7 @@ const Payment = () => {
     ])
 
     setOrderDataPg(orders?.oj_data || [])
+    setDateInvoice(new Date())
     setFrmIsChanged(false)
     setScreenPg('invoice')
     return
@@ -614,6 +621,7 @@ const Payment = () => {
             <div className="payment-methods flex flex-col gap-2">
               {paymentMethodsPg.map((method) => (
                 <PaymentMethodCard
+                  bg=""
                   key={method.payment_method_id}
                   method={method}
                   onClick={!frmLoading ? handlePaymentMethodClick : () => {}}

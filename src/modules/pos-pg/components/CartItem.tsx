@@ -25,9 +25,9 @@ export default function CartItem({
       //   isSelected ? 'bg-blue-50' : ''
       // }`}
 
-      className={`py-2 px-2 flex items-center justify-between cursor-pointer  ${isSelected ? 'bg-yellow-600' : ''
-        }`}
-
+      className={`py-2 px-2 flex items-center justify-between cursor-pointer  ${
+        isSelected ? 'bg-yellow-600' : ''
+      }`}
       onClick={onSelect}
     >
       <div className="flex items-center">
@@ -35,21 +35,16 @@ export default function CartItem({
         <div className="w-auto min-w-[24px] text-center c1">
           {
             /*Number.parseFloat(item.quantity).toFixed(maxDecimals)*/ formatNumberDisplay(
-            item.quantity
-          )
+              item.quantity
+            )
           }
         </div>
 
         <div className="ml-4">
-
           <div className="text-gray-900 font-bold">{item.name}</div>
 
           {/* <div>{`S/ ${item?.price_unit} por ${item?.uom_name}`}</div> */}
-          <div
-            className='text-black'
-          >
-            {`S/ ${item?.price_unit} por ${item?.uom_name}`}
-          </div>
+          <div className="text-black">{`S/ ${item?.price_unit} por ${item?.uom_name}`}</div>
 
           {item.tara_value || item.tara_quantity ? (
             <>
@@ -89,7 +84,6 @@ export default function CartItem({
             </button>
           )}
           */}
-
         </div>
 
         {/* 

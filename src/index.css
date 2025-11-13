@@ -10917,7 +10917,12 @@ body {
 
 /* Columna 2: Ancho fijo de 150px */
 .col_balance {
-    flex: 0 0 180px;
+    /* flex: 0 0 240px; */
+    flex: 1;
+    /* flex-grow: 0 (no crece), flex-shrink: 0 (no se encoge), flex-basis: 150px (ancho fijo) */
+}
+.col_price {
+    flex: 0 0 150px;
     /* flex-grow: 0 (no crece), flex-shrink: 0 (no se encoge), flex-basis: 150px (ancho fijo) */
 }
 
@@ -10960,4 +10965,115 @@ body {
     gap: 10px;
 
     /* border: 1px solid red; */
+}
+
+
+.grid-item-header-pg {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5em;
+  border-radius: 8px;
+  background-color: #f7f7f7;
+  color: #333;
+
+  width: 50px;
+  /* height: auto; */
+  height: 3cap;
+}
+
+.pos-header-left-header-pg
+{
+  align-items: center;
+  flex-grow: 1;
+  max-width: 200px;
+  display: flex;
+  overflow: auto;
+
+  gap: 8px;
+}
+
+.pos-header-right-header-pg
+{
+  flex-grow: 1;
+  max-width: 95%;
+
+  gap: 4px;
+  align-items: center;
+  justify-content: flex-end;
+  display: flex;
+}
+
+.pos-header-pg {
+  background-color: RGBA(255, 255, 255, 1);
+  gap: 4px;
+  padding: 10px;
+  margin: 0;
+  align-items: stretch;
+  justify-content: flex-start;
+  position: relative;
+  
+  display: flex;
+  flex-direction: column; /* <--- EL CAMBIO */
+}
+
+/* Contenedor para los de arriba */
+.pos-header-top-pg {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+/* Tu bottom */
+.pos-header-bottom-pg {
+  width: 100%;
+  padding: 8px;
+}
+
+.grid-item-tara-pg
+{
+  height: 70px;
+  width: 70px;
+  border-radius: 8px;
+  color: #333;
+  font-size: 1.5em;
+  background-color: #f7f7f7;
+}
+
+.text-center-s7
+{
+  text-align: -webkit-center !important;
+  
+}
+
+
+.pg-line-vertical {
+    display: flex;             /* Habilita Flexbox */
+    flex-direction: column;    /* Organiza los hijos verticalmente */
+    height: 100vh;             /* El contenedor ocupa el 100% del alto de la ventana */
+    /* border: 1px solid black; */
+    box-sizing: border-box;
+    width: 170px;
+
+    gap: 10px;
+
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-right: 10px;
+}
+
+.pg-line-vertical > .lv-child {
+    height: 120px;             /* Los 5 divs fijos tienen 100px de alto */
+    /* background-color: #f0f0f0; */
+    text-align: center;
+
+    /* border: 1px solid red; */
+}
+
+.pg-line-vertical > .lv-child-4 {
+    height: auto;              /* Reseteamos la altura fija */
+    flex-grow: 1;              /* ¡Esto hace que crezca y ocupe el espacio restante! */
+    background-color: #4CAF50; /* Color diferente para destacar */
+    color: white;
 }

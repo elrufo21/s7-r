@@ -10,6 +10,7 @@ interface Props {
   selectedField?: Operation
   dialogId: string
 }
+
 const sanitizeInputString = (raw: string) => {
   if (raw === '' || raw === '-' || raw === '.' || raw === '-.') return raw
   let s = raw
@@ -45,6 +46,7 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
     selectedItemPg,
     setChangePricePg,
     executeFnc,
+    updateTemporaryLinePg,
   } = useAppStore()
 
   const [localProduct, setLocalProduct] = useState<Product>({ ...product })
@@ -212,23 +214,21 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
       return
     }
     applyInput(inputValue)
-    setHandleChangePg(true)
-    updateOrderLinePg(localProduct)
+    //setHandleChangePg(true)
+    updateTemporaryLinePg(localProduct)
+    //updateOrderLinePg(localProduct)
     closeDialogWithData(dialogId, {})
   }
-
   const showTaraInfo = (localProduct.tara_value ?? 0) > 0 || (localProduct.tara_quantity ?? 0) > 0
   return (
     <div className="flex flex-row p-[15px]">
-      {/* {activeField === Operation.TARA_VALUE && */}
-      {selectedField !== Operation.CHANGE_PRICE && (
+      {/*selectedField !== Operation.CHANGE_PRICE && (
         <>
           <div className="pr-3">
             <div className="grid grid-cols-2 gap-3">
               {containersPg.map((value: { weight: number; name: string }) => (
                 <button
                   key={value.weight}
-                  // className="numpad-button btn2 btn2-white fs-3 lh-mlg"
                   className="bg-gray-100 hover:bg-gray-200 transition-colors duration-200 
               rounded-lg text-gray-700 font-medium text-center w-[100px] h-[90px]"
                   onClick={() => {
@@ -246,78 +246,11 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
                 </button>
               ))}
 
-              {/* Si quieres que la última fila mantenga la alineación cuando hay un número impar de botones */}
               {containersPg.length % 2 !== 0 && (
                 <div className="w-full h-[90px]" aria-hidden="true" />
               )}
             </div>
           </div>
-          {/* } */}
-
-          {/*
-            <div className="pr-3">
-              <div className=" h-full">
-                <div className="d-flex flex-column" style={{ minWidth: '160px', maxWidth: '180px' }}>
-                  <div
-                    className="rounded-3 p-3 shadow-sm d-flex flex-column"
-                    style={{ backgroundColor: '#1f2937', height: '104px' }}
-                  >
-                    <div className="text-center flex-grow-1 d-flex flex-column justify-content-center">
-                      <div
-                        className="fw-bold mb-0"
-                        style={{ color: '#60a5fa', fontSize: '40px', lineHeight: '1.1' }}
-                      >
-                        {weightValuePg.toFixed(2)}
-                      </div>
-                      <Divider component="div" style={{ height: '2px', backgroundColor: '#60a5fa' }} />
-                      <div
-                        className="text-truncate"
-                        style={{ color: '#fbbf24', fontSize: '14px', fontWeight: '600' }}
-                      >
-                        S/ {getProductPricePg(selectedItemPg || '', selectedOrderPg || '').toFixed(2)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  className="btn fw-semibold rounded-3 h-[200px] shadow-sm d-flex align-items-center justify-content-center w-full text-white mt-2"
-                  style={{
-                    backgroundColor: '#3b82f6',
-                    borderColor: '#3b82f6',
-                    flex: '2',
-                    height: '100px',
-                    fontSize: '13px',
-                  }}
-                  onClick={() => {
-                    //setProductQuantityInOrder(selectedOrder, selectedItem || 0, weightValue || 0)
-                    //  const currentTaraQuantity = getProductTaraQuantity(selectedOrder, selectedItem || 0)
-                    //if (currentTaraQuantity === 0) {
-                    //      setTaraQuantity(selectedOrder, selectedItem || 0, 0)
-                    //  }
-                  }}
-                >
-                  <span>CAPTURAR</span>
-                </button>
-                <button
-                  className="btn fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center mt-2 w-full text-white"
-                  style={{
-                    backgroundColor: '#f97316',
-                    borderColor: '#f97316',
-                    flex: '1',
-                    height: '100px',
-                    fontSize: '13px',
-                  }}
-                  onClick={() => {
-                    if (selectedItemPg && selectedOrderPg) {
-                      //  setProductQuantityInOrder(selectedOrder, selectedItem || 0, -weightValue || 0)
-                    }
-                  }}
-                >
-                  DEVOLVER
-                </button>
-              </div>
-            </div>
-            */}
 
           <div className="pr-3">
             <div className="grid-container2">
@@ -388,7 +321,6 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
                 >
                   <div className="pt-1">
                     <div className="text-red-600">
-                      {/* <GrTrash style={{ fontSize: '20px' }} className="mb-[3px]" /> */}
                       <svg
                         width="34"
                         height="34"
@@ -411,11 +343,12 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
             </div>
           </div>
         </>
-      )}
+      )*/}
 
       <div className="">
         {activeField !== Operation.CHANGE_PRICE ? (
           <div className="pb-3">
+            {/**{/**<div className="pb-3">
             {showTaraInfo && (
               <>
                 <div className="flex justify-between text-gray-700 text-xl">
@@ -427,7 +360,7 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
                   <span
                     className={`${activeField === Operation.QUANTITY ? 'text-red-500 font-bold' : ''}`}
                   >
-                    {to2(localProduct.price_unit).toFixed(2)} {localProduct.uom_name}
+                    {to2(localProduct.base_quantity).toFixed(2)} {localProduct.uom_name}
                   </span>
                 </div>
                 <div className="flex justify-between text-gray-700 text-xl">
@@ -487,6 +420,26 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
             <div className="flex justify-between text-xl font-bold">
               <span>Importe total:</span>
               <span>S/ {to2(localProduct.amount_untaxed).toFixed(2)}</span>
+            </div>
+          </div> */}
+            <div className="flex items-center justify-center text-6xl font-bold py-6">
+              {activeField === Operation.QUANTITY && (
+                <span>{to2(localProduct.base_quantity).toFixed(2)} </span>
+              )}
+
+              {activeField === Operation.TARA_QUANTITY && (
+                <span>{to2(localProduct.tara_quantity).toFixed(2)} </span>
+              )}
+
+              {activeField === Operation.TARA_VALUE && (
+                <span>
+                  {to2(localProduct.tara_value).toFixed(2)} {localProduct.uom_name}
+                </span>
+              )}
+
+              {activeField === Operation.PRICE && (
+                <span>{to2(localProduct.price_unit).toFixed(2)}</span>
+              )}
             </div>
           </div>
         ) : (

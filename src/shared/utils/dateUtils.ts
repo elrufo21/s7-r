@@ -130,3 +130,66 @@ export function formatDateWithToday(date: Date | string, useShortMonth: boolean 
 
   return formatShortDate(date, useShortMonth)
 }
+export function setCurrentTimeIfToday(input: string | Date) {
+  if (!input) return ''
+
+  try {
+    const limaZone = 'America/Lima'
+    let baseDate: Temporal.ZonedDateTime
+
+    // 🧩 Si es instancia de Date
+    if (input instanceof Date) {
+      baseDate = Temporal.ZonedDateTime.from({
+        timeZone: limaZone,
+        year: input.getFullYear(),
+        month: input.getMonth() + 1,
+        day: input.getDate(),
+        hour: input.getHours(),
+        minute: input.getMinutes(),
+        second: input.getSeconds(),
+      })
+    }
+
+    // 🧩 Si es string (ISO o con offset)
+    else if (typeof input === 'string') {
+      // Caso con zona
+      if (input.includes('[')) {
+        baseDate = Temporal.ZonedDateTime.from(input)
+      } else {
+        // Caso ISO u offset
+        try {
+          baseDate = Temporal.ZonedDateTime.from(`${input}[${limaZone}]`)
+        } catch {
+          // Si ni así, intenta como PlainDateTime
+          const plain = Temporal.PlainDateTime.from(input)
+          baseDate = plain.toZonedDateTime({ timeZone: limaZone })
+        }
+      }
+    }
+
+    // 🚫 Cualquier otro tipo (evita el "expected a string")
+    else {
+      console.warn('setCurrentTimeIfToday: tipo inesperado', typeof input, input)
+      return ''
+    }
+
+    const now = Temporal.Now.zonedDateTimeISO(limaZone)
+    const sameDay =
+      baseDate.year === now.year && baseDate.month === now.month && baseDate.day === now.day
+
+    const result = sameDay
+      ? baseDate.with({
+          hour: now.hour,
+          minute: now.minute,
+          second: now.second,
+          millisecond: 0,
+        })
+      : baseDate
+
+    // 🔁 Limpia la zona para que no aparezca [America/Lima]
+    return result.toString().replace(`[${limaZone}]`, '')
+  } catch (err) {
+    console.error('setCurrentTimeIfToday: error parsing date', input, err)
+    return ''
+  }
+}

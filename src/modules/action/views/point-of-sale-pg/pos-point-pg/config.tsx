@@ -64,11 +64,13 @@ const PosPaymentConfig: FormConfig = {
           accessorKey: 'name',
           className: '!w-auto text-left',
         },
+        /*
         {
           header: 'Empresa',
           accessorKey: 'company_name',
           className: '!w-auto text-left',
         },
+        */
       ],
     },
   },
