@@ -50,7 +50,7 @@ const createPosPg = (
     })
   },
   // Establecer cantidad en valores temporales (auto-crea si no existe)
-  setTemporaryQuantityPg: (base_quantity: number) => {
+ setTemporaryQuantityPg: (base_quantity: number) => {
     get()._ensureTemporaryValuesPg()
 
     set((state) => {
