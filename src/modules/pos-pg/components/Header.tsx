@@ -16,15 +16,13 @@ import { Type_pos_payment_origin, TypePayment, TypeStateOrder } from '../types'
 import { FiAlertTriangle } from 'react-icons/fi'
 import { CustomToast } from '@/components/toast/CustomToast'
 import { usePosActionsPg } from '@/modules/pos/hooks/usePosActionsPg'
-import { InputWithKeyboard } from '@/shared/ui/inputs/InputWithKeyboard'
 import { Operation } from '../context/CalculatorContext'
 import CalculatorPanel from './modal/components/ModalCalculatorPanel'
-import { codePayment, summarizeTransactions } from '@/shared/helpers/helpers'
+import { codePayment } from '@/shared/helpers/helpers'
 import { Divider } from '@mui/material'
 
 export default function Header({ pointId }: { pointId: string }) {
   const {
-    addNewOrderPg,
     orderDataPg,
     selectedOrderPg,
     setSelectedOrderPg,
@@ -32,31 +30,22 @@ export default function Header({ pointId }: { pointId: string }) {
     screenPg,
     openDialog,
     closeDialogWithData,
-    searchProductPg,
-    setSearchProductPg,
-    selectedNavbarMenuPg,
     setSelectedNavbarMenuPg,
     setSelectedItemPg,
-    finalCustomerPg,
     executeFnc,
-    frmLoading,
     setOrderDataPg,
     setSyncLoading,
     deleteOrderPg,
     setHandleChangePg,
-    changePricePg,
     setChangePricePg,
     setCloseSession,
     setOperationPg,
     selectedItemPg,
-    operationPg,
     backToProductsPg,
     setPayment,
     containersPg,
     weightValuePg,
     getProductPricePg,
-    setPrevWeight,
-    setProductQuantityInOrderPg,
     setTemporaryQuantityPg,
     temporaryValuesPg,
     setTemporaryTaraValuePg,
@@ -65,10 +54,18 @@ export default function Header({ pointId }: { pointId: string }) {
     connectedPg,
     connectToDevicePg,
     dateInvoice,
+    temporaryListPg,
   } = useAppStore()
-  console.log('containersPg', containersPg)
+
   const [selectedTaraValue, setSelectedTaraValue] = useState(null)
   const [selectedTaraQuantity, setSelectedTaraQuantity] = useState(null)
+
+  const order = orderDataPg.find((o) => o.order_id === selectedOrderPg)
+
+  const temporalItem = temporaryListPg.find(
+    (t) => t?.position_pg === order?.position_pg && t?.payment_state === order?.payment_state
+  )
+
   useEffect(() => {
     if (!temporaryValuesPg) {
       setSelectedTaraValue(null)
@@ -897,11 +894,7 @@ export default function Header({ pointId }: { pointId: string }) {
     const dialogId = openDialog({
       title: title(),
       dialogContent: () => (
-        <CalculatorPanel
-          product={temporaryValuesPg}
-          selectedField={operation}
-          dialogId={dialogId}
-        />
+        <CalculatorPanel product={temporalItem} selectedField={operation} dialogId={dialogId} />
       ),
       buttons: [
         {
@@ -1391,7 +1384,7 @@ export default function Header({ pointId }: { pointId: string }) {
                   // width: '100px',
                 }}
               >
-                {Number(temporaryValuesPg?.base_quantity ?? 0).toFixed(2)}
+                {Number(temporalItem?.base_quantity ?? 0).toFixed(2)}
               </div>
             </div>
           </div>
@@ -1435,7 +1428,7 @@ export default function Header({ pointId }: { pointId: string }) {
                   // width: '100px',
                 }}
               >
-                {(temporaryValuesPg?.price_unit ?? 0).toFixed(2)}
+                {(temporalItem?.price_unit ?? 0).toFixed(2)}
               </div>
             </div>
           </div>

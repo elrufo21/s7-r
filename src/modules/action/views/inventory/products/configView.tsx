@@ -1043,6 +1043,21 @@ export function FrmTab5({ setValue, control, watch, errors, editConfig }: frmEle
           </div>
 
           <div className="o_inner_group grid">
+            <div className="d-sm-contents">
+              <div className="o_cell o_wrap_label">
+                <label className="o_form_label">Principal en POS</label>
+              </div>
+              <div className="o_cell">
+                <div className="o_field">
+                  <CheckBoxControlled
+                    className="o_CheckBox"
+                    name={'main_in_pos'}
+                    control={control}
+                    editConfig={{ config: editConfig }}
+                  />
+                </div>
+              </div>
+            </div>
             <FormRow label="Categoría">
               <MultiSelectObject
                 name={'categories'}

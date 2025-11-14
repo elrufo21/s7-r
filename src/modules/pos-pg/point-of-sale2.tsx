@@ -24,7 +24,7 @@ import { FiAlertTriangle } from 'react-icons/fi'
 import PosCloseCashConfig from './views/modal-close-cash-register/config'
 import PosModalCashinAndOut from './views/modal-cash-in-and-out/config'
 import ModalButtons from './components/modal/components/ModalButtons'
-
+import modalProducts from './views/modal-products/config'
 const PointOfSale = () => {
   const { pointId } = useParams()
   const { userData } = useUserStore()
@@ -66,6 +66,7 @@ const PointOfSale = () => {
     setCloseSession,
     deleteOrderPg,
     setSelectedOrderPg,
+    productsPg,
   } = useAppStore()
   const sessions = JSON.parse(localStorage.getItem('sessions') || '[]')
   const { saveCurrentOrder } = usePosActionsPg()
@@ -1060,6 +1061,28 @@ const PointOfSale = () => {
         position: index + 1,
       }))
   }
+
+  const openProductModal = () => {
+    const dialogId = openDialog({
+      title: 'Mas productos',
+      dialogContent: () => (
+        <FrmBaseDialog
+          config={modalProducts}
+          viewType={ViewTypeEnum.LIBRE}
+          initialValues={{ products: productsPg, dialogId: dialogId }}
+        />
+      ),
+      buttons: [
+        {
+          text: 'Cerrar',
+          type: 'cancel',
+          onClick: () => {
+            closeDialogWithData(dialogId, {})
+          },
+        },
+      ],
+    })
+  }
   return (
     <div className="flex h-full">
       <div className="flex flex-col flex-1 min-w-0">
@@ -1225,6 +1248,23 @@ const PointOfSale = () => {
               }}
             >
               <div className="text-white font-bold text-[1.09375rem]">REALIZAR PAGO</div>
+            </button>
+          </div>
+
+          <div className="lv-child">
+            <button
+              className="btn h-full w-full align-items-center justify-content-center text-white bg-yellow-600"
+              style={{
+                fontSize: '1.1375rem',
+                backgroundColor: 'oklch(50.8% 0.118 165.612)',
+                // width: '100%',
+                // height: '100px',
+              }}
+              onClick={() => {
+                openProductModal()
+              }}
+            >
+              <div className="text-white font-bold text-[1.09375rem]">+ PRODUCTOS</div>
             </button>
           </div>
 

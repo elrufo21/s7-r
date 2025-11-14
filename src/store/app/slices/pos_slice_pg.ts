@@ -1,5 +1,10 @@
 import { Operation, TypeStateOrder } from '@/modules/pos/types'
-import { AppStoreProps, PointsOfSaleSliceStatePg, SetState } from '@/store/store.types'
+import {
+  AppStoreProps,
+  PointsOfSaleSliceStatePg,
+  SetState,
+  TemporaryValuePg,
+} from '@/store/store.types'
 import { offlineCache, OfflineCache } from '@/lib/offlineCache'
 import { getCurrentTimeInLima, now } from '@/shared/utils/dateUtils'
 import { ActionTypeEnum } from '@/shared/shared.types'
@@ -12,6 +17,611 @@ const createPosPg = (
   dateInvoice: getCurrentTimeInLima(),
   setDateInvoice: (dateInvoice) => set({ dateInvoice }),
   //Valores temporales
+
+  temporaryListPg: [],
+  setTemporaryListPg: (temporaryListPg) => set({ temporaryListPg }),
+  // Inicializar la lista con 4 valores temporales vacíos
+  initializeTemporaryListPg: () => {
+    const initialList: TemporaryValuePg[] = [
+      // PF - Venta público
+      {
+        position_pg: 1,
+        payment_state: 'PF',
+        line_id: crypto.randomUUID(),
+        base_quantity: 0,
+        quantity: 0,
+        price_unit: 0,
+        tara_value: 0,
+        tara_quantity: 0,
+        tara_total: 0,
+      },
+      {
+        position_pg: 2,
+        payment_state: 'PF',
+        line_id: crypto.randomUUID(),
+        base_quantity: 0,
+        quantity: 0,
+        price_unit: 0,
+        tara_value: 0,
+        tara_quantity: 0,
+        tara_total: 0,
+      },
+      // PE - Crédito
+      {
+        position_pg: 1,
+        payment_state: 'PE',
+        line_id: crypto.randomUUID(),
+        base_quantity: 0,
+        quantity: 0,
+        price_unit: 0,
+        tara_value: 0,
+        tara_quantity: 0,
+        tara_total: 0,
+      },
+      {
+        position_pg: 2,
+        payment_state: 'PE',
+        line_id: crypto.randomUUID(),
+        base_quantity: 0,
+        quantity: 0,
+        price_unit: 0,
+        tara_value: 0,
+        tara_quantity: 0,
+        tara_total: 0,
+      },
+    ]
+
+    set({ temporaryListPg: initialList })
+  },
+
+  // Obtener el temporal por posición y estado de pago
+  getTemporaryByPositionPg: (position_pg: number, payment_state: 'PF' | 'PE') => {
+    const { temporaryListPg } = get()
+
+    return (
+      temporaryListPg.find(
+        (temp) => temp.position_pg === position_pg && temp.payment_state === payment_state
+      ) || null
+    )
+  },
+
+  // Asegurar que existe un temporal para una posición (auto-crea si no existe)
+  _ensureTemporaryForPositionPg: (position_pg: number, payment_state: 'PF' | 'PE') => {
+    const { temporaryListPg } = get()
+
+    // Verificar si ya existe
+    const existing = temporaryListPg.find(
+      (temp) => temp.position_pg === position_pg && temp.payment_state === payment_state
+    )
+
+    if (existing) return existing
+
+    // Crear nuevo temporal
+    const newTemporary: TemporaryValuePg = {
+      position_pg,
+      payment_state,
+      line_id: crypto.randomUUID(),
+      base_quantity: 0,
+      quantity: 0,
+      price_unit: 0,
+      tara_value: 0,
+      tara_quantity: 0,
+      tara_total: 0,
+    }
+
+    set({ temporaryListPg: [...temporaryListPg, newTemporary] })
+    return newTemporary
+  },
+
+  // ============================================
+  // SETTERS PARA VALORES ESPECÍFICOS POR POSICIÓN
+  // ============================================
+
+  setTemporaryQuantityByPositionPg: (
+    position_pg: number,
+    payment_state: 'PF' | 'PE',
+    base_quantity: number
+  ) => {
+    get()._ensureTemporaryForPositionPg(position_pg, payment_state)
+
+    set((state) => {
+      const updatedList = state.temporaryListPg.map((temp) => {
+        if (temp.position_pg === position_pg && temp.payment_state === payment_state) {
+          const effectiveQuantity = get().calculateEffectiveQuantityPg(
+            base_quantity,
+            temp.tara_value || 0,
+            temp.tara_quantity || 0
+          )
+
+          return {
+            ...temp,
+            base_quantity: formatNumber(base_quantity),
+            quantity: formatNumber(effectiveQuantity),
+          }
+        }
+        return temp
+      })
+
+      return { temporaryListPg: updatedList }
+    })
+  },
+
+  setTemporaryPriceByPositionPg: (
+    position_pg: number,
+    payment_state: 'PF' | 'PE',
+    new_price: number
+  ) => {
+    get()._ensureTemporaryForPositionPg(position_pg, payment_state)
+
+    set((state) => {
+      const updatedList = state.temporaryListPg.map((temp) => {
+        if (temp.position_pg === position_pg && temp.payment_state === payment_state) {
+          return { ...temp, price_unit: new_price }
+        }
+        return temp
+      })
+
+      return { temporaryListPg: updatedList }
+    })
+  },
+
+  setTemporaryTaraValueByPositionPg: (
+    position_pg: number,
+    payment_state: 'PF' | 'PE',
+    tara_value: number
+  ) => {
+    get()._ensureTemporaryForPositionPg(position_pg, payment_state)
+
+    set((state) => {
+      const updatedList = state.temporaryListPg.map((temp) => {
+        if (temp.position_pg === position_pg && temp.payment_state === payment_state) {
+          const baseQuantity = temp.base_quantity || temp.quantity || 0
+          const tara_quantity = temp.tara_quantity || 0
+
+          const effectiveQuantity = get().calculateEffectiveQuantityPg(
+            baseQuantity,
+            tara_value,
+            tara_quantity
+          )
+
+          const tara_total = get().calculateTaraTotalPg(tara_value, tara_quantity)
+
+          return {
+            ...temp,
+            tara_value: tara_value,
+            tara_total: tara_total,
+            base_quantity: formatNumber(baseQuantity),
+            quantity: formatNumber(effectiveQuantity),
+          }
+        }
+        return temp
+      })
+
+      return { temporaryListPg: updatedList }
+    })
+  },
+
+  setTemporaryTaraQuantityByPositionPg: (
+    position_pg: number,
+    payment_state: 'PF' | 'PE',
+    tara_quantity: number
+  ) => {
+    get()._ensureTemporaryForPositionPg(position_pg, payment_state)
+
+    set((state) => {
+      const updatedList = state.temporaryListPg.map((temp) => {
+        if (temp.position_pg === position_pg && temp.payment_state === payment_state) {
+          const baseQuantity = temp.base_quantity || temp.quantity || 0
+          const tara_value = temp.tara_value || 0
+
+          const effectiveQuantity = get().calculateEffectiveQuantityPg(
+            baseQuantity,
+            tara_value,
+            tara_quantity
+          )
+
+          const tara_total = get().calculateTaraTotalPg(tara_value, tara_quantity)
+
+          return {
+            ...temp,
+            tara_quantity: tara_quantity,
+            tara_total: tara_total,
+            base_quantity: formatNumber(baseQuantity),
+            quantity: formatNumber(effectiveQuantity),
+          }
+        }
+        return temp
+      })
+
+      return { temporaryListPg: updatedList }
+    })
+  },
+
+  setTemporaryProductByPositionPg: (
+    position_pg: number,
+    payment_state: 'PF' | 'PE',
+    product: any
+  ) => {
+    const currentTemp = get().getTemporaryByPositionPg(position_pg, payment_state)
+
+    set((state) => {
+      const updatedList = state.temporaryListPg.map((temp) => {
+        if (temp.position_pg === position_pg && temp.payment_state === payment_state) {
+          // Si cambió el producto, conservar valores pero tomar precio del nuevo producto
+          if (temp.product_id && temp.product_id !== product.product_id) {
+            return {
+              ...product,
+              position_pg: temp.position_pg,
+              payment_state: temp.payment_state,
+              line_id: crypto.randomUUID(),
+              base_quantity: temp.base_quantity || 0,
+              quantity: temp.quantity || 0,
+              tara_value: temp.tara_value || 0,
+              tara_quantity: temp.tara_quantity || 0,
+              tara_total: temp.tara_total || 0,
+              price_unit: product.sale_price || product.price_unit || 0,
+            }
+          }
+
+          // Mismo producto o primer producto: hacer merge
+          return {
+            ...product,
+            position_pg: temp.position_pg,
+            payment_state: temp.payment_state,
+            line_id: temp.line_id,
+            base_quantity: temp.base_quantity || 0,
+            quantity: temp.quantity || 0,
+            tara_value: temp.tara_value || 0,
+            tara_quantity: temp.tara_quantity || 0,
+            tara_total: temp.tara_total || 0,
+            price_unit: product.sale_price || product.price_unit || 0,
+          }
+        }
+        return temp
+      })
+
+      return { temporaryListPg: updatedList }
+    })
+  },
+
+  // ============================================
+  // OPERACIONES DE SIGNO
+  // ============================================
+
+  toggleTemporaryQuantitySignByOrderPg: (order_id: string) => {
+    const order = get().orderDataPg.find((o) => o.order_id === order_id)
+    if (!order) return
+
+    set((state) => {
+      const updatedList = state.temporaryListPg.map((temp) => {
+        if (temp.position_pg === order.position_pg && temp.payment_state === order.payment_state) {
+          const currentQuantity = temp.quantity || 0
+          if (currentQuantity === 0) return temp
+
+          return {
+            ...temp,
+            quantity: currentQuantity * -1,
+            base_quantity: (temp.base_quantity || 0) * -1,
+          }
+        }
+        return temp
+      })
+
+      return { temporaryListPg: updatedList }
+    })
+  },
+  applyTemporaryValuesByPositionPg: (
+    position_pg: number,
+    payment_state: 'PF' | 'PE',
+    tara_value?: number,
+    tara_quantity?: number
+  ) => {
+    const temporary = get().getTemporaryByPositionPg(position_pg, payment_state)
+    if (!temporary || !temporary.product_id) {
+      console.warn('No se puede aplicar temporal sin product_id')
+      return
+    }
+
+    // Buscar la orden correspondiente a esta posición y estado de pago
+    const order = get().orderDataPg.find(
+      (o) => o.position_pg === position_pg && o.payment_state === payment_state
+    )
+
+    if (!order) {
+      console.warn('No se encontró orden para esta posición')
+      return
+    }
+
+    // Aplicar tara si se proporciona
+    let finalTemporary = { ...temporary }
+
+    if (tara_value !== undefined || tara_quantity !== undefined) {
+      const finalTaraValue = tara_value ?? temporary.tara_value ?? 0
+      const finalTaraQuantity = tara_quantity ?? temporary.tara_quantity ?? 0
+      const baseQuantity = temporary.base_quantity || temporary.quantity || 0
+
+      // Calcular tara total
+      const taraTotal = finalTaraValue * finalTaraQuantity
+
+      // Si el peso base es negativo, la tara se RESTA (se hace más negativo)
+      // Si el peso base es positivo, la tara se resta normalmente
+      const effectiveQuantity =
+        baseQuantity >= 0
+          ? baseQuantity - taraTotal // peso positivo
+          : baseQuantity + taraTotal // peso negativo (quita tara)
+
+      finalTemporary = {
+        ...temporary,
+        tara_value: finalTaraValue,
+        tara_quantity: finalTaraQuantity,
+        tara_total: taraTotal,
+        base_quantity: formatNumber(baseQuantity),
+        quantity: formatNumber(effectiveQuantity),
+      }
+    }
+
+    set((state) => {
+      const newOrderData = state.orderDataPg.map((o) => {
+        if (o.position_pg !== position_pg || o.payment_state !== payment_state) return o
+
+        const existingLine = o?.lines?.find((p: any) => p.product_id === finalTemporary.product_id)
+        let updatedLines
+
+        if (state.PC_multipleSimilarProductsPg || !existingLine) {
+          // Agregar como nueva línea
+          updatedLines = [...(o?.lines ?? []), finalTemporary]
+        } else {
+          // Actualizar línea existente
+          if (state.isWeightModePg) {
+            updatedLines = o.lines.map((p: any) =>
+              p.product_id === finalTemporary.product_id ? { ...p, ...finalTemporary } : p
+            )
+          } else {
+            updatedLines = o.lines.map((p: any) => {
+              if (p.product_id === finalTemporary.product_id) {
+                const newBaseQuantity =
+                  (p.base_quantity || p.quantity || 0) +
+                  (finalTemporary.base_quantity || finalTemporary.quantity || 0)
+
+                const taraTotal = (p.tara_value || 0) * (p.tara_quantity || 0)
+
+                // Aplicar lógica de tara según el signo
+                const effectiveQuantity =
+                  newBaseQuantity >= 0 ? newBaseQuantity - taraTotal : newBaseQuantity + taraTotal
+
+                return {
+                  ...p,
+                  base_quantity: newBaseQuantity,
+                  quantity: effectiveQuantity,
+                }
+              }
+              return p
+            })
+          }
+        }
+
+        return {
+          ...o,
+          lines_change: true,
+          lines: updatedLines,
+        }
+      })
+
+      // Limpiar solo el temporal de esta posición (mantener producto y precio)
+      const clearedList = state.temporaryListPg.map((temp) => {
+        if (temp.position_pg === position_pg && temp.payment_state === payment_state) {
+          return {
+            ...temp, // Mantener todos los datos del producto
+            line_id: crypto.randomUUID(), // Nuevo ID de línea
+            base_quantity: 0,
+            quantity: 0,
+            tara_value: 0,
+            tara_quantity: 0,
+            tara_total: 0,
+            // product_id, product_name, price_unit se mantienen del spread ...temp
+          }
+        }
+        return temp
+      })
+
+      return {
+        orderDataPg: newOrderData.filter((o) => o.state !== 'P'),
+        selectedItemPg: finalTemporary.line_id,
+        temporaryListPg: clearedList,
+        handleChangePg: true,
+        temporaryValuesPg: null,
+      }
+    })
+  },
+  toggleTemporaryPriceSignByOrderPg: (order_id: string) => {
+    const order = get().orderDataPg.find((o) => o.order_id === order_id)
+    if (!order) return
+
+    set((state) => {
+      const updatedList = state.temporaryListPg.map((temp) => {
+        if (temp.position_pg === order.position_pg && temp.payment_state === order.payment_state) {
+          const currentPrice = temp.price_unit || 0
+          if (currentPrice === 0) return temp
+
+          return { ...temp, price_unit: currentPrice * -1 }
+        }
+        return temp
+      })
+
+      return { temporaryListPg: updatedList }
+    })
+  },
+
+  // ============================================
+  // APLICAR Y LIMPIAR
+  // ============================================
+
+  applyTemporaryValuesByOrderPg: (order_id: string) => {
+    const order = get().orderDataPg.find((o) => o.order_id === order_id)
+    if (!order) return
+
+    const temporary = get().getTemporaryByOrderPg(order_id)
+    if (!temporary || !temporary.product_id) {
+      console.warn('No se puede aplicar temporal sin product_id')
+      return
+    }
+
+    set((state) => {
+      const newOrderData = state.orderDataPg.map((o) => {
+        if (o.order_id !== order_id) return o
+
+        const existingLine = o?.lines?.find((p: any) => p.product_id === temporary.product_id)
+        let updatedLines
+
+        if (state.PC_multipleSimilarProductsPg || !existingLine) {
+          // Agregar como nueva línea
+          updatedLines = [...(o?.lines ?? []), temporary]
+        } else {
+          // Actualizar línea existente
+          if (state.isWeightModePg) {
+            updatedLines = o.lines.map((p: any) =>
+              p.product_id === temporary.product_id ? { ...p, ...temporary } : p
+            )
+          } else {
+            updatedLines = o.lines.map((p: any) => {
+              if (p.product_id === temporary.product_id) {
+                const newBaseQuantity =
+                  (p.base_quantity || p.quantity || 0) +
+                  (temporary.base_quantity || temporary.quantity || 0)
+
+                const effectiveQuantity = get().calculateEffectiveQuantityPg(
+                  newBaseQuantity,
+                  p.tara_value || 0,
+                  p.tara_quantity || 0
+                )
+
+                return {
+                  ...p,
+                  base_quantity: newBaseQuantity,
+                  quantity: effectiveQuantity,
+                }
+              }
+              return p
+            })
+          }
+        }
+
+        return {
+          ...o,
+          lines_change: true,
+          lines: updatedLines,
+        }
+      })
+
+      // Limpiar solo el temporal de esta orden
+      const clearedList = state.temporaryListPg.map((temp) => {
+        if (temp.position_pg === order.position_pg && temp.payment_state === order.payment_state) {
+          return {
+            position_pg: temp.position_pg,
+            payment_state: temp.payment_state,
+            line_id: crypto.randomUUID(),
+            base_quantity: 0,
+            quantity: 0,
+            price_unit: 0,
+            tara_value: 0,
+            tara_quantity: 0,
+            tara_total: 0,
+          }
+        }
+        return temp
+      })
+
+      return {
+        orderDataPg: newOrderData.filter((o) => o.state !== 'P'),
+        selectedItemPg: temporary.line_id,
+        temporaryListPg: clearedList,
+        handleChangePg: true,
+      }
+    })
+  },
+
+  clearTemporaryByOrderPg: (order_id: string) => {
+    const order = get().orderDataPg.find((o) => o.order_id === order_id)
+    if (!order) return
+
+    set((state) => {
+      const clearedList = state.temporaryListPg.map((temp) => {
+        if (temp.position_pg === order.position_pg && temp.payment_state === order.payment_state) {
+          return {
+            position_pg: temp.position_pg,
+            payment_state: temp.payment_state,
+            line_id: crypto.randomUUID(),
+            base_quantity: 0,
+            quantity: 0,
+            price_unit: 0,
+            tara_value: 0,
+            tara_quantity: 0,
+            tara_total: 0,
+          }
+        }
+        return temp
+      })
+
+      return { temporaryListPg: clearedList }
+    })
+  },
+
+  getTemporaryTotalPriceByOrderPg: (order_id: string) => {
+    const temporary = get().getTemporaryByOrderPg(order_id)
+    if (!temporary) return 0
+
+    const quantity = temporary.quantity || 0
+    const price = temporary.price_unit || 0
+
+    return formatNumber(quantity * price)
+  },
+
+  // ============================================
+  // UTILIDADES
+  // ============================================
+
+  updateTemporaryByOrderPg: (order_id: string, updates: Partial<TemporaryValuePg>) => {
+    const order = get().orderDataPg.find((o) => o.order_id === order_id)
+    if (!order) return
+
+    //get()._ensureTemporaryForOrderPg(order_id)
+
+    set((state) => {
+      const updatedList = state.temporaryListPg.map((temp) => {
+        if (temp.position_pg === order.position_pg && temp.payment_state === order.payment_state) {
+          return { ...temp, ...updates }
+        }
+        return temp
+      })
+
+      return { temporaryListPg: updatedList }
+    })
+  },
+
+  hasTemporaryByOrderPg: (order_id: string) => {
+    return get().getTemporaryByOrderPg(order_id) !== null
+  },
+
+  convertTemporaryToReturnByOrderPg: (order_id: string) => {
+    const order = get().orderDataPg.find((o) => o.order_id === order_id)
+    if (!order) return
+
+    set((state) => {
+      const updatedList = state.temporaryListPg.map((temp) => {
+        if (temp.position_pg === order.position_pg && temp.payment_state === order.payment_state) {
+          return {
+            ...temp,
+            base_quantity: Math.abs(temp.base_quantity || 0) * -1,
+            quantity: Math.abs(temp.quantity || 0) * -1,
+          }
+        }
+        return temp
+      })
+
+      return { temporaryListPg: updatedList }
+    })
+  },
+
   temporaryValuesPg: null,
   setTemporaryValuesPg: (temporaryValuesPg) => set({ temporaryValuesPg }),
 
@@ -50,7 +660,7 @@ const createPosPg = (
     })
   },
   // Establecer cantidad en valores temporales (auto-crea si no existe)
- setTemporaryQuantityPg: (base_quantity: number) => {
+  setTemporaryQuantityPg: (base_quantity: number) => {
     get()._ensureTemporaryValuesPg()
 
     set((state) => {
@@ -1243,7 +1853,7 @@ const createPosPg = (
   ) => {
     if (get().closeSession) return
     const { executeFnc, getOrSetLocalStoragePg } = get()
-
+    get().initializeTemporaryListPg()
     try {
       const cache = new OfflineCache()
       await cache.init()

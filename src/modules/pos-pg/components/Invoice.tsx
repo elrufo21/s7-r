@@ -11,6 +11,7 @@ import { renderToString } from 'react-dom/server'
 import { printHTML } from '@/lib/qzPrinter'
 import PaymentTicketHtml from './PaymentTicketHtml'
 import qz from 'qz-tray'
+import TicketHTMLSimple from './TicketHtmlSimple'
 
 const Invoice = () => {
   const {
@@ -289,7 +290,7 @@ const Invoice = () => {
           <div className="pos-receipt-container d-flex flex-grow-1 flex-lg-grow-0 w-100 w-lg-50 user-select-none justify-content-center bg-200 text-center overflow-hidden">
             <div className="w-full d-inline-block m-2 m-lg-3 p-3 text-start overflow-y-auto overflow-x-hidden">
               <div className="w-full h-full flex items-center align-middle justify-center scale-125">
-                {payment ? <PaymentTicketHtml info={payment} /> : <TicketHTML info={info} />}
+                {payment ? <PaymentTicketHtml info={payment} /> : <TicketHTMLSimple info={info} />}
               </div>
             </div>
           </div>

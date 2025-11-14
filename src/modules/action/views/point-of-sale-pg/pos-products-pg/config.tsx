@@ -169,6 +169,7 @@ const ProductsConfig: FormConfig = {
     parent_id: null,
     categories: [],
     sw_categories: false,
+    main_in_pos: false,
   },
 
   grid: {

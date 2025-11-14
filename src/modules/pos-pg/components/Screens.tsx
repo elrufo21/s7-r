@@ -18,6 +18,8 @@ import { RiPrinterLine } from 'react-icons/ri'
 import { TypeStateOrder, TypeStatePayment } from '../types'
 import { useParams } from 'react-router-dom'
 import { offlineCache } from '@/lib/offlineCache'
+import modalProducts from '../views/modal-products/config'
+import { ViewTypeEnum } from '@/shared/shared.types'
 
 const Screens = () => {
   const {
@@ -42,6 +44,7 @@ const Screens = () => {
     setSelectedOrderInListPg,
     selectedOrderInListPg,
     getSortedActiveOrdersPg,
+    productsPg,
   } = useAppStore()
   const sortedOrders = getSortedActiveOrdersPg()
   const { pointId } = useParams()
@@ -212,6 +215,28 @@ const Screens = () => {
       order.payment_state === 'PF' ? TypeStatePayment.PAYMENT : TypeStatePayment.PENDING_PAYMENT,
   }))
 
+  const openProductModal = () => {
+    const dialogId = openDialog({
+      title: 'Mas productos',
+      dialogContent: () => (
+        <FrmBaseDialog
+          config={modalProducts}
+          viewType={ViewTypeEnum.LIBRE}
+          initialValues={{ products: productsPg, dialogId: dialogId }}
+        />
+      ),
+      buttons: [
+        {
+          text: 'Cerrar',
+          type: 'cancel',
+          onClick: () => {
+            closeDialogWithData(dialogId, {})
+          },
+        },
+      ],
+    })
+  }
+
   switch (screenPg) {
     case 'products':
       return (
@@ -305,7 +330,7 @@ const Screens = () => {
                       <div className="h-[30px]">
                         <RiPrinterLine style={{ fontSize: '24px' }} />
                       </div>
-                      <div className="text-[1.09375rem]">Imprimir recibo</div>
+                      <div className="text-[1.09375rem]">Imprimir recibos</div>
                     </div>
                   </button>
                 </div>

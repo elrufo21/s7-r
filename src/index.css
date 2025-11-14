@@ -11064,7 +11064,7 @@ body {
 }
 
 .pg-line-vertical > .lv-child {
-    height: 120px;             /* Los 5 divs fijos tienen 100px de alto */
+    height: 110px;             /* Los 5 divs fijos tienen 100px de alto */
     /* background-color: #f0f0f0; */
     text-align: center;
 

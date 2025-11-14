@@ -20,13 +20,13 @@ import { adjustTotal } from '@/shared/helpers/helpers'
 import CalculatorPanel from './modal/components/ModalCalculatorPanel'
 import { usePosActionsPg } from '@/modules/pos/hooks/usePosActionsPg'
 import { CustomToast } from '@/components/toast/CustomToast'
+import CartTable from './CartTable'
 
 export default function CartPanel({ order }: { order: any[] }) {
   const {
     openDialog,
     closeDialogWithData,
     executeFnc,
-    modalData,
     updateOrderPartnerPg,
     setModalData,
     orderDataPg,
@@ -34,7 +34,6 @@ export default function CartPanel({ order }: { order: any[] }) {
     selectedOrderPg,
     selectedItemPg,
     setSelectedItemPg,
-    setScreenPg,
     screenPg,
     changeToPaymentLocalPg,
     finalCustomerPg,
@@ -44,14 +43,14 @@ export default function CartPanel({ order }: { order: any[] }) {
     setOperationPg,
     clearDisplayPg,
     addDigitPg,
-    backToProductsPg,
     defaultPosSessionDataPg,
     deleteOrderPg,
     setSelectedLinePg,
     resetTriggerPg,
     setSelectedOrderPg,
     temporaryValuesPg,
-    applyTemporaryValuesToPg,
+    temporaryListPg,
+    applyTemporaryValuesByPositionPg,
   } = useAppStore()
   const { isOnline } = usePWA()
   const [cart, setCart] = useState<Product[]>([])
@@ -531,7 +530,6 @@ export default function CartPanel({ order }: { order: any[] }) {
       lastTapTime.current[itemId] = now
     }
   }
-
   return (
     // <div
     //   className={`flex flex-col h-full border rounded-md shadow-sm transition-all duration-200 ${selectedOrderPg === order.order_id
@@ -541,6 +539,24 @@ export default function CartPanel({ order }: { order: any[] }) {
     // >
 
     <div className={`flex flex-col h-full`}>
+      <div className="pads">
+        <div className="control-buttons bg-black ">
+          <div className="w-full flex justify-between text-truncate font-bold text-yellow-500 ">
+            <div className="w-full text-center">
+              {temporaryListPg.find(
+                (t) =>
+                  t.position_pg === order.position_pg && t.payment_state === order.payment_state
+              )?.name || ''}
+            </div>
+            <div className="mr-8">
+              {temporaryListPg.find(
+                (t) =>
+                  t.position_pg === order.position_pg && t.payment_state === order.payment_state
+              )?.base_quantity || '0'}
+            </div>
+          </div>
+        </div>
+      </div>
       <div className="control-buttons mb-0 pt-0">
         <button
           className="btn touch-lh-m text-truncate w-full text-action text-white"
@@ -557,7 +573,13 @@ export default function CartPanel({ order }: { order: any[] }) {
               })
             }
             setSelectedOrderPg(order.order_id)
-            applyTemporaryValuesToPg(order.order_id)
+            //  applyTemporaryValuesToPg(order.order_id)
+            applyTemporaryValuesByPositionPg(
+              order.position_pg,
+              order.payment_state,
+              temporaryValuesPg.tara_value,
+              temporaryValuesPg.tara_quantity
+            )
           }}
         >
           AGREGAR A LA LISTA
@@ -589,8 +611,9 @@ export default function CartPanel({ order }: { order: any[] }) {
 
       <div
         // className={`order-container cursor-pointer`}
-        className={`order-container cursor-pointer ${selectedOrderPg === order.order_id ? 'bg-yellow-400' : ''
-          }`}
+        className={`order-container cursor-pointer ${
+          selectedOrderPg === order.order_id ? 'bg-yellow-400' : ''
+        }`}
         onClick={() => setSelectedOrderPg(order.order_id)}
       >
         {order.lines?.length === 0 ? (
@@ -619,11 +642,12 @@ export default function CartPanel({ order }: { order: any[] }) {
           </div>
         ) : (
           <div>
-            {order.lines?.map((item) => (
+            <CartTable order={order} />
+            {/** {order.lines?.map((item) => (
               <div
                 key={item.line_id}
                 ref={(el) => (itemRefs.current[item.line_id] = el)}
-               // onClick={() => handleDoubleTap(item.line_id)}
+                // onClick={() => handleDoubleTap(item.line_id)}
               >
                 <CartItem
                   item={{
@@ -642,7 +666,7 @@ export default function CartPanel({ order }: { order: any[] }) {
                   key={item.line_id}
                 />
               </div>
-            ))}
+            ))} */}
           </div>
         )}
       </div>

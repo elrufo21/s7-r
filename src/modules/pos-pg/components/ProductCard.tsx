@@ -11,17 +11,16 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const {
-    addProductToOrderPg,
     selectedOrderPg,
     getProductQuantityInProductsPg,
     openDialog,
     closeDialogWithData,
     changePricePg,
-    prevWeight,
     setPrevWeight,
-    weightValue,
     setTemporaryProductPg,
-    temporaryValuesPg,
+    setTemporaryProductByPositionPg,
+    orderDataPg,
+    temporaryListPg,
   } = useAppStore()
   /*
   const quantity =
@@ -69,10 +68,11 @@ export default function ProductCard({ product }: ProductCardProps) {
       ],
     })
   }
-
+  const order = orderDataPg.find((o) => o.order_id === selectedOrderPg)
   return (
     <article
-      className={`card_article ${temporaryValuesPg?.product_id === product.product_id && 'border-1 border-red-600 shadow-[0_0_18px_rgba(250,21,21)]  rounded-md'}`}
+      className={`card_article 
+        ${temporaryListPg.find((t) => t.product_id === product.product_id) && 'border-1 .border-red-600 .shadow-[0_0_18px_rgba(250,21,21)]  rounded-md'}`}
       onClick={async () => {
         if (changePricePg) {
           openCalculatorModal({ operation: Operation.CHANGE_PRICE })
@@ -80,6 +80,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         }
         if (product.product_id) {
           setTemporaryProductPg(product, 0)
+          setTemporaryProductByPositionPg(order.position_pg, order.payment_state, product)
           //     addProductToOrderPg(selectedOrderPg, product as any, prevWeight)
           setPrevWeight(0)
         }

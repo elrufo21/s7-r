@@ -37,16 +37,20 @@ const to2 = (v: any) => Number(Number(v || 0).toFixed(2))
 const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
   const {
     closeDialogWithData,
-    updateOrderLinePg,
+    /**updateOrderLinePg,
     setHandleChangePg,
     deleteProductInOrderPg,
     selectedOrderPg,
     containersPg,
     setTaraValuePg,
-    selectedItemPg,
+    selectedItemPg, */
     setChangePricePg,
     executeFnc,
     updateTemporaryLinePg,
+    setTemporaryQuantityByPositionPg,
+    updateTemporaryByOrderPg,
+    selectedOrderPg,
+    orderDataPg,
   } = useAppStore()
 
   const [localProduct, setLocalProduct] = useState<Product>({ ...product })
@@ -194,6 +198,7 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
   }
 
   const handleOk = async () => {
+    const order = orderDataPg.find((o) => o.order_id === selectedOrderPg)
     if (activeField === Operation.CHANGE_PRICE) {
       const { oj_data } = await executeFnc('fnc_product', 'u', {
         product_id: product.product_id,
@@ -215,7 +220,10 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
     }
     applyInput(inputValue)
     //setHandleChangePg(true)
-    updateTemporaryLinePg(localProduct)
+    if (activeField === Operation.TARA_VALUE) {
+      updateTemporaryLinePg(localProduct)
+    }
+    updateTemporaryByOrderPg(selectedOrderPg, localProduct)
     //updateOrderLinePg(localProduct)
     closeDialogWithData(dialogId, {})
   }

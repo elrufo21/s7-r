@@ -51,7 +51,7 @@ const PosOrderConfig: FormConfig = {
   form_id: 401,
   aditionalFilters: [
     //desarrollo
-     [
+    [
       0,
       'multi_filter_in',
       [

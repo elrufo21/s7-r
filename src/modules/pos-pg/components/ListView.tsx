@@ -226,9 +226,9 @@ export function DataTable<TData extends { isSelected?: boolean }, TValue = any>(
   }, [globalFilter, onSearchChange])
 
   return (
-    <div className={`w-full bg-white shadow-sm h-full flex flex-col h-full ${className} `}>
+    <div className={`w-full bg-white shadow-sm  flex flex-col max-h-[500px]  ${className} `}>
       {(enableSearch || enablePagination || statusOptions) && (
-        <div className="pos-controls-order-list border-b border-gray-200 py-2 pr-2 pl-3">
+        <div className="pos-controls-order-list border-b border-gray-200 py-2 pr-2 pl-3 sticky top-0 bg-white z-20">
           <div className="pos-search-bar">
             <InputWithKeyboard
               type="text"
@@ -291,8 +291,8 @@ export function DataTable<TData extends { isSelected?: boolean }, TValue = any>(
         </div>
       )}
 
-      <div className="flex flex-col flex-1 overflow-auto ">
-        <div className="flex-1 overflow-y-auto  h-full">
+      <div className="flex flex-col flex-1">
+        <div className="flex-1 h-[400px] overflow-y-auto">
           <table className="w-full table-auto">
             {header && (
               <thead className="sticky top-0 bg-gray-50 z-10">
