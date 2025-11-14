@@ -136,7 +136,7 @@ const Invoice = () => {
       })
 
       const rawHtml = renderToString(
-        payment ? <PaymentTicketHtml info={payment} /> : <TicketHTML info={info} />
+        payment ? <PaymentTicketHtml info={payment} /> : <TicketHTMLSimple info={info} />
       )
 
       const html = `
