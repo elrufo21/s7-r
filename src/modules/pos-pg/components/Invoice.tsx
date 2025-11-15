@@ -5,11 +5,9 @@ import useAppStore from '@/store/app/appStore'
 import { usePWA } from '@/hooks/usePWA'
 import { offlineCache } from '@/lib/offlineCache'
 import { RiPrinterLine } from 'react-icons/ri'
-import TicketHTML from './TicketHtml'
 import { TypeStateOrder } from '../types'
 import { renderToString } from 'react-dom/server'
 import PaymentTicketHtml from './PaymentTicketHtml'
-import qz from 'qz-tray'
 import TicketHTMLSimple from './TicketHtmlSimple'
 
 const Invoice = () => {
@@ -143,7 +141,7 @@ const Invoice = () => {
     if (payment) {
       root.render(<PaymentTicketHtml info={payment} />)
     } else {
-      root.render(<TicketHTML info={info} />)
+      root.render(<TicketHTMLSimple info={info} />)
     }
 
     setTimeout(() => {
