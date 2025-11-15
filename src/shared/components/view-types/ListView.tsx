@@ -623,7 +623,7 @@ export const ListView = ({
     >
       {handleNoDataList()}
 
-      <table className="list_table w-full">
+      <table className="list_table w-full overflow-auto">
         <TableHeader table={table!} />
         <TableBody
           table={table!}
@@ -660,7 +660,7 @@ const TableHeader = ({ table }: { table: Table<any> }) => (
             key={header.id}
             colSpan={header.colSpan}
             style={{ width: header.getSize() }}
-            className={`relative  ${header.id === 'select' && ' left-sticky justify-center bg-[#F9FAFB] '}
+            className={`${header.id === 'settings' ? 'absolute !w-[33px]' : 'relative'}   ${header.id === 'select' && ' left-sticky justify-center bg-[#F9FAFB] '}
                 ${header.id === 'settings' && ' right-sticky  bg-gray-50'} 
                 p-2 ${header.column.columnDef.enableSorting === false ? 'cursor-default' : 'cursor-pointer'} ${header.column.getIsSorted() && 'bg-gray-200 '}  ${(header.column.columnDef as { className?: string })?.className ?? 'text-left'} font-semibold `}
           >

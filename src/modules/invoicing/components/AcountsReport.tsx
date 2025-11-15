@@ -178,7 +178,7 @@ const AccountsReport = ({ data, reportDate = new Date() }) => {
 
   return (
     <Document>
-      <Page size="A4" orientation="landscape" style={styles.page}>
+      <Page size="A4" orientation="portrait" style={styles.page}>
         {/* Encabezado */}
         <View style={styles.headerSection}>
           <View style={styles.titleBlock}>

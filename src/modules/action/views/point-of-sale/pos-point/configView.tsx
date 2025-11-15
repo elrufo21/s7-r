@@ -1,11 +1,16 @@
 import { required } from '@/shared/helpers/validators'
 import { frmElementsProps } from '@/shared/shared.types'
-import { TextControlled } from '@/shared/ui'
-import { useCallback } from 'react'
+import { MultiSelectObject, TextControlled } from '@/shared/ui'
+import { useCallback, useState } from 'react'
 import { pdf } from '@react-pdf/renderer'
 import TotalSalesTodayPDF from '@/modules/invoicing/components/TotalSalesTodayPDF'
+import FormRow from '@/shared/components/form/base/FormRow'
+import { Chip } from '@mui/material'
+import useAppStore from '@/store/app/appStore'
 
 export function FrmTitle({ control, errors, editConfig }: frmElementsProps) {
+  const createOptions = useAppStore((state) => state.createOptions)
+  const [users, setUsers] = useState<any[]>([])
   // Función para descargar el PDF
   const downloadSalesReport = useCallback(async () => {
     try {
@@ -60,7 +65,27 @@ export function FrmTitle({ control, errors, editConfig }: frmElementsProps) {
       alert('Error al generar el reporte. Por favor intenta nuevamente.')
     }
   }, [])
-
+  const fnc_renderImps = (value: any, getProps: any) => {
+    return value.map((option: any, index: number) => (
+      <Chip
+        {...getProps({ index })}
+        key={index}
+        className="text-red-100"
+        label={option['label']}
+        size="small"
+      />
+    ))
+  }
+  const loadUsers = async () => {
+    setUsers(
+      await createOptions({
+        fnc_name: 'fnc_user',
+        filters: [],
+        action: 's2',
+      })
+    )
+  }
+  console.log('users', users)
   return (
     <>
       <TextControlled
@@ -73,6 +98,19 @@ export function FrmTitle({ control, errors, editConfig }: frmElementsProps) {
         errors={errors}
         editConfig={{ config: editConfig }}
       />
+      <FormRow label="Usuarios permitidos">
+        <MultiSelectObject
+          name={'user_id'}
+          control={control}
+          options={users}
+          errors={errors}
+          fnc_loadOptions={loadUsers}
+          renderTags={fnc_renderImps}
+          createOpt={true}
+          searchOpt={true}
+          editConfig={{ config: editConfig }}
+        />
+      </FormRow>
       <br />
       <br />
 

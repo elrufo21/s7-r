@@ -128,9 +128,9 @@ export const ModalBase = ({
   return (
     <div className="flex flex-col gap-4">
       {!contactModal && (
-        <div className="flex mt-4">
+        <div className="flex mt-4 ">
           <div className="w-1/3"></div>
-          <div className="w-1/3">
+          <div className="w-1/3 sticky">
             <SearchInput
               config={config}
               setFilters={onHandleFilters}
@@ -182,31 +182,33 @@ export const ModalBase = ({
           />
         </>
       ) : (
-        <ListView
-          config={config}
-          listCurrentPage={listCurrentPage}
-          groupedParentRow={groupedParentRow}
-          setGroupedParentRow={setGroupedParentRow}
-          table={table}
-          setTable={setTable}
-          groupByData={groupByData}
-          setExpandedData={setExpandedData}
-          expandedData={expandedData}
-          setListViewData={setListViewData}
-          listViewData={listViewData}
-          listGroupBy={listGroupBy}
-          setCanChangeGroupBy={setCanChangeGroupBy}
-          canChangeGroupBy={canChangeGroupBy}
-          dataShow={dataShow}
-          filters={filters}
-          setFilters={onHandleFilters}
-          columnsVisibility={columnsVisibility}
-          setColumnsVisibility={setColumnsVisibility}
-          multiple={multiple}
-          onRowClick={onRowClick}
-          useLocalSelection={true}
-          onRowSelectionChange={handleSelectionChange}
-        />
+        <div className="h-[500px] overflow-auto">
+          <ListView
+            config={config}
+            listCurrentPage={listCurrentPage}
+            groupedParentRow={groupedParentRow}
+            setGroupedParentRow={setGroupedParentRow}
+            table={table}
+            setTable={setTable}
+            groupByData={groupByData}
+            setExpandedData={setExpandedData}
+            expandedData={expandedData}
+            setListViewData={setListViewData}
+            listViewData={listViewData}
+            listGroupBy={listGroupBy}
+            setCanChangeGroupBy={setCanChangeGroupBy}
+            canChangeGroupBy={canChangeGroupBy}
+            dataShow={dataShow}
+            filters={filters}
+            setFilters={onHandleFilters}
+            columnsVisibility={columnsVisibility}
+            setColumnsVisibility={setColumnsVisibility}
+            multiple={multiple}
+            onRowClick={onRowClick}
+            useLocalSelection={true}
+            onRowSelectionChange={handleSelectionChange}
+          />
+        </div>
       )}
     </div>
   )

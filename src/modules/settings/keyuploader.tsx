@@ -6,67 +6,48 @@ interface QZKeyUploaderProps {
   description?: string
 }
 
-const QZKeyUploader: React.FC<QZKeyUploaderProps> = ({
-  title = 'Claves de Firma QZ Tray',
-  description = 'Sube los archivos del certificado y la clave privada que usará QZ Tray para firmar digitalmente.',
-}) => {
-  const [certificate, setCertificate] = useState<File | null>(null)
-  const [privateKey, setPrivateKey] = useState<File | null>(null)
-  const [message, setMessage] = useState<string>('')
+const QZKeyUploader: React.FC<QZKeyUploaderProps> = () => {
+  const [file, setFile] = useState<File | null>(null)
+  const [msg, setMsg] = useState('')
 
-  const handleSave = async () => {
-    if (!certificate || !privateKey) {
-      setMessage('⚠️ Selecciona ambos archivos antes de guardar.')
+  async function handleSave() {
+    if (!file) {
+      setMsg('⚠️ Selecciona un archivo qztray.p12')
       return
     }
 
     try {
-      const certText = await certificate.text()
-      const keyText = await privateKey.text()
+      const base64 = await fileToBase64(file)
 
-      await offlineCache.saveQZKeys(certText, keyText)
+      await offlineCache.saveQZP12(base64)
 
-      setMessage('✅ Claves guardadas correctamente en el almacenamiento local.')
-    } catch (error) {
-      console.error(error)
-      setMessage('❌ Error al guardar las claves.')
+      setMsg('✅ qztray.p12 guardado correctamente.')
+    } catch (err) {
+      console.error(err)
+      setMsg('❌ Error al guardar el archivo.')
     }
   }
 
   return (
-    <div className="o_setting_right_pane">
-      <label className="o_form_label">{title}</label>
-      <div className="text-muted mb8">{description}</div>
+    <div>
+      <label>Sube tu archivo qztray.p12</label>
 
-      <div className="mt8">
-        <div className="mb4">
-          <label className="text-muted">Certificado (.txt)</label>
-          <input
-            type="file"
-            accept=".txt"
-            className="form-control"
-            onChange={(e) => setCertificate(e.target.files?.[0] || null)}
-          />
-        </div>
+      <input type="file" accept=".p12" onChange={(e) => setFile(e.target.files?.[0] || null)} />
 
-        <div className="mb4">
-          <label className="text-muted">Clave Privada (.pem)</label>
-          <input
-            type="file"
-            accept=".pem"
-            className="form-control"
-            onChange={(e) => setPrivateKey(e.target.files?.[0] || null)}
-          />
-        </div>
+      <button onClick={handleSave}>Guardar clave</button>
 
-        <button className="btn btn-link mt8" onClick={handleSave}>
-          <span>Guardar claves</span>
-        </button>
-
-        {message && <div className="text-muted mt8">{message}</div>}
-      </div>
+      {msg && <p>{msg}</p>}
     </div>
   )
 }
 
 export default QZKeyUploader
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}

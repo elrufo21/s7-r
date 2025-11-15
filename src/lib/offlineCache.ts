@@ -151,7 +151,25 @@ export class OfflineCache {
     await tx.done
     console.log('💾 Claves QZ guardadas localmente.')
   }
+  async saveQZP12(base64P12: string) {
+    if (!this.db) await this.init()
+    const tx = this.db.transaction('qz_security', 'readwrite')
+    const store = tx.objectStore('qz_security')
 
+    await store.put({
+      id: 'p12',
+      base64: base64P12,
+      updatedAt: new Date().toISOString(),
+    })
+
+    await tx.done
+  }
+
+  async getQZP12() {
+    if (!this.db) await this.init()
+    const tx = this.db.transaction('qz_security', 'readonly')
+    return tx.objectStore('qz_security').get('p12')
+  }
   // Obtiene configuración QZ
   async getQZKeys() {
     if (!this.db) await this.init()

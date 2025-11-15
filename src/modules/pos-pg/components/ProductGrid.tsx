@@ -22,8 +22,8 @@ function hasCategoryRecursive(categories: any[], selectedId: number): boolean {
 
 export default function ProductGrid() {
   const { productsPg, searchProductPg, selectedCategoryPg } = useAppStore()
-
-  const filteredProducts = productsPg.filter((product) => {
+  const products = productsPg.filter((p) => p.main_in_pos)
+  const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchProductPg.toLowerCase())
 
     const matchesCategory =

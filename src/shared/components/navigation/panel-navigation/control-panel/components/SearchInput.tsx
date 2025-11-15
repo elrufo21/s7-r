@@ -451,7 +451,7 @@ export const SearchInput = ({
   }
 
   return (
-    <Paper variant="outlined" className="w-full flex">
+    <Paper variant="outlined" className="w-full flex sticky ">
       <div
         className="w-full flex"
         style={{

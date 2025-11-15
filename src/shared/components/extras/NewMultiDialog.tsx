@@ -26,7 +26,6 @@ export const NewMultiDialog = () => {
     const dialog = newAppDialogs.find((d) => d.id === dialogId)
 
     if (!dialog) return
-    console.log('close', dialog)
 
     if (dialog?.handleCloseDialog) await dialog?.handleCloseDialog()
     // ✅ Si el diálogo tiene disableClose: true, no lo cerrar
@@ -78,8 +77,10 @@ export const NewMultiDialog = () => {
               </IconButton>
             )}
 
-            <DialogContent dividers={true} sx={{ padding: 0 }} className="modal-dialog">
-              {dialog.content(() => handleCloseDialog(dialog.id))}
+            <DialogContent dividers={false} sx={{ padding: 0 }} className="modal-dialog">
+              <div className="overflow-y-auto max-h-[70vh]">
+                {dialog.content(() => handleCloseDialog(dialog.id))}
+              </div>
             </DialogContent>
 
             <DialogActions className="modal-footer !p-[15px]">
@@ -90,9 +91,7 @@ export const NewMultiDialog = () => {
                     key={index}
                     className={clsx(
                       'c-equivalent-son btn btn-lg lh-lg',
-                      button.type === 'confirm'
-                        ? 'btn-primary'
-                        : 'btn-secondary',
+                      button.type === 'confirm' ? 'btn-primary' : 'btn-secondary',
                       button.className
                     )}
                     onClick={button.onClick}
@@ -113,7 +112,6 @@ export const NewMultiDialog = () => {
                   // >
                   //   {button.text}
                   // </button>
-
                 ))}
               </div>
             </DialogActions>

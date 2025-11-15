@@ -8,7 +8,6 @@ import { RiPrinterLine } from 'react-icons/ri'
 import TicketHTML from './TicketHtml'
 import { TypeStateOrder } from '../types'
 import { renderToString } from 'react-dom/server'
-import { printHTML } from '@/lib/qzPrinter'
 import PaymentTicketHtml from './PaymentTicketHtml'
 import qz from 'qz-tray'
 import TicketHTMLSimple from './TicketHtmlSimple'
@@ -29,9 +28,7 @@ const Invoice = () => {
   const orderDataRef = useRef(orderDataPg)
   const { isOnline } = usePWA()
   const firstOrderRef = useRef(null)
-  useEffect(() => {
-    setupQZSecurity()
-  }, [])
+
   useEffect(() => {
     const fetchOrder = async () => {
       let fetchedOrder = {}
@@ -69,96 +66,46 @@ const Invoice = () => {
       }
     }
   }, [])
-  async function setupQZSecurity() {
-    const keys = await offlineCache.getQZKeys()
 
-    if (!keys?.cert || !keys?.privateKey) {
-      console.warn('No hay claves QZ cargadas todavía.')
-      return
-    }
-
-    qz.security.setCertificatePromise(async () => {
-      return keys.cert
-    })
-
-    qz.security.setSignaturePromise(async (toSign: string) => {
-      const { privateKey } = keys
-      const crypto = window.crypto.subtle
-
-      // Convert PEM to raw key
-      const pem = privateKey
-        .replace(/-----BEGIN PRIVATE KEY-----/, '')
-        .replace(/-----END PRIVATE KEY-----/, '')
-        .replace(/\s+/g, '')
-
-      const binary = atob(pem)
-      const buffer = Uint8Array.from(binary, (c) => c.charCodeAt(0))
-
-      const keyObj = await crypto.importKey(
-        'pkcs8',
-        buffer,
-        {
-          name: 'RSASSA-PKCS1-v1_5',
-          hash: 'SHA-256',
-        },
-        false,
-        ['sign']
-      )
-
-      const signature = await crypto.sign(
-        {
-          name: 'RSASSA-PKCS1-v1_5',
-        },
-        keyObj,
-        new TextEncoder().encode(toSign)
-      )
-
-      return btoa(String.fromCharCode.apply(null, new Uint8Array(signature) as any))
-    })
-  }
   const info = { ...order, lines: (order as any)?.lines || [] }
+
   const handlePrint = async () => {
     try {
-      if (!qz.websocket.isActive()) {
-        await qz.websocket.connect()
-      }
-
-      const printers = await qz.printers.find()
-      console.log('Impresoras detectadas:', printers)
-
-      const printerName = printers.find((p) => p.toLowerCase().includes('epson')) || printers[0]
-
-      console.log('Usando impresora:', printerName)
-
-      const config = qz.configs.create(printerName, {
-        scaleContent: true,
-        copies: 1,
-      })
-
       const rawHtml = renderToString(
         payment ? <PaymentTicketHtml info={payment} /> : <TicketHTMLSimple info={info} />
       )
 
       const html = `
-        <style>
-          @page { size: 10mm auto; margin: 0; }
-          body { width: 10mm; margin: 0; padding: 0; font-family: monospace; font-size: 12px; }
-          * { font-family: monospace; }
-        </style>
-        ${rawHtml}
-      `
+      <style>
+        @page { margin: 0; }
+        body { font-family: monospace; font-size: 12px; }
+      </style>
+      ${rawHtml}
+    `
 
-      await qz.print(config, [
-        {
-          type: 'html',
-          format: 'plain',
-          data: html,
-        },
-      ])
+      // Intentar enviar al backend primero
+      const res = await fetch('http://localhost:3000/print', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          html: html,
+          printerName: 'Canon G2060 series HTTP',
+        }),
+      })
 
-      await qz.websocket.disconnect()
+      const data = await res.json()
+
+      if (data.ok) {
+        console.log('Ticket enviado a la impresora correctamente (backend)')
+      } else {
+        console.error('Error desde backend:', data.error)
+        console.log('Usando impresión local como fallback')
+        fnc_printTicket() // fallback
+      }
     } catch (err) {
-      console.error('Error imprimiendo:', err)
+      console.error('Error imprimiendo con backend:', err)
+      console.log('Usando impresión local como fallback')
+      fnc_printTicket() // fallback
     }
   }
 

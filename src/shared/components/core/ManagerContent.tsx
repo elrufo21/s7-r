@@ -61,7 +61,6 @@ export const ManagerContent = () => {
   }, [config.title, pathname, setBreadcrumb, viewType])
   useEffect(() => {
     if (!breadcrumb.find((item) => item.title === config.title)) {
-      console.log('config.view_default', config.view_default)
       setViewType(config.view_default)
     }
   }, [breadcrumb, config.title, config.view_default, setViewType])
@@ -185,7 +184,7 @@ export const ManagerContent = () => {
         </div>
       )}
       {viewType === ViewTypeEnum.LIST && (
-        <div className="o_list_renderer o_renderer table-responsive">
+        <div className="o_list_renderer o_renderer  ">
           {config && (
             <ListView
               config={config}
