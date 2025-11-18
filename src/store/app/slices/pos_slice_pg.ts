@@ -1740,7 +1740,6 @@ const createPosPg = (
           '2',
           [{ key: '2.1', key_db: 'available_in_pos', value: '1' }],
         ],
-        [1, 'pag', 1],
       ])
       set({ productsPg: oj_data, filteredProductsPg: oj_data })
     } catch (err) {
@@ -2036,7 +2035,6 @@ const createPosPg = (
               '2',
               [{ key: '2.1', key_db: 'available_in_pos', value: '1' }],
             ],
-            [1, 'pag', 1],
           ]).then((res) => res.oj_data || [])
         ),
         getOrSetLocalStoragePg('categories', () =>

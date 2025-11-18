@@ -734,7 +734,6 @@ export class OfflineCache {
         '2',
         [{ key: '2.1', key_db: 'available_in_pos', value: '1' }],
       ],
-      [1, 'pag', 1],
     ])
 
     if (result?.oj_data) {
@@ -1364,7 +1363,6 @@ export class OfflineCache {
           '2',
           [{ key: '2.1', key_db: 'available_in_pos', value: '1' }],
         ],
-        [1, 'pag', 1],
       ])
 
       if (!result?.oj_data || result.oj_data.length === 0) {
