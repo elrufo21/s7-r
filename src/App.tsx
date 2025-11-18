@@ -8,7 +8,7 @@ import { PWAUpdateHandler } from './components/PWAUpdateHandler'
 function App() {
   useOfflineCache();
 
-  useEffect(() => {
+  /*useEffect(() => {
     // Bloquear menú contextual (anticlick)
     const handleContextMenu = (e) => e.preventDefault();
 
@@ -30,7 +30,7 @@ function App() {
       document.removeEventListener("touchstart", blockLongPress);
     };
   }, []);
-
+*/
   return (
     <>
       <AppRoutes />
