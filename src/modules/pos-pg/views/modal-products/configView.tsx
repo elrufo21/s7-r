@@ -5,7 +5,6 @@ import { DataTable } from '../../components/ListView'
 import useAppStore from '@/store/app/appStore'
 
 export function FrmMiddle({ watch }: frmElementsProps) {
-  console.log('watch', watch())
   const {
     closeDialogWithData,
     setTemporaryProductByPositionPg,
@@ -16,7 +15,11 @@ export function FrmMiddle({ watch }: frmElementsProps) {
   const order = orderDataPg.find((o) => o.order_id === selectedOrderPg)
   const columns = useMemo<ColumnDef<any>[]>(
     () => [
-      { header: 'Producto', accessorKey: 'name' },
+      {
+        header: 'Producto',
+        accessorKey: 'name',
+        cell: (info) => <div className="uppercase ">{info.row.original.name}</div>,
+      },
       {
         header: 'Precio',
         accessorKey: 'sale_price',

@@ -184,7 +184,7 @@ const Invoice = () => {
                     className="button print btn btn-lg btn-secondary w-100 py-3 lh-xlg"
                     type="button"
                     onClick={
-                      //handlePrint
+                    //  handlePrint
                       fnc_printTicket
                     }
                   >

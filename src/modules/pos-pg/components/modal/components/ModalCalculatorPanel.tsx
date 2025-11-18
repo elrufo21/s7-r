@@ -52,6 +52,10 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
     selectedOrderPg,
     orderDataPg,
   } = useAppStore()
+  const formatNumber = (n: number) => {
+    if (n === null || n === undefined) return ''
+    return Number.isInteger(n) ? String(n) : n.toFixed(2)
+  }
 
   const [localProduct, setLocalProduct] = useState<Product>({ ...product })
   const [activeField, setActiveField] = useState<Operation>(selectedField ?? Operation.QUANTITY)
@@ -431,23 +435,13 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
             </div>
           </div> */}
             <div className="flex items-center justify-center text-6xl font-bold py-6">
-              {activeField === Operation.QUANTITY && (
-                <span>{to2(localProduct.base_quantity).toFixed(2)} </span>
-              )}
+              {activeField === Operation.QUANTITY && <span>{inputValue}</span>}
 
-              {activeField === Operation.TARA_QUANTITY && (
-                <span>{to2(localProduct.tara_quantity).toFixed(2)} </span>
-              )}
+              {activeField === Operation.TARA_QUANTITY && <span>{inputValue}</span>}
 
-              {activeField === Operation.TARA_VALUE && (
-                <span>
-                  {to2(localProduct.tara_value).toFixed(2)} {localProduct.uom_name}
-                </span>
-              )}
+              {activeField === Operation.TARA_VALUE && <span>{inputValue}</span>}
 
-              {activeField === Operation.PRICE && (
-                <span>{to2(localProduct.price_unit).toFixed(2)}</span>
-              )}
+              {activeField === Operation.PRICE && <span>{inputValue}</span>}
             </div>
           </div>
         ) : (

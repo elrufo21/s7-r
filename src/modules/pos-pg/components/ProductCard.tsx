@@ -101,7 +101,9 @@ export default function ProductCard({ product }: ProductCardProps) {
       )}
 
       <div className="product-content mt-4">
-        <div className={`pos-product-name  ${imageUrl ? '' : 'no-image'}`}>{product.name}</div>
+        <div className={`pos-product-name uppercase  ${imageUrl ? '' : 'no-image'}`}>
+          {product.name}
+        </div>
       </div>
 
       <div className="product-category-color"></div>

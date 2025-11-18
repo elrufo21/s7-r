@@ -59,7 +59,6 @@ export function ClientModal({ onSelectClient, openEditModal }: ClientModalProps)
     },
     [onSelectClient]
   )
-  console.log('Selected client:', modalData)
 
   const handleToggleMenu = useCallback((e: React.MouseEvent, id: string) => {
     e.stopPropagation()
@@ -96,7 +95,7 @@ export function ClientModal({ onSelectClient, openEditModal }: ClientModalProps)
         cell: ({ row }) => {
           const client = row.original
           return (
-            <div className="flex flex-col py-1">
+            <div className="flex flex-col py-1 uppercase">
               <div className="font-medium text-gray-800">{client.name}</div>
             </div>
           )

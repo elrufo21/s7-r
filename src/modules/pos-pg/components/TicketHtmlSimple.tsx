@@ -83,37 +83,84 @@ const TicketHTMLSimple: React.FC<TicketHTMLSimpleProps> = ({ info }) => {
         style={{
           display: 'flex',
           fontSize: '11px',
-          marginBottom: '3px',
         }}
       >
-        <div style={{ width: '20%', border: '1px solid #000' }}>TIPO</div>
-        <div style={{ width: '10%', textAlign: 'center', border: '1px solid #000' }}>C/T</div>
-        <div style={{ width: '20%', textAlign: 'center', border: '1px solid #000' }}>P BRUTO</div>
-        <div style={{ width: '10%', textAlign: 'center', border: '1px solid #000' }}>TARA</div>
-        <div style={{ width: '20%', textAlign: 'center', border: '1px solid #000' }}>P NETO</div>
-        <div style={{ width: '20%', textAlign: 'right', border: '1px solid #000' }}>TOTAL</div>
+        <div style={{ width: '24%', border: '1px solid #000' }}>TIPO</div>
+        <div style={{ width: '14%', textAlign: 'center', border: '1px solid #000' }}>C/T</div>
+        <div style={{ width: '24%', textAlign: 'center', border: '1px solid #000' }}>P BRUTO</div>
+        <div style={{ width: '14%', textAlign: 'center', border: '1px solid #000' }}>TARA</div>
+        <div style={{ width: '24%', textAlign: 'center', border: '1px solid #000' }}>P NETO</div>
       </div>
 
+      {/**<div style={{ width: '20%', textAlign: 'right', border: '1px solid #000' }}>TOTAL</div>*/}
       {info.lines?.map((item: any, i: number) => (
-        <div key={i} style={{ marginBottom: '3px' }}>
+        <div key={i}>
           <div
             style={{
               display: 'flex',
               fontSize: '12px',
             }}
           >
-            <div style={{ width: '20%', textTransform: 'uppercase' }}>
+            <div
+              style={{
+                width: '24%',
+                textTransform: 'uppercase',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                fontWeight: 'bold',
+              }}
+            >
               {item.short_name || item.name}
             </div>
-            <div style={{ width: '10%', textAlign: 'center' }}>{item.tara_quantity}</div>
-            <div style={{ width: '20%', textAlign: 'center' }}>
+            <div style={{ width: '14%', textAlign: 'center' }}>{item.tara_quantity}</div>
+            <div style={{ width: '24%', textAlign: 'right' }}>
               {item.base_quantity ? item.base_quantity : '0'}
             </div>
-            <div style={{ width: '10%', textAlign: 'center' }}>
+            <div style={{ width: '14%', textAlign: 'center' }}>
               {item.tara_total ? item.tara_total : '0'}
             </div>
-            <div style={{ width: '20%', textAlign: 'center' }}>{item.quantity}</div>
+            <div style={{ width: '24%', textAlign: 'right' }}>{item.quantity}</div>
+          </div>
+        </div>
+      ))}
+      <div
+        style={{
+          marginTop: '20px',
+          display: 'flex',
+          fontSize: '11px',
+          borderTop: '1px solid #000',
+          borderBottom: '1px solid #000',
+        }}
+      >
+        <div style={{ width: '38%', textAlign: 'center' }}>Producto</div>
+        <div style={{ width: '20%', textAlign: 'center' }}>P.NETO</div>
+        <div style={{ width: '20%', textAlign: 'center' }}>PRECIO</div>
+        <div style={{ width: '22%', textAlign: 'center' }}>TOTAL</div>
+      </div>
+      {info.lines?.map((item: any, i: number) => (
+        <div key={i}>
+          <div
+            style={{
+              display: 'flex',
+              fontSize: '12px',
+            }}
+          >
+            <div
+              style={{
+                width: '38%',
+                textTransform: 'uppercase',
+                fontWeight: 'bold',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+              }}
+            >
+              {item.short_name || item.name}
+            </div>
+            <div style={{ width: '20%', textAlign: 'right' }}>{item.quantity}</div>
             <div style={{ width: '20%', textAlign: 'right' }}>
+              {item.price_unit ? item.price_unit : '0'}
+            </div>
+            <div style={{ width: '22%', textAlign: 'right' }}>
               {item.amount_withtaxed_total.toFixed(2) || 0}
             </div>
           </div>

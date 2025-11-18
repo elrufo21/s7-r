@@ -42,7 +42,9 @@ export default function CartTable({ order }: CartTableProps) {
                   selectedItemPg === item.line_id ? 'bg-yellow-600 text-white' : 'hover:bg-gray-100'
                 }`}
               >
-                <td className="p-1 border font-semibold break-words max-w-[60px]">{item.name}</td>
+                <td className="p-1 border font-semibold break-words max-w-[60px] uppercase">
+                  {item.name}
+                </td>
 
                 <td className="p-1 border text-right">
                   {formatNumberDisplay(item.base_quantity ?? 0)}

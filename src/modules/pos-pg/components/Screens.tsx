@@ -236,7 +236,6 @@ const Screens = () => {
       ],
     })
   }
-
   switch (screenPg) {
     case 'products':
       return (
