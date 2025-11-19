@@ -52,7 +52,6 @@ export default function CartPanel({ order }: { order: any[] }) {
     temporaryListPg,
     applyTemporaryValuesByPositionPg,
   } = useAppStore()
-  console.log('orderabc', order)
   const { isOnline } = usePWA()
   const [cart, setCart] = useState<Product[]>([])
   const prevLinesCount = useRef<number>(order?.lines?.length || 0)
@@ -531,6 +530,7 @@ export default function CartPanel({ order }: { order: any[] }) {
       lastTapTime.current[itemId] = now
     }
   }
+    const temporary = temporaryListPg.find((t) => t.position_pg === order.position_pg && t.payment_state === order.payment_state)
   return (
     // <div
     //   className={`flex flex-col h-full border rounded-md shadow-sm transition-all duration-200 ${selectedOrderPg === order.order_id
@@ -566,7 +566,7 @@ export default function CartPanel({ order }: { order: any[] }) {
             fontSize: '1.1rem',
           }}
           onClick={() => {
-            if (!temporaryValuesPg?.product_id) {
+            if (!temporary?.product_id) {
               CustomToast({
                 title: 'Alerta',
                 description: 'Seleccione un producto antes de agregarlo a la lista',
@@ -578,8 +578,8 @@ export default function CartPanel({ order }: { order: any[] }) {
             applyTemporaryValuesByPositionPg(
               order.position_pg,
               order.payment_state,
-              temporaryValuesPg.tara_value,
-              temporaryValuesPg.tara_quantity
+              temporaryValuesPg?.tara_value,
+              temporaryValuesPg?.tara_quantity
             )
           }}
         >
@@ -587,10 +587,9 @@ export default function CartPanel({ order }: { order: any[] }) {
         </button>
       </div>
 
-      <div className="w-full min-h-[40px] h-[40px] flex items-center justify-center font-bold bg-white">
-        {/* Usar order.payment_state en lugar de order.payment_state */}
+     {/** <div className="w-full min-h-[40px] h-[40px] flex items-center justify-center font-bold bg-white">
         {order.payment_state === 'PE' ? 'CRÉDITO' : 'VENTA PÚBLICO'}
-      </div>
+      </div> */}
 
       <div className="pads">
         <div className="control-buttons ">

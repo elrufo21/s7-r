@@ -127,7 +127,7 @@ const Payment = () => {
       payments.length === 0 &&
       paymentMethodsPg.length > 0 &&
       selectedOrderPg &&
-      currentOrder.payment_state === TypeStatePayment.PAYMENT
+      currentOrder.payment_state === TypeStatePayment.PAYMENT && currentOrder?.partner_id === defaultPosSessionDataPg.partner_id
     ) {
       const firstMethod = paymentMethodsPg[0]
       const id = crypto.randomUUID()
@@ -311,7 +311,7 @@ const Payment = () => {
   }
 
   const modalValidateMethod = async () => {
-    const message = validatePayment()
+    /*const message = validatePayment()
     if (message) {
       const dialogId = openDialog({
         title: '',
@@ -340,7 +340,8 @@ const Payment = () => {
       })
     } else {
       handleValidatePayment()
-    }
+    }*/
+   handleValidatePayment()
   }
 
   const handleValidatePayment = async () => {
@@ -624,7 +625,7 @@ const Payment = () => {
                   bg=""
                   key={method.payment_method_id}
                   method={method}
-                  onClick={!frmLoading ? handlePaymentMethodClick : () => {}}
+                  onClick={!frmLoading ? handlePaymentMethodClick : () => { }}
                 />
               ))}
             </div>
@@ -784,9 +785,8 @@ const Payment = () => {
                 payments.map((payment) => (
                   <div
                     key={payment.payment_id}
-                    className={`payment-line ${
-                      selectedPaymentId === payment.payment_id ? 'select' : ''
-                    }`}
+                    className={`payment-line ${selectedPaymentId === payment.payment_id ? 'select' : ''
+                      }`}
                     onClick={() => handleSelectPayment(payment.payment_id)}
                   >
                     <div className="payment-info">

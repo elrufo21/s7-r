@@ -22,6 +22,40 @@ const TicketHTMLSimple: React.FC<TicketHTMLSimpleProps> = ({ info }) => {
     const ss = String(d.getSeconds()).padStart(2, '0')
     return `${dd}/${mm}/${yyyy} ${hh}:${mi}:${ss}`
   }
+  const getGroupedLines = () => {
+    if (!info.lines || info.lines.length === 0) return [];
+
+    const grouped = info.lines.reduce((acc, item) => {
+      const id = item.product_id;
+
+      const qty = parseFloat(item.quantity) || 0;
+      const price = parseFloat(item.price_unit) || 0;
+      const total = parseFloat(item.amount_withtaxed_total) || 0;
+
+      if (!acc[id]) {
+        acc[id] = {
+          product_id: id,
+          name: item.name,
+          quantity: 0,
+          price_unit: price,
+          total: 0,
+        };
+      }
+
+      acc[id].quantity += qty;
+      acc[id].total += total;
+
+      return acc;
+    }, {});
+    return Object.values(grouped).sort((a, b) => {
+      if (!a.name) return 1;
+      if (!b.name) return -1;
+      return a.name.localeCompare(b.name);
+    });
+  };
+
+  const groupedLines = getGroupedLines();
+
   const getPaymentsByMethod = () => {
     if (!info.payments || info.payments.length === 0) {
       return []
@@ -112,12 +146,12 @@ const TicketHTMLSimple: React.FC<TicketHTMLSimpleProps> = ({ info }) => {
             >
               {item.short_name || item.name}
             </div>
-            <div style={{ width: '14%', textAlign: 'center' }}>{item.tara_quantity}</div>
+            <div style={{ width: '14%', textAlign: 'center' }}>{item?.tara_quantity ?item?.tara_quantity:"" }</div>
             <div style={{ width: '24%', textAlign: 'right' }}>
               {item.base_quantity ? item.base_quantity : '0'}
             </div>
-            <div style={{ width: '14%', textAlign: 'center' }}>
-              {item.tara_total ? item.tara_total : '0'}
+            <div style={{ width: '14%', textAlign: 'right' }}>
+              {item.tara_total ? item.tara_total.toFixed(1) : ''}
             </div>
             <div style={{ width: '24%', textAlign: 'right' }}>{item.quantity}</div>
           </div>
@@ -137,7 +171,7 @@ const TicketHTMLSimple: React.FC<TicketHTMLSimpleProps> = ({ info }) => {
         <div style={{ width: '20%', textAlign: 'center' }}>PRECIO</div>
         <div style={{ width: '22%', textAlign: 'center' }}>TOTAL</div>
       </div>
-      {info.lines?.map((item: any, i: number) => (
+      {groupedLines.map((item, i) => (
         <div key={i}>
           <div
             style={{
@@ -154,18 +188,24 @@ const TicketHTMLSimple: React.FC<TicketHTMLSimpleProps> = ({ info }) => {
                 overflow: 'hidden',
               }}
             >
-              {item.short_name || item.name}
+              {item.name}
             </div>
-            <div style={{ width: '20%', textAlign: 'right' }}>{item.quantity}</div>
+
             <div style={{ width: '20%', textAlign: 'right' }}>
-              {item.price_unit ? item.price_unit : '0'}
+              {item.quantity.toFixed(2)}
             </div>
+
+            <div style={{ width: '20%', textAlign: 'right' }}>
+              {item.price_unit.toFixed(1)}
+            </div>
+
             <div style={{ width: '22%', textAlign: 'right' }}>
-              {item.amount_withtaxed_total.toFixed(2) || 0}
+              {item.total.toFixed(2)}
             </div>
           </div>
         </div>
       ))}
+
       <div
         style={{
           marginTop: '3px',

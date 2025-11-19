@@ -126,7 +126,18 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
   }
 
   const handleNumberClick = (digit: string) => {
-    let next = replaceOnNextDigit ? digit : inputValue + digit
+    let next;
+
+    if (replaceOnNextDigit) {
+      // Mantener signo negativo aunque replace sea true
+      if (inputValue === '-' || inputValue.startsWith('-')) {
+        next = '-' + digit;
+      } else {
+        next = digit;
+      }
+    } else {
+      next = inputValue + digit;
+    }
 
     // ✅ Permitir 0 al inicio sin borrarlo
     if (replaceOnNextDigit && digit === '0') {
@@ -195,11 +206,22 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
   }
 
   const toggleSign = () => {
-    if (inputValue === '') return
-    const next = inputValue.startsWith('-') ? inputValue.slice(1) : '-' + inputValue
-    setInputValue(next)
-    applyInput(next)
-  }
+    let val = inputValue;
+
+    // Permitir cambiar signo incluso si es solo '-'
+    if (val === '') {
+      // si está vacío, empezar como '-'
+      setInputValue('-');
+      applyInput('-');
+      return;
+    }
+
+    // Alternar signo
+    const next = val.startsWith('-') ? val.slice(1) : '-' + val;
+
+    setInputValue(next);
+    applyInput(next);
+  };
 
   const handleOk = async () => {
     const order = orderDataPg.find((o) => o.order_id === selectedOrderPg)
@@ -527,12 +549,22 @@ const CalculatorPanel = ({ product, selectedField, dialogId }: Props) => {
               ))}
 
               <div className="grid-item special-bg">
-                <button
+                {/**  <button
                   className="numpad-button btn2 fs-3 lh-lg w-full h-full o_colorlist_item_numpad_color_3"
                   onClick={toggleSign}
                 >
-                  +/-
+                 +/-
+                </button> */}
+                <button
+                  className="numpad-button btn2 fs-3 lh-lg w-full h-full o_colorlist_item_numpad_color_3"
+                  onClick={() => {
+                    if (inputValue?.startsWith("-")) return; // Si ya es negativo → no cambiar
+                    toggleSign();
+                  }}
+                >
+                  -
                 </button>
+
               </div>
 
               <div className="grid-item">

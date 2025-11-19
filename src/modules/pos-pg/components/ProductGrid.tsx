@@ -19,10 +19,10 @@ function hasCategoryRecursive(categories: any[], selectedId: number): boolean {
 
   return false
 }
-
 export default function ProductGrid() {
   const { productsPg, searchProductPg, selectedCategoryPg } = useAppStore()
   const products = productsPg.filter((p) => p.main_in_pos)
+
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchProductPg.toLowerCase())
 
@@ -32,7 +32,12 @@ export default function ProductGrid() {
     return matchesSearch && matchesCategory
   })
 
-  if (filteredProducts.length === 0) {
+  // 👉 ORDENAR por position (ascendente o descendente)
+  const sortedProducts = [...filteredProducts].sort(
+    (a, b) => (a.position ?? 0) - (b.position ?? 0)
+  )
+
+  if (sortedProducts.length === 0) {
     return (
       <div className="flex items-center justify-center text-center ">
         <p>
@@ -44,9 +49,10 @@ export default function ProductGrid() {
 
   return (
     <div className="pos-product-list">
-      {filteredProducts.map((product) => (
+      {sortedProducts.map((product) => (
         <ProductCard key={product.product_template_id} product={product} />
       ))}
     </div>
   )
 }
+

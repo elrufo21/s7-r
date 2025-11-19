@@ -13,10 +13,10 @@ export default function CartTable({ order }: CartTableProps) {
   const itemRefs = useRef<Record<string, HTMLTableRowElement | null>>({})
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto max-h-[300px]">
       <table className="w-full border-collapse text-[12px] leading-[10px]">
-        <thead>
-          <tr className="bg-gray-200 text-left">
+        <thead className="sticky top-0 z-10 bg-gray-200">
+          <tr className="text-left">
             <th className="p-1 border">Prod</th>
             <th className="p-1 border">Bruto</th>
             <th className="p-1 border">Tara</th>
@@ -24,7 +24,6 @@ export default function CartTable({ order }: CartTableProps) {
             <th className="p-1 border">Imp</th>
           </tr>
         </thead>
-
         <tbody>
           {order?.lines?.map((item: CartItemType) => {
             const taraTotal = item.tara_total ?? (item.tara_value || 0) * (item.tara_quantity || 0)
@@ -38,9 +37,8 @@ export default function CartTable({ order }: CartTableProps) {
                 onClick={() => {
                   setSelectedItemPg(item.line_id)
                 }}
-                className={`h-[40px] cursor-pointer border ${
-                  selectedItemPg === item.line_id ? 'bg-yellow-600 text-white' : 'hover:bg-gray-100'
-                }`}
+                className={`h-[40px] cursor-pointer border ${selectedItemPg === item.line_id ? 'bg-yellow-600 text-white' : 'hover:bg-gray-100'
+                  }`}
               >
                 <td className="p-1 border font-semibold break-words max-w-[60px] uppercase">
                   {item.name}
